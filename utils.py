@@ -55,3 +55,20 @@ def ray_intersects_aabb(p1, p2, obstacles):
     overlaps = (tmax >= 0) & (tmin <= tmax) & (tmin <= 1)
 
     return np.any(overlaps)
+
+
+def get_relative_index(cur_agent_pos, target_agent_pos):
+    """
+    Get relative hexagon index from current agent to target agent.
+
+    Args:
+        cur_agent_pos (np.ndarray): position of current agent.
+        target_agent_pos (np.ndarray): position of target agent.
+
+    Returns:
+        int: relative hexagon index.
+    """
+    dir = cur_agent_pos - target_agent_pos
+    angle = np.arctan2(dir[1], dir[0])
+    angles = np.linspace(angle - np.deg2rad(5), angle + np.deg2rad(5), 10)
+    return int(np.mean(angles) % (2 * np.pi)) % 6

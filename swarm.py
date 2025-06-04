@@ -88,7 +88,7 @@ else:
         def render(self, surface, font):
             if len(self.agents) > 0:
                 for agent in self.agents:
-                    agent.render(surface, font)
+                    agent.render(surface, font, self.agents)
 
         def create_plot(self):
             fig, ax = plt.subplots()

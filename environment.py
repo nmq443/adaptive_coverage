@@ -42,12 +42,7 @@ class Environment:
             return True
         return False
 
-    # def point_is_in_obstacle(self, point):
-    #     for obs in self.obstacles:
-    #         x, y, w, h = obs
-    #         if x <= point[0] <= x + w and y <= point[1] <= y + h:
-    #             return True
-    #     return False
+
     def point_is_in_obstacle(self, point: np.ndarray, agent_radius: float):
         """Obstacle is a rectangle with (x, y, width, height) values"""
         if len(self.obstacles) <= 0:
@@ -78,15 +73,8 @@ class Environment:
         return np.any(intersects)
 
     def point_is_in_environment(self, point, agent_radius):
-        if point[0] < self.x_min or point[0] > self.x_max:
-            return False
-        if point[1] < self.y_min or point[1] > self.y_max:
-            return False
-        return True
-        '''
         if point[0] - agent_radius < self.x_min or point[0] + agent_radius > self.x_max:
             return False
         if point[1] - agent_radius < self.y_min or point[1] + agent_radius > self.y_max:
             return False
         return True
-        '''
