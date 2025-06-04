@@ -15,7 +15,6 @@ class Simulator:
         self.iterations = ITERATIONS
         self.font = None
         self.clock = pygame.time.Clock()
-        self.limit_running = LIMIT_RUNNING
         self.first_click = True
         self.start = False
 
@@ -68,7 +67,7 @@ class Simulator:
         self.init()
         i = 0
         while self.running:
-            if self.limit_running and self.start:
+            if LIMIT_RUNNING and self.start:
                 if (i + 1) % 10 == 0:
                     print(f"Iteration {i + 1}/{self.iterations}")
                 if i >= self.iterations:
@@ -78,6 +77,6 @@ class Simulator:
             self.screen.fill('white')
             self.loop()
             pygame.display.flip()
-        if self.limit_running:
+        if LIMIT_RUNNING and SAVE_VIDEO:
             self.save_results()
         pygame.quit()

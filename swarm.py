@@ -63,7 +63,7 @@ else:
 
         def init_agents(self, ref_pos=None):
             if RANDOM_INIT and ref_pos is not None:
-                random_positions = np.random.rand(self.num_agents, 2) * AGENT_SPREAD + ref_pos
+                random_positions = np.random.uniform(-1, 1, (self.num_agents, 2)) * AGENT_SPREAD + ref_pos
                 for index in range(self.num_agents):
                     self.agents.append(Agent(
                         index=index,
@@ -77,13 +77,14 @@ else:
                 self.determine_root(0, self.agents[0].pos)
         
         def determine_root(self, agent_id, agent_goal):
-            self.agents[agent_id].set_state("assigned")
-            self.agents[agent_id].set_goal(agent_goal)
+            self.agents[agent_id].set_state("occupied")
+            # self.agents[agent_id].set_goal(agent_goal)
 
         def step(self, env):
             if len(self.agents) > 0:
-                for agent in self.agents:
-                    agent.step(self.landmarks, self.agents, env)
+                order = np.random.permutation(len(self.agents))
+                for i in order:
+                    self.agents[i].step(self.landmarks, self.agents, env)
 
         def render(self, surface, font):
             if len(self.agents) > 0:

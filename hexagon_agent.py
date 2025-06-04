@@ -59,7 +59,7 @@ class Agent:
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def render(self, screen: pg.Surface, font: pg.font.Font):
+    def render(self, screen: pg.Surface, font: pg.font.Font, agents: list):
         color = COLOR
         if self.is_assigned():
             color = ASSIGNED_AGENT_COLOR
@@ -76,16 +76,19 @@ class Agent:
             radius=SIZE,
             width=2
         )
-        if SHOW_SENSING_RANGE:
-            pg.draw.circle(
-                surface=screen,
-                center=self.pos,
-                color=SENSING_COLOR,
-                radius=SENSING_RANGE,
-                width=2
-            )
+        # if SHOW_SENSING_RANGE:
+        #     pg.draw.circle(
+        #         surface=screen,
+        #         center=self.pos,
+        #         color=SENSING_COLOR,
+        #         radius=SENSING_RANGE,
+        #         width=2
+        #     )
+        for other in agents:
+            if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
+                pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         text_surface = font.render(str(self.index), True, 'black')
-        text_rect = text_surface.get_rect(center=self.pos)
+        text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
 
     def stop(self):
