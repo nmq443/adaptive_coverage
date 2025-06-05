@@ -23,6 +23,7 @@ class Agent:
         self.index = index
         self.pos = init_pos
         self.vel = np.zeros(2)
+        self.trajectory = [self.pos.copy()]
 
         # Distributed Control Parameters
         self.source: int = -1
@@ -74,7 +75,6 @@ class Agent:
             center=self.pos,
             color=color,
             radius=SIZE,
-            width=2
         )
         # if SHOW_SENSING_RANGE:
         #     pg.draw.circle(
@@ -87,6 +87,9 @@ class Agent:
         for other in agents:
             if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
                 pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
+        for i in range(len(self.virtual_targets)):
+            if not self.occupied_virtual_targets[i]:
+                pg.draw.circle(screen, 'green', self.virtual_targets[i], 3)
         text_surface = font.render(str(self.index), True, 'black')
         text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
@@ -120,6 +123,7 @@ class Agent:
         va = self.alignment_behaviour(dest)
         # vs = self.separation_behaviour(agents)
         vs = np.zeros(2)
+        self.trajectory.append(self.pos.copy())
         self.velocity = va + vs
         self.limit_speed()
         self.pos += self.velocity
@@ -202,27 +206,30 @@ class Agent:
                 )
 
     def compute_penalty_node(self, v1, v2, env, agents):
-        index_i, index_j = v1[1], v2[1]
-        if abs(index_i - index_j) != 1:
-            return
-        pos = find_penalty_node(
-            index=self.index,
-            v1=v1,
-            v2=v2,
-            env=env,
-            agents=agents,
-        )
+        if ORIGINAL_METHOD:
+            pass
+        else:
+            index_i, index_j = v1[1], v2[1]
+            if abs(index_i - index_j) != 1:
+                return
+            pos = find_penalty_node(
+                index=self.index,
+                v1=v1,
+                v2=v2,
+                env=env,
+                agents=agents,
+            )
 
-        # Then check if the penalty node is valid
-        is_valid, _ = self.is_valid_virtual_target(
-            target=pos,
-            agents=agents,
-            env=env
-        )
-        if is_valid:
-            self.virtual_targets.append(pos)
-            self.occupied_virtual_targets.append(False)
-            self.penalty_nodes.append(pos)
+            # Then check if the penalty node is valid
+            is_valid, _ = self.is_valid_virtual_target(
+                target=pos,
+                agents=agents,
+                env=env
+            )
+            if is_valid:
+                self.virtual_targets.append(pos)
+                self.occupied_virtual_targets.append(False)
+                self.penalty_nodes.append(pos)
 
     def is_valid_virtual_target(self, target: np.ndarray, agents: list, env):
         # not a hidden vertex
@@ -237,9 +244,7 @@ class Agent:
         if len(other_agent_positions) > 0:
             distances = np.linalg.norm(
                 target - other_agent_positions, axis=1)
-            if np.any(distances <= EPS):  # not occupied by another agent
-                return False, False
-            if np.any(distances <= HEXAGON_RANGE):  # not in a coverage range
+            if np.any(distances <= 10*EPS):  # not occupied by another agent
                 return False, False
 
         # not a neighbour's targets
@@ -249,8 +254,8 @@ class Agent:
             if len(virtual_targets) > 0:
                 distances = np.linalg.norm(
                     virtual_targets - target, axis=1)
-                distances = np.round(distances, 2)
-                if np.any(distances <= EPS):
+                distances = np.round(distances, 5)
+                if np.any(distances <= 10 * EPS):
                     return False, False
 
         # If behind an obstacle
@@ -271,6 +276,9 @@ class Agent:
                 landmarks.popleft()
 
     def on_assigned(self, agents, landmarks):
+        """
+        Assignment phase.
+        """
         flag = self.mobility_control(agents)
         if flag == 1:
             if self.goal is not None:
@@ -282,6 +290,8 @@ class Agent:
             else:
                 if len(landmarks) > 0:
                     lc = landmarks[0]
+                    print(landmarks)
+                    print(lc)
                     landmark = agents[lc]
                     tc = landmark.tc
                     if 0 <= tc < len(landmark.virtual_targets) and not landmark.occupied_virtual_targets[tc]:
@@ -299,6 +309,9 @@ class Agent:
                         landmark.tc += 1
 
     def on_unassigned(self, landmarks, agents):
+        """
+        Unassignment phase.
+        """
         self.stop()
         if len(landmarks) > 0:
             lc = landmarks[0]
@@ -309,6 +322,15 @@ class Agent:
                 self.set_state("assigned")
 
     def build_graph(self, agents):
+        """
+        Build a graph for current agent. Nodes are occupied agents' ids.
+
+        Args: 
+            agents (list): list of all agents.
+
+        Returns:
+            dict: connectivity graph for current agent. 
+        """
         graph = {agent.index: [] for agent in agents}
         for agent in agents:
             for other_agent in agents:
@@ -319,6 +341,16 @@ class Agent:
         return graph
 
     def get_shortest_path(self, landmark_id: int, agents):
+        """
+        Get shortest path from current agent to current activated landmark.
+
+        Args:
+            landmark_id (int): index of current activated landmark.
+            agents (list): list of all agents.
+
+        Returns:
+            list: shortest path found.
+        """
         graph = self.build_graph(agents)
         # bfs shortest path
         visited = set()

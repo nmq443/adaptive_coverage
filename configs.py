@@ -5,7 +5,7 @@ from utils import meters2pixels
 
 # Simulation settings
 SCREEN_SIZE = (1920, 1080)
-RANDOM_INIT = True
+RANDOM_INIT = False
 SCALE = 50
 LINE_WIDTH = 5
 EPS = meters2pixels(0.1, SCALE)
@@ -14,26 +14,28 @@ CENTER = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2]
 CENTER_COLOR = 'purple'
 CENTER_SIZE = meters2pixels(0.5, SCALE)
 LIMIT_RUNNING = True
+SAVE_VIDEO = True
 FPS = 30
 ITERATIONS = 500
-RIDGE_COLOR = 'blue'
-FONT_SIZE = 9
-SHOW_SENSING_RANGE = True
+RIDGE_COLOR = 'black'
+FONT_SIZE = 13
+SHOW_SENSING_RANGE = False
+SHOW_TRAJECTORY = False
 
 # Swarm settings
 # CONTROLLER = 'voronoi'  # 'hexagon' or 'voronoi'
 CONTROLLER = 'hexagon'  # 'hexagon' or 'voronoi'
-NUM_AGENTS = 31
+NUM_AGENTS = 20
 if RANDOM_INIT:
-    AGENT_SPREAD = meters2pixels(2., SCALE)
+    AGENT_SPREAD = meters2pixels(.5, SCALE)
 
 # Agent's settings
 COLOR = 'red'
 GOAL_COLOR = 'green'
 SENSING_COLOR = 'blue' 
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(6., SCALE) # rc and rs
-VMAX = meters2pixels(1, SCALE)
+SENSING_RANGE = meters2pixels(7., SCALE) # rc and rs
+VMAX = meters2pixels(0.5, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
 AGENT_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 3 + 200, SCREEN_SIZE[1] / 2])
 KG = 0.1
@@ -57,13 +59,16 @@ if CONTROLLER == 'hexagon':
     UNASSIGNED_AGENT_COLOR = COLOR
     PENALTY_AGENT_COLOR = 'green'
     USE_PENALTY_NODE = False
+    ORIGINAL_METHOD = True
+    RHO = 0.5
+    NV = 6
     # PSO
     PSO_ITERATIONS = 100
     PSO_PARTICLES = 50
     PSO_VMAX = meters2pixels(0.5, SCALE)
     PSO_SPREAD = meters2pixels(0.05, SCALE)
 else:
-    VALID_RANGE = 0.75 * SENSING_RANGE
+    VALID_RANGE = 0.9 * SENSING_RANGE
 
 # Area
 # Area 1 is a simple rectangle without obstacles

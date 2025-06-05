@@ -116,8 +116,10 @@ def lloyd(agent, agents, env):
     # Step 3: move points to centroids
     goal = centroids[0]
     goal = handle_goal(goal, agent.pos, env)
-    while not agent.terminated(goal):
-        agent.move_to_goal(goal)
+    # while not agent.terminated(goal):
+        # agent.move_to_goal(goal)
+    # agent.move_to_goal(goal)
+    return goal
 
 
 def handle_goal(goal, agent_pos, env):

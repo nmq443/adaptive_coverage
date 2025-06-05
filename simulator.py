@@ -24,6 +24,7 @@ class Simulator:
         self.font = pygame.font.SysFont("monospace", FONT_SIZE, True)
         if not RANDOM_INIT:
             self.swarm.init_agents()
+            self.start = True
 
     def loop(self):
         # pygame.draw.circle(self.screen, CENTER_COLOR, CENTER, CENTER_SIZE) # center of density function
@@ -61,7 +62,7 @@ class Simulator:
         imageio.mimsave(video_path, self.frames, fps=self.fps)
         imageio.imwrite(start_img_path, self.frames[0])
         imageio.imwrite(end_img_path, self.frames[-1])
-        # self.swarm.create_plot()
+        self.swarm.save_data()
  
     def execute(self):
         self.init()
