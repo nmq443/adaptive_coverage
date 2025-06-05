@@ -70,12 +70,11 @@ if CONTROLLER == 'voronoi':
 
             self.graph = graph
 
-            datas.append(graph)
-
-            df = pd.DataFrame(datas)
-            save_dir = os.path.join(
-                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.csv")
-            df.to_csv(save_dir)
+            datas = np.array(datas)
+            save_file = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.npy")
+            with open(save_file, 'wb') as f:
+                np.save(f, datas)
 
 
 else:
@@ -146,9 +145,9 @@ else:
                             graph[j][i] = 1
 
             self.graph = graph
-            datas.append(graph)
 
-            df = pd.DataFrame(datas)
-            save_dir = os.path.join(
-                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.csv")
-            df.to_csv(save_dir)
+            datas = np.array(datas)
+            save_file = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.npy")
+            with open(save_file, 'wb') as f:
+                np.save(f, datas)

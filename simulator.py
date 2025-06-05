@@ -1,5 +1,6 @@
 import os
 import pygame
+import shutil
 import logging
 import imageio
 from configs import *
@@ -22,6 +23,9 @@ class Simulator:
 
     def init(self):
         pygame.init()
+        if os.path.exists(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR)):
+            shutil.rmtree(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR))
+            os.makedirs(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR), exist_ok=True)
         self.screen = pygame.display.set_mode(self.screen_size)
         self.font = pygame.font.SysFont("monospace", FONT_SIZE, True)
         if not RANDOM_INIT:

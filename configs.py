@@ -20,6 +20,7 @@ ITERATIONS = 500
 RIDGE_COLOR = 'black'
 FONT_SIZE = 13
 SHOW_SENSING_RANGE = False
+SHOW_CONNECTIONS = False
 SHOW_TRAJECTORY = False
 
 # Swarm settings
@@ -32,13 +33,14 @@ if RANDOM_INIT:
 # Agent's settings
 COLOR = 'red'
 GOAL_COLOR = 'green'
-SENSING_COLOR = 'blue' 
+SENSING_COLOR = 'blue'
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(7., SCALE) # rc and rs
+SENSING_RANGE = meters2pixels(7., SCALE)  # rc and rs
 VMAX = meters2pixels(0.5, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
 AGENT_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 3 + 200, SCREEN_SIZE[1] / 2])
 KG = 0.1
+KA = 0.5
 NUM_ROWS = 5
 NUM_COLS = 4
 INIT_POS = []
@@ -78,18 +80,23 @@ ENV_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3])
 if ENV == 1:
     # OBSTACLES = np.array([
     #     [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1], SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3]
-    # ])  
+    # ])
     OBSTACLES = np.array([])
 elif ENV == 2:
     OBSTACLES = np.array([
-        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1], SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3],
-        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
+        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1],
+            SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3],
+        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2,
+            SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
     ])
 elif ENV == 3:
     OBSTACLES = np.array([
-        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1], SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3],
-        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
-        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2 + 500, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
+        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1],
+            SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3],
+        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2,
+            SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
+        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2 +
+            500, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
     ])
 VERTICES = np.array([
     [0, 0],
@@ -98,6 +105,9 @@ VERTICES = np.array([
     [0, SCREEN_SIZE[1]]
 ], dtype=float)
 
+# Logging
+LOG_DIR = "log"
+LOG_FILE = "hexagon_log.log" if CONTROLLER == 'hexagon' else 'voronoi_log.log'
 
 # Results
 RES_DIR = "results"
