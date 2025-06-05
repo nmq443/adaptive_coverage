@@ -1,5 +1,6 @@
 import os
 import pygame
+import logging
 import imageio
 from configs import *
 
@@ -15,6 +16,7 @@ class Simulator:
         self.iterations = ITERATIONS
         self.font = None
         self.clock = pygame.time.Clock()
+        self.logger = logging.getLogger(__name__)
         self.first_click = True
         self.start = False
 
@@ -25,6 +27,24 @@ class Simulator:
         if not RANDOM_INIT:
             self.swarm.init_agents()
             self.start = True
+        logging.basicConfig(
+            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+            datefmt='%m-%d %H:%M',
+            filemode='w',
+            filename=os.path.join(LOG_DIR, LOG_FILE), 
+            level=logging.DEBUG
+        )
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        self.console = logging.StreamHandler()
+        self.console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+        # tell the handler to use this format
+        self.console.setFormatter(formatter)
+        # add the handler to the root logger
+        logging.getLogger().addHandler(self.console)
+        self.logger.info('Started')
+        self.logger.info(f'Using {CONTROLLER} method')
 
     def loop(self):
         # pygame.draw.circle(self.screen, CENTER_COLOR, CENTER, CENTER_SIZE) # center of density function
@@ -63,6 +83,8 @@ class Simulator:
         imageio.imwrite(start_img_path, self.frames[0])
         imageio.imwrite(end_img_path, self.frames[-1])
         self.swarm.save_data()
+        self.logger.info(f"Final adjacent graph: \n{self.swarm.graph}")
+        self.logger.info(f"Number of connection links: {int(np.sum(self.swarm.graph) / 2)}")
  
     def execute(self):
         self.init()
@@ -70,7 +92,8 @@ class Simulator:
         while self.running:
             if LIMIT_RUNNING and self.start:
                 if (i + 1) % 10 == 0:
-                    print(f"Iteration {i + 1}/{self.iterations}")
+                    # print(f"Iteration {i + 1}/{self.iterations}")
+                    self.logger.info(f"Iteration {i + 1}/{self.iterations}")
                 if i >= self.iterations:
                     self.running = False
                 i += 1
@@ -81,3 +104,4 @@ class Simulator:
         if LIMIT_RUNNING and SAVE_VIDEO:
             self.save_results()
         pygame.quit()
+        self.logger.info('Finished')

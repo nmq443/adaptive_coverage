@@ -67,9 +67,10 @@ class Agent:
                     color=COLOR,
                     radius=1,
                 )
-        for other in agents:
-            if other.index != self.index and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
-                pygame.draw.line(surface, SENSING_COLOR, self.pos, other.pos)
+        if SHOW_CONNECTIONS:
+            for other in agents:
+                if other.index != self.index and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
+                    pygame.draw.line(surface, SENSING_COLOR, self.pos, other.pos)
 
         text_surface = font.render(str(self.index), True, 'black')
         text_rect = text_surface.get_rect(center=(self.pos[0] + SIZE, self.pos[1] - SIZE))

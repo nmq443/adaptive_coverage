@@ -62,12 +62,12 @@ class Agent:
 
     def render(self, screen: pg.Surface, font: pg.font.Font, agents: list):
         color = COLOR
-        if self.is_assigned():
-            color = ASSIGNED_AGENT_COLOR
-        elif self.is_occupied():
-            color = OCCUPIED_AGENT_COLOR
-        elif self.is_unassigned():
-            color = UNASSIGNED_AGENT_COLOR
+        # if self.is_assigned():
+        #     color = ASSIGNED_AGENT_COLOR
+        # elif self.is_occupied():
+        #     color = OCCUPIED_AGENT_COLOR
+        # elif self.is_unassigned():
+        #     color = UNASSIGNED_AGENT_COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR
         pg.draw.circle(
@@ -84,9 +84,10 @@ class Agent:
         #         radius=SENSING_RANGE,
         #         width=2
         #     )
-        for other in agents:
-            if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
-                pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
+        if SHOW_CONNECTIONS:
+            for other in agents:
+                if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
+                    pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         for i in range(len(self.virtual_targets)):
             if not self.occupied_virtual_targets[i]:
                 pg.draw.circle(screen, 'green', self.virtual_targets[i], 3)
@@ -121,7 +122,7 @@ class Agent:
 
     def move_to_dest(self, agents, dest: np.ndarray = None):
         va = self.alignment_behaviour(dest)
-        # vs = self.separation_behaviour(agents)
+        vs = self.separation_behaviour(agents)
         vs = np.zeros(2)
         self.trajectory.append(self.pos.copy())
         self.velocity = va + vs
@@ -140,7 +141,7 @@ class Agent:
         directions = positions - self.pos  # Vector from self to others
         # Compute all distances at once
         distances = np.linalg.norm(directions, axis=1)
-        mask = distances <= self.rs  # Only consider nearby agents
+        mask = distances <= SENSING_RANGE  # Only consider nearby agents
 
         if not np.any(mask):
             return np.zeros(2)
@@ -151,8 +152,8 @@ class Agent:
 
         beta_c = 2.
         va = np.sum(
-            (self.beta * np.exp(-beta_c * (distances - self.ra))
-             * (directions / distances) / (distances - self.ra)),
+            (KA * np.exp(-beta_c * (distances - AVOIDANCE_RANGE))
+             * (directions / distances) / (distances - AVOIDANCE_RANGE)),
             axis=0
         )
         return va
@@ -246,6 +247,9 @@ class Agent:
                 target - other_agent_positions, axis=1)
             if np.any(distances <= 10*EPS):  # not occupied by another agent
                 return False, False
+            if self.is_penalty_node:
+                if np.any(distances <= HEXAGON_RANGE): # not in a coverage range
+                    return False, False
 
         # not a neighbour's targets
         for other_agent in agents:
@@ -290,8 +294,6 @@ class Agent:
             else:
                 if len(landmarks) > 0:
                     lc = landmarks[0]
-                    print(landmarks)
-                    print(lc)
                     landmark = agents[lc]
                     tc = landmark.tc
                     if 0 <= tc < len(landmark.virtual_targets) and not landmark.occupied_virtual_targets[tc]:

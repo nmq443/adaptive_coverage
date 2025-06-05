@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from configs import *
 from voronoi import *
@@ -14,6 +13,7 @@ if CONTROLLER == 'voronoi':
             self.num_agents = NUM_AGENTS
             self.agents = []
             self.generators = []
+            self.graph = None
 
         def init_agents(self, ref_pos=None):
             if RANDOM_INIT and ref_pos is not None:
@@ -47,7 +47,7 @@ if CONTROLLER == 'voronoi':
 
         def save_data(self):
             datas = []
-            
+
             # save poses
             for agent in self.agents:
                 data = []
@@ -62,16 +62,19 @@ if CONTROLLER == 'voronoi':
                     if i == j:
                         graph[i][j] = 0
                     else:
-                        distance = np.linalg.norm(self.agents[i].pos - self.agents[j].pos)
+                        distance = np.linalg.norm(
+                            self.agents[i].pos - self.agents[j].pos)
                         if distance <= SENSING_RANGE:
                             graph[i][j] = 1
                             graph[j][i] = 1
 
-            num_connections = np.sum(graph)
-            datas.append([num_connections])
+            self.graph = graph
+
+            datas.append(graph)
 
             df = pd.DataFrame(datas)
-            save_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.csv")
+            save_dir = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.csv")
             df.to_csv(save_dir)
 
 
@@ -83,6 +86,7 @@ else:
             self.num_agents = NUM_AGENTS
             self.agents = []
             self.landmarks = deque([])
+            self.graph = None
 
         def init_agents(self, ref_pos=None):
             if RANDOM_INIT and ref_pos is not None:
@@ -98,7 +102,9 @@ else:
                 for i in range(NUM_ROWS):
                     for j in range(NUM_COLS):
                         self.agents.append(
-                            Agent(i * NUM_ROWS + j, INIT_POS[i][j]))
+                            Agent(i * NUM_COLS + j, INIT_POS[i][j]))
+                # for agent in self.agents:
+                #     print(agent.index)
                 self.determine_root(0, self.agents[0].pos)
 
         def determine_root(self, agent_id, agent_goal):
@@ -118,11 +124,31 @@ else:
 
         def save_data(self):
             datas = []
+
+            # save poses
             for agent in self.agents:
                 data = []
                 data.append(agent.trajectory[0])  # first pose
                 data.append(agent.pos)  # last pose
                 datas.append(data)
+
+            # save graph
+            graph = np.zeros((NUM_AGENTS, NUM_AGENTS))
+            for i in range(NUM_AGENTS):
+                for j in range(NUM_AGENTS):
+                    if i == j:
+                        graph[i][j] = 0
+                    else:
+                        distance = np.linalg.norm(
+                            self.agents[i].pos - self.agents[j].pos)
+                        if distance <= SENSING_RANGE:
+                            graph[i][j] = 1
+                            graph[j][i] = 1
+
+            self.graph = graph
+            datas.append(graph)
+
             df = pd.DataFrame(datas)
-            save_dir = os.path.join(RES_DIR, ENV_DIR, METHOD_DIR, "swarm_data.csv")
+            save_dir = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.csv")
             df.to_csv(save_dir)
