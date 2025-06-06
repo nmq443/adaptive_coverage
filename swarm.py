@@ -45,7 +45,7 @@ if CONTROLLER == 'voronoi':
                 vor = compute_voronoi_diagrams(self.generators, env)
                 draw_voronoi(vor, surface)
 
-        def save_data(self):
+        def save_data(self, res_dir):
             datas = []
 
             # save poses
@@ -71,11 +71,12 @@ if CONTROLLER == 'voronoi':
             self.graph = graph
 
             datas = np.array(datas)
+
             save_file = os.path.join(
-                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.npy")
+                res_dir, "swarm_data.npy")
+
             with open(save_file, 'wb') as f:
                 np.save(f, datas)
-
 
 else:
     from hexagon_agent import Agent
@@ -121,7 +122,7 @@ else:
                 for agent in self.agents:
                     agent.render(surface, font, self.agents)
 
-        def save_data(self):
+        def save_data(self, res_dir):
             datas = []
 
             # save poses
@@ -147,7 +148,9 @@ else:
             self.graph = graph
 
             datas = np.array(datas)
+
             save_file = os.path.join(
-                RES_DIR, METHOD_DIR, ENV_DIR, "swarm_data.npy")
+                res_dir, "swarm_data.npy")
+
             with open(save_file, 'wb') as f:
                 np.save(f, datas)

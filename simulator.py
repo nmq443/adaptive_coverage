@@ -20,12 +20,24 @@ class Simulator:
         self.logger = logging.getLogger(__name__)
         self.first_click = True
         self.start = False
+        self.res_dir = None
 
     def init(self):
         pygame.init()
-        if os.path.exists(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR)):
-            shutil.rmtree(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR))
-            os.makedirs(os.path.join(RES_DIR, METHOD_DIR, ENV_DIR), exist_ok=True)
+        if CONTROLLER == 'hexagon':
+            if ORIGINAL_METHOD:
+                dir = "original"
+            else:
+                dir = "pso"
+            self.res_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, dir)
+            if os.path.exists(self.res_dir):
+                shutil.rmtree(self.res_dir)
+            os.makedirs(self.res_dir, exist_ok=True)
+        else:
+            self.res_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR)
+            if os.path.exists(self.res_dir):
+                shutil.rmtree(self.res_dir)
+            os.makedirs(self.res_dir, exist_ok=True)
         self.screen = pygame.display.set_mode(self.screen_size)
         self.font = pygame.font.SysFont("monospace", FONT_SIZE, True)
         if not RANDOM_INIT:
@@ -80,13 +92,13 @@ class Simulator:
 
 
     def save_results(self):
-        video_path = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, VIDEO_NAME)
-        start_img_path = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, START_FIG)
-        end_img_path = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, FINAL_FIG)
+        video_path = os.path.join(self.res_dir, VIDEO_NAME)
+        start_img_path = os.path.join(self.res_dir, START_FIG)
+        end_img_path = os.path.join(self.res_dir, FINAL_FIG)
         imageio.mimsave(video_path, self.frames, fps=self.fps)
         imageio.imwrite(start_img_path, self.frames[0])
         imageio.imwrite(end_img_path, self.frames[-1])
-        self.swarm.save_data()
+        self.swarm.save_data(self.res_dir)
         self.logger.info(f"Final adjacent graph: \n{self.swarm.graph}")
         self.logger.info(f"Number of connection links: {int(np.sum(self.swarm.graph) / 2)}")
  

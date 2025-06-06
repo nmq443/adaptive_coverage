@@ -76,14 +76,14 @@ class Agent:
             color=color,
             radius=SIZE,
         )
-        # if SHOW_SENSING_RANGE:
-        #     pg.draw.circle(
-        #         surface=screen,
-        #         center=self.pos,
-        #         color=SENSING_COLOR,
-        #         radius=SENSING_RANGE,
-        #         width=2
-        #     )
+        if SHOW_SENSING_RANGE:
+            pg.draw.circle(
+                surface=screen,
+                center=self.pos,
+                color=SENSING_COLOR,
+                radius=SENSING_RANGE,
+                width=2
+            )
         if SHOW_CONNECTIONS:
             for other in agents:
                 if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
