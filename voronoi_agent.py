@@ -48,7 +48,7 @@ class Agent:
         else:
             self.goal = lloyd(self, agents, env)
 
-    def render(self, surface, font, agents):
+    def render(self, surface, font, agents, timestep):
         pygame.draw.circle(surface, COLOR,
                            self.pos, SIZE)
         if SHOW_SENSING_RANGE:
@@ -67,7 +67,7 @@ class Agent:
                     color=COLOR,
                     radius=1,
                 )
-        if SHOW_CONNECTIONS:
+        if SHOW_CONNECTIONS and timestep >= 10: # only render connection links from frame 10th
             for other in agents:
                 if other.index != self.index and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
                     pygame.draw.line(surface, SENSING_COLOR, self.pos, other.pos)

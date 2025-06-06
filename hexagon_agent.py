@@ -60,7 +60,7 @@ class Agent:
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def render(self, screen: pg.Surface, font: pg.font.Font, agents: list):
+    def render(self, screen: pg.Surface, font: pg.font.Font, agents: list, timestep):
         color = COLOR
         # if self.is_assigned():
         #     color = ASSIGNED_AGENT_COLOR
@@ -84,7 +84,7 @@ class Agent:
                 radius=SENSING_RANGE,
                 width=2
             )
-        if SHOW_CONNECTIONS:
+        if SHOW_CONNECTIONS and timestep >= 10:
             for other in agents:
                 if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
                     pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
@@ -234,7 +234,9 @@ class Agent:
 
     def is_valid_virtual_target(self, target: np.ndarray, agents: list, env):
         # not a hidden vertex
-        if not env.point_is_in_environment(target, SIZE):
+        # if not env.point_is_in_environment(target, SIZE):
+        #     return False, True
+        if not env.contains(target):
             return False, True
         is_in_obs = env.point_is_in_obstacle(target, SIZE)
         if is_in_obs:
@@ -245,7 +247,7 @@ class Agent:
         if len(other_agent_positions) > 0:
             distances = np.linalg.norm(
                 target - other_agent_positions, axis=1)
-            if np.any(distances <= 10*EPS):  # not occupied by another agent
+            if np.any(distances <= 20*EPS):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
                 if np.any(distances <= HEXAGON_RANGE): # not in a coverage range
@@ -259,7 +261,7 @@ class Agent:
                 distances = np.linalg.norm(
                     virtual_targets - target, axis=1)
                 distances = np.round(distances, 5)
-                if np.any(distances <= 10 * EPS):
+                if np.any(distances <= 20 * EPS):
                     return False, False
 
         # If behind an obstacle

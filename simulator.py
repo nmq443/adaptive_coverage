@@ -21,6 +21,7 @@ class Simulator:
         self.first_click = True
         self.start = False
         self.res_dir = None
+        self.timestep = 0
 
     def init(self):
         pygame.init()
@@ -66,9 +67,9 @@ class Simulator:
         # pygame.draw.circle(self.screen, CENTER_COLOR, CENTER, CENTER_SIZE) # center of density function
         self.env.render(self.screen)
         if CONTROLLER == 'voronoi':
-            self.swarm.render(self.screen, self.env, self.font)
+            self.swarm.render(self.screen, self.env, self.font, self.timestep)
         else:
-            self.swarm.render(self.screen, self.font)
+            self.swarm.render(self.screen, self.font, self.timestep)
         data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
         frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
         if len(self.swarm.agents) > 0:
@@ -107,6 +108,7 @@ class Simulator:
         i = 0
         while self.running:
             if LIMIT_RUNNING and self.start:
+                self.timestep = i
                 if (i + 1) % 10 == 0:
                     # print(f"Iteration {i + 1}/{self.iterations}")
                     self.logger.info(f"Iteration {i + 1}/{self.iterations}")

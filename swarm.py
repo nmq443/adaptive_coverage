@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pandas as pd
 from configs import *
 from voronoi import *
 from collections import deque
@@ -37,10 +36,10 @@ if CONTROLLER == 'voronoi':
                 for agent in self.agents:
                     agent.step(self.agents, env)
 
-        def render(self, surface, env, font):
+        def render(self, surface, env, font, timestep):
             if len(self.agents) > 0:
                 for agent in self.agents:
-                    agent.render(surface, font, self.agents)
+                    agent.render(surface, font, self.agents, timestep)
                     self.generators[agent.index] = agent.pos
                 vor = compute_voronoi_diagrams(self.generators, env)
                 draw_voronoi(vor, surface)
@@ -117,10 +116,10 @@ else:
                 for i in order:
                     self.agents[i].step(self.landmarks, self.agents, env)
 
-        def render(self, surface, font):
+        def render(self, surface, font, timestep):
             if len(self.agents) > 0:
                 for agent in self.agents:
-                    agent.render(surface, font, self.agents)
+                    agent.render(surface, font, self.agents, timestep)
 
         def save_data(self, res_dir):
             datas = []
