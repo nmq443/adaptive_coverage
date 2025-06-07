@@ -1,10 +1,11 @@
 import pygame as pg
 import numpy as np
+from shapely.geometry import LineString
 from enum import Enum
 from collections import deque
 from configs import *
 from pso import find_penalty_node
-from utils import ray_intersects_aabb
+from utils import ray_intersects_aabb, nearest_point_to_obstacle
 
 
 class State(Enum):
@@ -92,7 +93,8 @@ class Agent:
             if not self.occupied_virtual_targets[i]:
                 pg.draw.circle(screen, 'green', self.virtual_targets[i], 3)
         text_surface = font.render(str(self.index), True, 'black')
-        text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
+        text_rect = text_surface.get_rect(
+            center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
 
     def stop(self):
@@ -120,17 +122,29 @@ class Agent:
                 self.route_id += 1
         return flag
 
-    def move_to_dest(self, agents, dest: np.ndarray = None):
+    def move_to_dest(self, agents, dest: np.ndarray = None, env=None):
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
-        vs = np.zeros(2)
+        vo = self.obstacle_behaviour()
         self.trajectory.append(self.pos.copy())
-        self.velocity = va + vs
+        self.velocity = va + vs + vo
         self.limit_speed()
         self.pos += self.velocity
 
     def alignment_behaviour(self, dest: np.ndarray):
         return KG * (dest - self.pos)
+
+    def obstacle_behaviour(self):
+        vo = np.zeros(2)
+        if len(OBSTACLES) > 0:
+            for obs in OBSTACLES:
+                obs_point = nearest_point_to_obstacle(self.pos, obs)
+                obs_rel = self.pos - obs_point
+                obs_dis = np.linalg.norm(obs_rel)
+                if obs_dis < AVOIDANCE_RANGE:
+                    vo += 2*(AVOIDANCE_RANGE - obs_dis) / \
+                        (AVOIDANCE_RANGE - SIZE)*obs_rel/obs_dis
+        return vo
 
     def separation_behaviour(self, agents):
         positions = np.array(
@@ -165,7 +179,7 @@ class Agent:
 
     def generate_virtual_targets(self, agents, env):
         if self.source != -1:
-            direction = agents[self.source].pos- self.pos
+            direction = agents[self.source].pos - self.pos
             phi_0 = np.arctan2(direction[1], direction[0])
         else:
             phi_0 = 0.
@@ -175,7 +189,8 @@ class Agent:
         for i in range(6):
             phi = phi_0 + 2 * np.pi * i / 6
             virtual_target = self.pos + \
-                np.array([HEXAGON_RANGE * np.cos(phi), HEXAGON_RANGE * np.sin(phi)])
+                np.array([HEXAGON_RANGE * np.cos(phi),
+                         HEXAGON_RANGE * np.sin(phi)])
             virtual_target = np.round(virtual_target, 3)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
                 virtual_target, agents, env)
@@ -248,7 +263,7 @@ class Agent:
             if np.any(distances <= 20*EPS):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= HEXAGON_RANGE): # not in a coverage range
+                if np.any(distances <= HEXAGON_RANGE):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets

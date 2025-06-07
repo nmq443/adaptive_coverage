@@ -36,12 +36,14 @@ GOAL_COLOR = 'green'
 SENSING_COLOR = 'blue'
 SIZE = meters2pixels(0.2, SCALE)
 SENSING_RANGE = meters2pixels(6., SCALE)  # rc and rs
+AVOIDANCE_RANGE = meters2pixels(0.05, SCALE)  # ra
 VMAX = meters2pixels(0.5, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 8, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10])
 KG = 0.1
 KA = 0.5
+KO = 0.5
 NUM_ROWS = 5
 NUM_COLS = 6
 INIT_POS = []
@@ -55,13 +57,12 @@ for i in range(NUM_ROWS):
 INIT_POS = np.array(INIT_POS)
 if CONTROLLER == 'hexagon':
     HEXAGON_RANGE = 0.8 * SENSING_RANGE  # rh
-    AVOIDANCE_RANGE = meters2pixels(0.5, SCALE)  # ra
     ASSIGNED_AGENT_COLOR = 'blue'
     OCCUPIED_AGENT_COLOR = 'black'
     UNASSIGNED_AGENT_COLOR = COLOR
     PENALTY_AGENT_COLOR = 'green'
     USE_PENALTY_NODE = True
-    ORIGINAL_METHOD = True
+    ORIGINAL_METHOD = False
     RHO = 1.0
     NV = 6
     # PSO
@@ -77,6 +78,7 @@ else:
 # Area 2 is a hexagon
 # Area 3 is an octagon
 # Area 4 is an office-like environment
+# Area 5 is a simple non-convex environment
 ENV = 4
 VERTICES = np.array([
     [0, 0],
@@ -114,9 +116,34 @@ elif ENV == 3:
     ITERATIONS = 500
 elif ENV == 4:
     OBSTACLES = np.array([
-        []
+        # upper half
+        [0, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 6, SCREEN_SIZE[1] / 20],
+
+        [SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 12, 0, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3],
+
+        [SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 12, 0, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3],
+
+        [SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 5 * 1.5, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+
+        # lower half
+        [0, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+
+        [SCREEN_SIZE[0] / 7 * 2, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 6, SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3 * 2],
+
+        [SCREEN_SIZE[0] / 7 * 2 + SCREEN_SIZE[0] / 5 * 1.5, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3 * 2],
+
+        [SCREEN_SIZE[0] / 7 * 2 + SCREEN_SIZE[0] / 5 * 1.5 + SCREEN_SIZE[0] / 5 * 1.5, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
     ])
-    ITERATIONS = 500
+    ITERATIONS = 1000
+elif ENV == 5:
+    OBSTACLES = np.array([ 
+        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1], SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3]
+    ])
+    ITERATIONS = 1000
 
 # Logging
 LOG_DIR = "log"

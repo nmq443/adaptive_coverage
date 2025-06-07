@@ -72,3 +72,18 @@ def get_relative_index(cur_agent_pos, target_agent_pos):
     angle = np.arctan2(dir[1], dir[0])
     angles = np.linspace(angle - np.deg2rad(5), angle + np.deg2rad(5), 10)
     return int(np.mean(angles) % (2 * np.pi)) % 6
+
+
+def nearest_point_to_obstacle(pose, obstacle):
+    x, y, w, h = obstacle
+    obstacle = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
+    nearest_point = []
+    nearest_dis = float(np.inf)
+    for i in range(len(obstacle)):
+        per = perpendicular(pose, np.array(
+            obstacle[i]), np.array(obstacle[np.mod(i+1, 4)]))
+        dis_per = np.linalg.norm(pose-per)
+        if dis_per < nearest_dis:
+            nearest_dis = dis_per
+            nearest_point = per
+    return nearest_point

@@ -2,6 +2,8 @@ import numpy as np
 import pygame
 from configs import *
 from lloyd import lloyd
+from utils import nearest_point_to_obstacle
+# from shapely.geometry import 
 
 
 class Agent:
@@ -16,13 +18,29 @@ class Agent:
         self.goal = None
         self.trajectory = [init_pos.copy()]
 
+    def obstacle_behaviour(self):
+        vo = np.zeros(2)
+        if len(OBSTACLES) > 0:
+            for obs in OBSTACLES:
+                obs_point = nearest_point_to_obstacle(self.pos, obs)
+                obs_rel = self.pos - obs_point
+                obs_dis = np.linalg.norm(obs_rel)
+                if obs_dis < AVOIDANCE_RANGE:
+                    vo += 2*(AVOIDANCE_RANGE - obs_dis)/(AVOIDANCE_RANGE - SIZE)*obs_rel/obs_dis
+        return vo
+
+    def goal_behaviour(self, goal):
+        return -KG * (self.pos - goal)
+
     def move_to_goal(self, goal):
         self.goal = goal
         if self.terminated(goal):
             self.stop()
         else:
             self.trajectory.append(self.pos.copy())
-            self.vel = -KG * (self.pos - goal)
+            vg = self.goal_behaviour(goal)
+            vo = self.obstacle_behaviour()
+            self.vel = vg + vo
             self.limit_speed()
             self.pos += self.vel
 
