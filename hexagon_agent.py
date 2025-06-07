@@ -234,9 +234,7 @@ class Agent:
 
     def is_valid_virtual_target(self, target: np.ndarray, agents: list, env):
         # not a hidden vertex
-        # if not env.point_is_in_environment(target, SIZE):
-        #     return False, True
-        if not env.contains(target):
+        if not env.point_is_in_environment(target):
             return False, True
         is_in_obs = env.point_is_in_obstacle(target, SIZE)
         if is_in_obs:

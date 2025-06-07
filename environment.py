@@ -34,6 +34,29 @@ class Environment:
             pygame.draw.rect(
                 surface, 'black', obs_rect)
 
+    def point_is_in_environment(self, point):
+        """
+        Check if a circle (agent) with given radius is inside or near the polygon.
+
+        Args:
+            point (tuple): (x, y) position of the agent.
+            radius_pixels (float): radius of the agent in pixels.
+
+        Returns:
+            bool: True if the entire circle is within or touches the polygon.
+        """
+        circle = Point(point).buffer(SIZE)
+
+        # Check if circle is entirely within polygon
+        if self.polygon.contains(circle):
+            return True
+
+        # Check if circle touches or intersects the polygon (i.e., partially in)
+        if self.polygon.intersects(circle):
+            return False
+
+        return False
+
     def contains(self, point):
         shapely_point = Point(point)
         if self.polygon.contains(shapely_point):
@@ -41,7 +64,6 @@ class Environment:
         if self.polygon.boundary.distance(shapely_point) < meters2pixels(1e-2, SCALE):
             return True
         return False
-
 
     def point_is_in_obstacle(self, point: np.ndarray, agent_radius: float):
         """Obstacle is a rectangle with (x, y, width, height) values"""
@@ -71,10 +93,3 @@ class Environment:
 
         # Return True if the circle intersects with any obstacle
         return np.any(intersects)
-
-    def point_is_in_environment(self, point, agent_radius):
-        if point[0] - agent_radius < self.x_min or point[0] + agent_radius > self.x_max:
-            return False
-        if point[1] - agent_radius < self.y_min or point[1] + agent_radius > self.y_max:
-            return False
-        return True

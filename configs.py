@@ -61,7 +61,7 @@ if CONTROLLER == 'hexagon':
     UNASSIGNED_AGENT_COLOR = COLOR
     PENALTY_AGENT_COLOR = 'green'
     USE_PENALTY_NODE = True
-    ORIGINAL_METHOD = False
+    ORIGINAL_METHOD = True
     RHO = 1.0
     NV = 6
     # PSO
@@ -77,7 +77,7 @@ else:
 # Area 2 is a hexagon
 # Area 3 is an octagon
 # Area 4 is an office-like environment
-ENV = 2
+ENV = 4
 VERTICES = np.array([
     [0, 0],
     [SCREEN_SIZE[0], 0],
@@ -100,15 +100,23 @@ elif ENV == 2:
     OBSTACLES = np.array([])
     ITERATIONS = 500
 elif ENV == 3:
+    VERTICES = np.array([
+        [0, SCREEN_SIZE[1] / 3],
+        [SCREEN_SIZE[0] / 4, 0],
+        [SCREEN_SIZE[0] / 4 * 3, 0],
+        [SCREEN_SIZE[0], SCREEN_SIZE[1] / 3],
+        [SCREEN_SIZE[0], SCREEN_SIZE[1] / 3 * 2],
+        [SCREEN_SIZE[0] / 4 * 3, SCREEN_SIZE[1]],
+        [SCREEN_SIZE[0] / 4, SCREEN_SIZE[1]],
+        [0, SCREEN_SIZE[1] / 3 * 2]
+    ], dtype=float)
+    OBSTACLES = np.array([])
+    ITERATIONS = 500
+elif ENV == 4:
     OBSTACLES = np.array([
-        [ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1],
-            SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3],
-        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2,
-            SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
-        [ENV_ANCHOR_POS[0] / 2, ENV_ANCHOR_POS[1] / 2 +
-            500, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 5],
+        []
     ])
-
+    ITERATIONS = 500
 
 # Logging
 LOG_DIR = "log"

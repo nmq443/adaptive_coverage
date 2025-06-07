@@ -34,11 +34,21 @@ class Simulator:
             if os.path.exists(self.res_dir):
                 shutil.rmtree(self.res_dir)
             os.makedirs(self.res_dir, exist_ok=True)
+            log_dir = os.path.join(LOG_DIR, METHOD_DIR, ENV_DIR, dir)
+            if os.path.exists(log_dir):
+                shutil.rmtree(log_dir)
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, LOG_FILE)
         else:
             self.res_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR)
             if os.path.exists(self.res_dir):
                 shutil.rmtree(self.res_dir)
             os.makedirs(self.res_dir, exist_ok=True)
+            log_dir = os.path.join(LOG_DIR, METHOD_DIR, ENV_DIR)
+            if os.path.exists(log_dir):
+                shutil.rmtree(log_dir)
+            os.makedirs(log_dir, exist_ok=True)
+            log_file = os.path.join(log_dir, LOG_FILE)
         self.screen = pygame.display.set_mode(self.screen_size)
         self.font = pygame.font.SysFont("monospace", FONT_SIZE, True)
         if not RANDOM_INIT:
@@ -48,7 +58,7 @@ class Simulator:
             format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
             datefmt='%m-%d %H:%M',
             filemode='w',
-            filename=os.path.join(LOG_DIR, LOG_FILE), 
+            filename=log_file, 
             level=logging.DEBUG
         )
         # define a Handler which writes INFO messages or higher to the sys.stderr

@@ -123,6 +123,8 @@ def lloyd(agent, agents, env):
 
 
 def handle_goal(goal, agent_pos, env):
+    original_goal = goal
+
     for obs in env.obstacles:
         x, y, w, h = obs
         edges = np.array([
@@ -140,5 +142,11 @@ def handle_goal(goal, agent_pos, env):
                     intersect = agent_to_goal.intersection(obs_edge)
             if intersect is not None: 
                 goal = np.array([intersect.x, intersect.y])
+    
+    if np.linalg.norm(goal - original_goal) > EPS:
+        dir = goal - agent_pos
+        dist = np.linalg.norm(dir)
+        new_dir = (dist - SIZE) * dir / dist
+        goal = new_dir + agent_pos
 
     return goal
