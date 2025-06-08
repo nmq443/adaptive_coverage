@@ -24,8 +24,8 @@ SHOW_CONNECTIONS = True
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-# CONTROLLER = 'voronoi'  # 'hexagon' or 'voronoi'
-CONTROLLER = 'hexagon'  # 'hexagon' or 'voronoi'
+CONTROLLER = 'voronoi'  # 'hexagon' or 'voronoi'
+# CONTROLLER = 'hexagon'  # 'hexagon' or 'voronoi'
 NUM_AGENTS = 30
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(.5, SCALE)
@@ -119,16 +119,16 @@ elif ENV == 4:
         # upper half
         [0, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 6, SCREEN_SIZE[1] / 20],
 
-        [SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 8 * 2, SCREEN_SIZE[1] / 20],
         [SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 12, 0, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3],
 
-        [SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        [SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 8 * 2, SCREEN_SIZE[1] / 20],
         [SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 12, 0, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3],
 
         [SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 5 * 1.5, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
 
         # lower half
-        [0, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
+        # [0, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
 
         [SCREEN_SIZE[0] / 7 * 2, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
         [SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 6, SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20, SCREEN_SIZE[0] / 25, SCREEN_SIZE[1] / 3 * 2],
