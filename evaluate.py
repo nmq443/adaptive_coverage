@@ -6,6 +6,7 @@ from shapely.geometry import Polygon
 from shapely.geometry import Polygon, Point
 import numpy as np
 
+
 def compute_coverage_percentage(positions):
     """
     Compute coverage percentage over a polygonal region using mesh grid.
@@ -47,7 +48,8 @@ def compute_coverage_percentage(positions):
             x_max, y_max = x_min + w, y_min + h
             inside = (
                 (inside_polygon_points[:, 0] >= x_min) & (inside_polygon_points[:, 0] <= x_max) &
-                (inside_polygon_points[:, 1] >= y_min) & (inside_polygon_points[:, 1] <= y_max)
+                (inside_polygon_points[:, 1] >= y_min) & (
+                    inside_polygon_points[:, 1] <= y_max)
             )
             in_obs |= inside
 
@@ -56,71 +58,6 @@ def compute_coverage_percentage(positions):
 
     # Step 5: Return coverage ratio within polygon
     return valid_covered.sum() / inside_polygon_points.shape[0] if inside_polygon_points.shape[0] > 0 else 0.0
-
-'''
-def compute_coverage_percentage(positions):
-    """
-    Compute coverage percentage using mesh grid method.
-
-    Args:
-        positions (numpy.ndarray): positions of agents after stopping.
-
-    Returns:
-        float: coverage percentage.
-    """
-    resolution = 100
-    x_vals = np.linspace(0, SCREEN_SIZE[0], resolution)
-    y_vals = np.linspace(0, SCREEN_SIZE[1], resolution)
-    xx, yy = np.meshgrid(x_vals, y_vals)
-    grid_points = np.column_stack((xx.ravel(), yy.ravel()))  # shape: (N, 2)
-
-    # Step 1: Compute coverage mask for all robots
-    in_coverage = np.zeros(grid_points.shape[0], dtype=bool)
-    for pos in positions:
-        distances = np.linalg.norm(grid_points - pos, axis=1)
-        in_coverage |= distances <= SENSING_RANGE
-
-    # Step 2: Compute obstacle mask
-    in_obs = np.zeros(grid_points.shape[0], dtype=bool)
-    if len(OBSTACLES) > 0:
-        for obs in OBSTACLES:
-            x_min, y_min, w, h = obs
-            x_max, y_max = x_min + w, y_min + h
-            inside = (
-                (grid_points[:, 0] >= x_min) & (grid_points[:, 0] <= x_max) &
-                (grid_points[:, 1] >= y_min) & (grid_points[:, 1] <= y_max)
-            )
-            in_obs |= inside
-
-    # Step 3: Final valid coverage
-    valid_covered = in_coverage & (~in_obs)
-
-    # Step 4: Return coverage ratio
-    return valid_covered.sum() / grid_points.shape[0]
-'''
-
-def compute_connection_links(positions):
-    """
-    Compute connection links of the network.
-
-    Args:
-        positions (numpy.ndarray): positions of agents after stopping.
-
-    Returns:
-        int: number of connection links.
-    """
-    graph = np.zeros((NUM_AGENTS, NUM_AGENTS))
-    for i in range(NUM_AGENTS):
-        for j in range(NUM_AGENTS):
-            if i == j:
-                graph[i][j] = 0
-            else:
-                distance = np.linalg.norm(
-                    positions[i] - positions[j])
-                if distance <= SENSING_RANGE:
-                    graph[i][j] = 1
-                    graph[j][i] = 1
-    return int(np.sum(graph) / 2)
 
 
 def evaluate(controller='voronoi', approach='original'):
@@ -139,7 +76,6 @@ def evaluate(controller='voronoi', approach='original'):
     final_poses = datas[:, 1]
 
     area = compute_coverage_percentage(final_poses)
-    num_links = compute_connection_links(final_poses)
 
     if controller == 'voronoi':
         print(f"Percent coverage for {controller} method: {area: .2f}")
@@ -150,7 +86,6 @@ def evaluate(controller='voronoi', approach='original'):
         else:
             print(
                 f"Percent coverage for {controller} method with PSO approach: {area: .2f}")
-    print(f"Number of connection links: {num_links}")
     print("----------")
 
 

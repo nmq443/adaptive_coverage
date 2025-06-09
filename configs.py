@@ -36,14 +36,14 @@ GOAL_COLOR = 'green'
 SENSING_COLOR = 'blue'
 SIZE = meters2pixels(0.2, SCALE)
 SENSING_RANGE = meters2pixels(6., SCALE)  # rc and rs
-AVOIDANCE_RANGE = meters2pixels(0.05, SCALE)  # ra
-VMAX = meters2pixels(0.5, SCALE)
+AVOIDANCE_RANGE = SIZE + meters2pixels(0.2, SCALE) # ra
+VMAX = meters2pixels(0.1, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 8, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10])
 KG = 0.1
-KA = 0.5
-KO = 0.5
+KA = 0.
+KO = 0.
 NUM_ROWS = 5
 NUM_COLS = 6
 INIT_POS = []
@@ -62,7 +62,7 @@ if CONTROLLER == 'hexagon':
     UNASSIGNED_AGENT_COLOR = COLOR
     PENALTY_AGENT_COLOR = 'green'
     USE_PENALTY_NODE = True
-    ORIGINAL_METHOD = False
+    ORIGINAL_METHOD = True
     RHO = 1.0
     NV = 6
     # PSO
@@ -71,7 +71,7 @@ if CONTROLLER == 'hexagon':
     PSO_VMAX = meters2pixels(0.5, SCALE)
     PSO_SPREAD = meters2pixels(0.05, SCALE)
 else:
-    VALID_RANGE = 0.9 * SENSING_RANGE
+    VALID_RANGE = 0.8 * SENSING_RANGE
 
 # Area
 # Area 1 is a simple rectangle without obstacles

@@ -35,10 +35,12 @@ def centroid_region(agent_pos, vertices, resolution=20):
 
     # Vectorized point-in-polygon check
     shapely_points = [Point(p) for p in grid_points]
-    mask_polygon = np.array([polygon.contains(sp) for sp in shapely_points]).reshape(xx.shape)
+    mask_polygon = np.array([polygon.contains(sp)
+                            for sp in shapely_points]).reshape(xx.shape)
 
     # Vectorized sensing range check
-    distances = np.linalg.norm(grid_points - agent_pos, axis=1).reshape(xx.shape)
+    distances = np.linalg.norm(
+        grid_points - agent_pos, axis=1).reshape(xx.shape)
     mask_range = distances <= SENSING_RANGE
 
     mask = mask_polygon & mask_range
@@ -51,7 +53,8 @@ def centroid_region(agent_pos, vertices, resolution=20):
     weights = wx[:, np.newaxis] * wy[np.newaxis, :]
 
     # Evaluate the function f at all grid points (iterating because f returns a scalar)
-    func_values = np.array([density_func(point) for point in grid_points]).reshape(xx.shape)
+    func_values = np.array([density_func(point)
+                           for point in grid_points]).reshape(xx.shape)
 
     # Apply the mask (only consider points inside the polygon)
     masked_func_values = func_values * mask
@@ -61,8 +64,10 @@ def centroid_region(agent_pos, vertices, resolution=20):
     total_mass = np.sum(masked_weights * masked_func_values) * (hx * hy) / 4
 
     # Calculate weighted centroid components
-    weighted_x = np.sum(masked_weights * masked_func_values * xx) * (hx * hy) / 4
-    weighted_y = np.sum(masked_weights * masked_func_values * yy) * (hx * hy) / 4
+    weighted_x = np.sum(
+        masked_weights * masked_func_values * xx) * (hx * hy) / 4
+    weighted_y = np.sum(
+        masked_weights * masked_func_values * yy) * (hx * hy) / 4
 
     centroid = CENTER
 
@@ -72,6 +77,7 @@ def centroid_region(agent_pos, vertices, resolution=20):
         centroid = np.array([centroid_x, centroid_y])
 
     return centroid
+
 
 def lloyd(agent, agents, env):
     """
@@ -97,11 +103,12 @@ def lloyd(agent, agents, env):
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
         if other.index != agent.index and distance <= VALID_RANGE - EPS:
-        # if other.index != agent.index and distance <= SENSING_RANGE and SENSING_RANGE - distance > EPS:
+            # if other.index != agent.index and distance <= SENSING_RANGE and SENSING_RANGE - distance > EPS:
             generators.append(other.index)
 
     # Step 1: compute voronoi diagrams
-    generators_positions = np.array([agents[index].pos for index in generators])
+    generators_positions = np.array(
+        [agents[index].pos for index in generators])
     vor = compute_voronoi_diagrams(generators_positions, env)
 
     # Step 2: compute centroidal voronoi diagrams
@@ -117,7 +124,7 @@ def lloyd(agent, agents, env):
     goal = centroids[0]
     goal = handle_goal(goal, agent.pos, env)
     # while not agent.terminated(goal):
-        # agent.move_to_goal(goal)
+    # agent.move_to_goal(goal)
     # agent.move_to_goal(goal)
     return goal
 
@@ -133,16 +140,15 @@ def handle_goal(goal, agent_pos, env):
             [[x + w, y + h], [x, y + h]],
             [[x, y + h], [x, y]]
         ])
-        if x <= goal[0] <= x + w and y <= goal[1] <= y + h: # is inside an obstacle
-            agent_to_goal = LineString(np.array([agent_pos, goal]))
-            intersect = None
-            for edge in edges:
-                obs_edge = LineString(edge)
-                if agent_to_goal.intersects(obs_edge):
-                    intersect = agent_to_goal.intersection(obs_edge)
-            if intersect is not None: 
-                goal = np.array([intersect.x, intersect.y])
-    
+        agent_to_goal = LineString(np.array([agent_pos, goal]))
+        intersect = None
+        for edge in edges:
+            obs_edge = LineString(edge)
+            if agent_to_goal.intersects(obs_edge):
+                intersect = agent_to_goal.intersection(obs_edge)
+        if intersect is not None:
+            goal = np.array([intersect.x, intersect.y])
+
     if np.linalg.norm(goal - original_goal) > EPS:
         dir = goal - agent_pos
         dist = np.linalg.norm(dir)
