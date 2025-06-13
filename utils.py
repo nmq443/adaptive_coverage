@@ -74,16 +74,22 @@ def get_relative_index(cur_agent_pos, target_agent_pos):
     return int(np.mean(angles) % (2 * np.pi)) % 6
 
 
-def nearest_point_to_obstacle(pose, obstacle):
-    x, y, w, h = obstacle
-    obstacle = [[x, y], [x + w, y], [x + w, y + h], [x, y + h]]
-    nearest_point = []
-    nearest_dis = float(np.inf)
-    for i in range(len(obstacle)):
-        per = perpendicular(pose, np.array(
-            obstacle[i]), np.array(obstacle[np.mod(i+1, 4)]))
-        dis_per = np.linalg.norm(pose-per)
-        if dis_per < nearest_dis:
-            nearest_dis = dis_per
-            nearest_point = per
-    return nearest_point
+def nearest_points_on_obstacles(agent_pos, obstacles):
+    """
+    Vectorized computation of the nearest point on each rectangular obstacle.
+
+    agent_pos: np.array of shape (2,)
+    obstacles: np.array of shape (N, 4) — [x, y, w, h]
+
+    Returns:
+        np.array of shape (N, 2) — nearest points on each obstacle
+    """
+    obs_x = obstacles[:, 0]
+    obs_y = obstacles[:, 1]
+    obs_w = obstacles[:, 2]
+    obs_h = obstacles[:, 3]
+
+    px = np.clip(agent_pos[0], obs_x, obs_x + obs_w)
+    py = np.clip(agent_pos[1], obs_y, obs_y + obs_h)
+
+    return np.stack([px, py], axis=1)

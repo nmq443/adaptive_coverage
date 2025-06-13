@@ -25,7 +25,7 @@ class Simulator:
 
     def init(self):
         pygame.init()
-        if CONTROLLER == 'hexagon':
+        if CONTROLLER == "hexagon":
             if ORIGINAL_METHOD:
                 dir = "original"
             else:
@@ -55,28 +55,28 @@ class Simulator:
             self.swarm.init_agents()
             self.start = True
         logging.basicConfig(
-            format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-            datefmt='%m-%d %H:%M',
-            filemode='w',
-            filename=log_file, 
-            level=logging.DEBUG
+            format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+            datefmt="%m-%d %H:%M",
+            filemode="w",
+            filename=log_file,
+            level=logging.DEBUG,
         )
         # define a Handler which writes INFO messages or higher to the sys.stderr
         self.console = logging.StreamHandler()
         self.console.setLevel(logging.INFO)
         # set a format which is simpler for console use
-        formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+        formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
         # tell the handler to use this format
         self.console.setFormatter(formatter)
         # add the handler to the root logger
         logging.getLogger().addHandler(self.console)
-        self.logger.info('Started')
-        self.logger.info(f'Using {CONTROLLER} method')
+        self.logger.info("Started")
+        self.logger.info(f"Using {CONTROLLER} method")
 
     def loop(self):
         # pygame.draw.circle(self.screen, CENTER_COLOR, CENTER, CENTER_SIZE) # center of density function
         self.env.render(self.screen)
-        if CONTROLLER == 'voronoi':
+        if CONTROLLER == "voronoi":
             self.swarm.render(self.screen, self.env, self.font, self.timestep)
         else:
             self.swarm.render(self.screen, self.font, self.timestep)
@@ -101,7 +101,6 @@ class Simulator:
                     self.swarm.init_agents(ref_pos=mouse_pos)
                     self.first_click = False
 
-
     def save_results(self):
         video_path = os.path.join(self.res_dir, VIDEO_NAME)
         start_img_path = os.path.join(self.res_dir, START_FIG)
@@ -111,8 +110,7 @@ class Simulator:
         imageio.imwrite(end_img_path, self.frames[-1])
         self.swarm.save_data(self.res_dir)
         self.logger.info(f"Final adjacent graph: \n{self.swarm.graph}")
-        self.logger.info(f"Number of connection links: {int(np.sum(self.swarm.graph) / 2)}")
- 
+
     def execute(self):
         self.init()
         i = 0
@@ -126,10 +124,10 @@ class Simulator:
                     self.running = False
                 i += 1
             self.handle_input()
-            self.screen.fill('white')
+            self.screen.fill("white")
             self.loop()
             pygame.display.flip()
         if LIMIT_RUNNING and SAVE_VIDEO:
             self.save_results()
         pygame.quit()
-        self.logger.info('Finished')
+        self.logger.info("Finished")

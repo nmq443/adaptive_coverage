@@ -4,7 +4,7 @@ from configs import *
 from voronoi import *
 from collections import deque
 
-if CONTROLLER == 'voronoi':
+if CONTROLLER == "voronoi":
     from voronoi_agent import Agent
 
     class Swarm:
@@ -16,18 +16,20 @@ if CONTROLLER == 'voronoi':
 
         def init_agents(self, ref_pos=None):
             if RANDOM_INIT and ref_pos is not None:
-                random_positions = np.random.rand(
-                    self.num_agents, 2) * AGENT_SPREAD + ref_pos
+                random_positions = (
+                    np.random.rand(self.num_agents, 2) * AGENT_SPREAD + ref_pos
+                )
                 for index in range(self.num_agents):
-                    self.agents.append(Agent(
-                        index=index,
-                        init_pos=random_positions[index],
-                    ))
+                    self.agents.append(
+                        Agent(
+                            index=index,
+                            init_pos=random_positions[index],
+                        )
+                    )
             else:
                 for i in range(NUM_ROWS):
                     for j in range(NUM_COLS):
-                        self.agents.append(
-                            Agent(i * NUM_COLS + j, INIT_POS[i][j]))
+                        self.agents.append(Agent(i * NUM_COLS + j, INIT_POS[i][j]))
             self.generators = [agent.pos for agent in self.agents]
             self.generators = np.array(self.generators)
 
@@ -62,7 +64,8 @@ if CONTROLLER == 'voronoi':
                         graph[i][j] = 0
                     else:
                         distance = np.linalg.norm(
-                            self.agents[i].pos - self.agents[j].pos)
+                            self.agents[i].pos - self.agents[j].pos
+                        )
                         if distance <= SENSING_RANGE:
                             graph[i][j] = 1
                             graph[j][i] = 1
@@ -71,10 +74,9 @@ if CONTROLLER == 'voronoi':
 
             datas = np.array(datas)
 
-            save_file = os.path.join(
-                res_dir, "swarm_data.npy")
+            save_file = os.path.join(res_dir, "swarm_data.npy")
 
-            with open(save_file, 'wb') as f:
+            with open(save_file, "wb") as f:
                 np.save(f, datas)
 
 else:
@@ -89,19 +91,22 @@ else:
 
         def init_agents(self, ref_pos=None):
             if RANDOM_INIT and ref_pos is not None:
-                random_positions = np.random.uniform(
-                    -1, 1, (self.num_agents, 2)) * AGENT_SPREAD + ref_pos
+                random_positions = (
+                    np.random.uniform(-1, 1, (self.num_agents, 2)) * AGENT_SPREAD
+                    + ref_pos
+                )
                 for index in range(self.num_agents):
-                    self.agents.append(Agent(
-                        index=index,
-                        init_pos=random_positions[index],
-                    ))
+                    self.agents.append(
+                        Agent(
+                            index=index,
+                            init_pos=random_positions[index],
+                        )
+                    )
                 self.determine_root(0, self.agents[0].pos)
             else:
                 for i in range(NUM_ROWS):
                     for j in range(NUM_COLS):
-                        self.agents.append(
-                            Agent(i * NUM_COLS + j, INIT_POS[i][j]))
+                        self.agents.append(Agent(i * NUM_COLS + j, INIT_POS[i][j]))
                 # for agent in self.agents:
                 #     print(agent.index)
                 self.determine_root(0, self.agents[0].pos)
@@ -139,7 +144,8 @@ else:
                         graph[i][j] = 0
                     else:
                         distance = np.linalg.norm(
-                            self.agents[i].pos - self.agents[j].pos)
+                            self.agents[i].pos - self.agents[j].pos
+                        )
                         if distance <= SENSING_RANGE:
                             graph[i][j] = 1
                             graph[j][i] = 1
@@ -148,8 +154,7 @@ else:
 
             datas = np.array(datas)
 
-            save_file = os.path.join(
-                res_dir, "swarm_data.npy")
+            save_file = os.path.join(res_dir, "swarm_data.npy")
 
-            with open(save_file, 'wb') as f:
+            with open(save_file, "wb") as f:
                 np.save(f, datas)

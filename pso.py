@@ -268,7 +268,7 @@ class PSO:
 
     def save_figures(self):
         # Save data
-        fitness_func_hist = np.array(fitness_func_hist)
+        fitness_func_hist = np.array(self.fitness_func_hist)
         data_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, "pso")
         os.makedirs(data_dir, exist_ok=True)
         data_filename = os.path.join(data_dir, f"agent_no_{self.index}.npy")

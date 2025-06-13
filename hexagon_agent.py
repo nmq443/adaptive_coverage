@@ -5,7 +5,7 @@ from enum import Enum
 from collections import deque
 from configs import *
 from pso import find_penalty_node
-from utils import ray_intersects_aabb, nearest_point_to_obstacle
+from utils import ray_intersects_aabb, nearest_points_on_obstacles
 
 
 class State(Enum):
@@ -37,6 +37,7 @@ class Agent:
         self.first_time: bool = True
         self.route_id: int = 0
         self.route: list[int] = []
+        self.flag = 0
         self.tc: int = 0
         self.is_penalty_node: bool = False
         self.invalid_targets: list = []
@@ -110,33 +111,58 @@ class Agent:
 
     def mobility_control(self, agents: list):
         if self.route_id >= len(self.route) - 1:
-            flag = 1
-        else:
-            flag = 0
-            dest1 = agents[self.route[self.route_id]].position
+            self.route_id = len(self.route) - 1
+            cur_node = agents[self.route[self.route_id]]
+            if (
+                np.linalg.norm(cur_node.pos - self.pos) <= SENSING_RANGE
+                and self.flag == 0
+            ):
+                self.flag = 1
+                return
+        if self.flag == 0:
+            dest1 = agents[self.route[self.route_id]].pos
             dest2 = None
             if self.route_id + 1 <= len(self.route) - 1:
-                dest2 = agents[self.route[self.route_id + 1]].position
+                dest2 = agents[self.route[self.route_id + 1]].pos
             self.move_to_dest(dest=dest1, agents=agents)
-            if dest2 is not None and np.linalg.norm(dest2 - self.position) <= self.rc:
+            if dest2 is not None and np.linalg.norm(dest2 - self.pos) <= SENSING_RANGE:
                 self.route_id += 1
-        return flag
 
     def move_to_dest(self, agents, dest: np.ndarray = None, env=None):
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
         vo = self.obstacle_behaviour()
         self.trajectory.append(self.pos.copy())
-        self.velocity = va + vs + vo
+        self.vel = va + vs + vo
         self.limit_speed()
-        self.pos += self.velocity
+        self.pos += self.vel
 
     def alignment_behaviour(self, dest: np.ndarray):
         return KG * (dest - self.pos)
 
     def obstacle_behaviour(self):
-        vo = np.zeros(2)
-        # TODO: implement this behaviour
+        if len(OBSTACLES) == 0:
+            return np.zeros(2)
+
+        obs_pts = nearest_points_on_obstacles(self.pos, OBSTACLES)
+        diff = self.pos - obs_pts
+        dist = np.linalg.norm(diff, axis=1) - SIZE
+        dist = np.clip(dist, 1e-4, None)  # avoid division by zero
+
+        mask = dist < AVOIDANCE_RANGE
+        if not np.any(mask):
+            return np.zeros(2)
+
+        diff_valid = diff[mask]
+        dist_valid = dist[mask][:, np.newaxis]
+
+        force = (
+            KO
+            * (1.0 / dist_valid - 1.0 / AVOIDANCE_RANGE)
+            * diff_valid
+            / (dist_valid**2)
+        )
+        vo = np.sum(force, axis=0)
         return vo
 
     def separation_behaviour(self, agents):
@@ -158,11 +184,10 @@ class Agent:
         directions = directions[mask]
         distances = distances[mask][:, np.newaxis]  # Reshape for broadcasting
 
-        beta_c = 2.0
         va = np.sum(
             (
                 KA
-                * np.exp(-beta_c * (distances - AVOIDANCE_RANGE))
+                * np.exp(-BETA_C * (distances - AVOIDANCE_RANGE))
                 * (directions / distances)
                 / (distances - AVOIDANCE_RANGE)
             ),
@@ -306,8 +331,8 @@ class Agent:
         """
         Assignment phase.
         """
-        flag = self.mobility_control(agents)
-        if flag == 1:
+        self.mobility_control(agents)
+        if self.flag == 1:
             if self.goal is not None:
                 if self.reached_target(self.goal):
                     self.stop()
