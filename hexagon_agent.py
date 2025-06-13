@@ -1,4 +1,4 @@
-import pygame as pg
+import pygame
 import numpy as np
 from shapely.geometry import LineString
 from enum import Enum
@@ -62,24 +62,18 @@ class Agent:
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def render(self, screen: pg.Surface, font: pg.font.Font, agents: list, timestep):
+    def render(self, screen, font, agents, timestep):
         color = COLOR
-        # if self.is_assigned():
-        #     color = ASSIGNED_AGENT_COLOR
-        # elif self.is_occupied():
-        #     color = OCCUPIED_AGENT_COLOR
-        # elif self.is_unassigned():
-        #     color = UNASSIGNED_AGENT_COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR
-        pg.draw.circle(
+        pygame.draw.circle(
             surface=screen,
             center=self.pos,
             color=color,
             radius=SIZE,
         )
         if SHOW_SENSING_RANGE:
-            pg.draw.circle(
+            pygame.draw.circle(
                 surface=screen,
                 center=self.pos,
                 color=SENSING_COLOR,
@@ -93,10 +87,12 @@ class Agent:
                     and other.is_occupied()
                     and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
                 ):
-                    pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
+                    pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         for i in range(len(self.virtual_targets)):
             if not self.occupied_virtual_targets[i]:
-                pg.draw.circle(screen, "green", self.virtual_targets[i], 3)
+                pygame.draw.circle(screen, "green", self.virtual_targets[i], 3)
+        if self.goal is not None and not self.reached_target(self.goal):
+            pygame.draw.circle(screen, "purple", self.goal, 3)
         text_surface = font.render(str(self.index), True, "black")
         text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
@@ -110,13 +106,11 @@ class Agent:
             self.vel = (self.vel / speed) * VMAX
 
     def mobility_control(self, agents: list):
+        # print(f"Agent {self.index} has route {self.route}")
         if self.route_id >= len(self.route) - 1:
             self.route_id = len(self.route) - 1
             cur_node = agents[self.route[self.route_id]]
-            if (
-                np.linalg.norm(cur_node.pos - self.pos) <= SENSING_RANGE
-                and self.flag == 0
-            ):
+            if np.linalg.norm(cur_node.pos - self.pos) <= SIZE * 2 and self.flag == 0:
                 self.flag = 1
                 return
         if self.flag == 0:
@@ -393,7 +387,7 @@ class Agent:
                 graph[other_agent.index].append(agent.index)
         return graph
 
-    def get_shortest_path(self, landmark_id: int, agents):
+    def get_shortest_path(self, landmark_id, agents):
         """
         Get shortest path from current agent to current activated landmark.
 
