@@ -1,8 +1,9 @@
 import os
 import numpy as np
 from configs import *
-from voronoi import *
 from collections import deque
+from lloyd import compute_voronoi_diagrams
+from utils import draw_voronoi
 
 if CONTROLLER == "voronoi":
     from voronoi_agent import Agent

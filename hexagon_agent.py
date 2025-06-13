@@ -1,6 +1,5 @@
 import pygame
 import numpy as np
-from shapely.geometry import LineString
 from enum import Enum
 from collections import deque
 from configs import *
@@ -81,13 +80,14 @@ class Agent:
                 width=2,
             )
         if SHOW_CONNECTIONS and timestep >= 10:
-            for other in agents:
-                if (
-                    other.index != self.index
-                    and other.is_occupied()
-                    and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
-                ):
-                    pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
+            if self.is_occupied():
+                for other in agents:
+                    if (
+                        other.index != self.index
+                        and other.is_occupied()
+                        and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
+                    ):
+                        pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         for i in range(len(self.virtual_targets)):
             if not self.occupied_virtual_targets[i]:
                 pygame.draw.circle(screen, "green", self.virtual_targets[i], 3)
@@ -363,8 +363,10 @@ class Agent:
         if len(landmarks) > 0:
             lc = landmarks[0]
             route = self.get_shortest_path(lc, agents)
+            print(f"Agent {self.index} found route {route}")
             if len(route) > 0:
                 route = route[1:]
+                print(f"Agent {self.index} has route {self.route}")
                 self.route = route
                 self.set_state("assigned")
 
@@ -376,15 +378,23 @@ class Agent:
             agents (list): list of all agents.
 
         Returns:
-            dict: connectivity graph for current agent.
+            numpy.ndarray: connectivity graph for current agent.
         """
-        graph = {agent.index: [] for agent in agents}
-        for agent in agents:
-            for other_agent in agents:
-                if other_agent.index == agent.index or not other_agent.is_occupied():
-                    continue
-                graph[agent.index].append(other_agent.index)
-                graph[other_agent.index].append(agent.index)
+        # graph = {agent.index: [] for agent in agents}
+        # for agent in agents:
+        #     for other_agent in agents:
+        #         if other_agent.index == agent.index or not other_agent.is_occupied():
+        #             continue
+        #         graph[agent.index].append(other_agent.index)
+        #         graph[other_agent.index].append(agent.index)
+        # return graph
+        n = len(agents)
+        graph = np.zeros((n, n))
+        for i in range(n):
+            for j in range(n):
+                dist = np.linalg.norm(agents[i].pos - agents[j].pos)
+                if dist <= SENSING_RANGE:
+                    graph[i][j] = graph[j][i] = 1
         return graph
 
     def get_shortest_path(self, landmark_id, agents):
@@ -398,18 +408,23 @@ class Agent:
         Returns:
             list: shortest path found.
         """
+        print(f"Finding shortest path from agent {self.index} to agent {landmark_id}")
         graph = self.build_graph(agents)
         # bfs shortest path
         visited = set()
+        start = (self.index, [self.index])
         # (current_node, path_to_current)
-        queue = deque([(self.index, [self.index])])
+        queue = deque([start])
 
         while queue:
             current, path = queue.popleft()
             visited.add(current)
 
-            for neighbor in graph.get(current, []):
+            for neighbor in graph[current]:
+                neighbor = int(neighbor)
                 if neighbor in visited:
+                    continue
+                if graph[current][neighbor] == 0:
                     continue
                 if neighbor == landmark_id:
                     return path + [neighbor]

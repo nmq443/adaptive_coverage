@@ -23,8 +23,8 @@ SHOW_CONNECTIONS = True
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
 NUM_AGENTS = 30
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(0.5, SCALE)

@@ -1,4 +1,6 @@
 import numpy as np
+import pygame
+from configs import *
 
 
 def meters2pixels(x, scale):
@@ -93,3 +95,12 @@ def nearest_points_on_obstacles(agent_pos, obstacles):
     py = np.clip(agent_pos[1], obs_y, obs_y + obs_h)
 
     return np.stack([px, py], axis=1)
+
+
+def draw_voronoi(vor, surface):
+    # Plot ridges
+    for region in vor.filtered_regions:
+        vertices = vor.vertices[region + [region[0]], :]
+        for i in range(len(vertices) - 1):
+            pygame.draw.line(surface, "black", vertices[i], vertices[i + 1], 5)
+        pygame.draw.line(surface, "black", vertices[0], vertices[-1], 5)
