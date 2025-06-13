@@ -16,9 +16,9 @@ class State(Enum):
 
 class Agent:
     def __init__(
-            self,
-            index,
-            init_pos,
+        self,
+        index,
+        init_pos,
     ):
         # Behaviour Control Parameters
         self.index = index
@@ -83,18 +83,21 @@ class Agent:
                 center=self.pos,
                 color=SENSING_COLOR,
                 radius=SENSING_RANGE,
-                width=2
+                width=2,
             )
         if SHOW_CONNECTIONS and timestep >= 10:
             for other in agents:
-                if other.index != self.index and other.is_occupied() and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE:
+                if (
+                    other.index != self.index
+                    and other.is_occupied()
+                    and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
+                ):
                     pg.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         for i in range(len(self.virtual_targets)):
             if not self.occupied_virtual_targets[i]:
-                pg.draw.circle(screen, 'green', self.virtual_targets[i], 3)
-        text_surface = font.render(str(self.index), True, 'black')
-        text_rect = text_surface.get_rect(
-            center=(self.pos[0] + 10, self.pos[1] - 10))
+                pg.draw.circle(screen, "green", self.virtual_targets[i], 3)
+        text_surface = font.render(str(self.index), True, "black")
+        text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
 
     def stop(self):
@@ -105,10 +108,7 @@ class Agent:
         if speed > VMAX:
             self.vel = (self.vel / speed) * VMAX
 
-    def mobility_control(
-            self,
-            agents: list
-    ):
+    def mobility_control(self, agents: list):
         if self.route_id >= len(self.route) - 1:
             flag = 1
         else:
@@ -142,13 +142,19 @@ class Agent:
                 obs_rel = self.pos - obs_point
                 obs_dis = np.linalg.norm(obs_rel)
                 if obs_dis < AVOIDANCE_RANGE:
-                    vo += 2*(AVOIDANCE_RANGE - obs_dis) / \
-                        (AVOIDANCE_RANGE - SIZE)*obs_rel/obs_dis
+                    vo += (
+                        2
+                        * (AVOIDANCE_RANGE - obs_dis)
+                        / (AVOIDANCE_RANGE - SIZE)
+                        * obs_rel
+                        / obs_dis
+                    )
         return vo
 
     def separation_behaviour(self, agents):
         positions = np.array(
-            [agent.pos for agent in agents if agent.index != self.index])
+            [agent.pos for agent in agents if agent.index != self.index]
+        )
         if positions.size == 0:
             return np.zeros(2)
 
@@ -164,11 +170,15 @@ class Agent:
         directions = directions[mask]
         distances = distances[mask][:, np.newaxis]  # Reshape for broadcasting
 
-        beta_c = 2.
+        beta_c = 2.0
         va = np.sum(
-            (KA * np.exp(-beta_c * (distances - AVOIDANCE_RANGE))
-             * (directions / distances) / (distances - AVOIDANCE_RANGE)),
-            axis=0
+            (
+                KA
+                * np.exp(-beta_c * (distances - AVOIDANCE_RANGE))
+                * (directions / distances)
+                / (distances - AVOIDANCE_RANGE)
+            ),
+            axis=0,
         )
         return va
 
@@ -182,18 +192,19 @@ class Agent:
             direction = agents[self.source].pos - self.pos
             phi_0 = np.arctan2(direction[1], direction[0])
         else:
-            phi_0 = 0.
+            phi_0 = 0.0
         virtual_targets = []
         occupied_virtual_targets = []
         hidden_vertices = []
         for i in range(6):
             phi = phi_0 + 2 * np.pi * i / 6
-            virtual_target = self.pos + \
-                np.array([HEXAGON_RANGE * np.cos(phi),
-                         HEXAGON_RANGE * np.sin(phi)])
+            virtual_target = self.pos + np.array(
+                [HEXAGON_RANGE * np.cos(phi), HEXAGON_RANGE * np.sin(phi)]
+            )
             virtual_target = np.round(virtual_target, 3)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
-                virtual_target, agents, env)
+                virtual_target, agents, env
+            )
             if is_valid:  # is a valid virtual target
                 virtual_targets.append(virtual_target)
                 occupied_virtual_targets.append(False)
@@ -212,18 +223,23 @@ class Agent:
                         v1=hidden_vertices[i],
                         v2=hidden_vertices[i + 1],
                         agents=agents,
-                        env=env
+                        env=env,
                     )
                 self.compute_penalty_node(
                     v1=hidden_vertices[0],
                     v2=hidden_vertices[-1],
                     agents=agents,
-                    env=env
+                    env=env,
                 )
 
-    def compute_penalty_node(self, v1, v2, env, agents):
+    def compute_penalty_node(self, v1, v2, phi_0, env, agents):
         if ORIGINAL_METHOD:
-            pass
+            phi1 = 2 * np.pi * v1[1] / 6
+            phi2 = 2 * np.pi * v2[1] / 6
+            phi = phi_0 + RHO * (phi1 + phi2) / 2
+            x = HEXAGON_RANGE * np.cos(phi)
+            y = HEXAGON_RANGE * np.sin(phi)
+            pos = self.pos + np.array([x, y])
         else:
             index_i, index_j = v1[1], v2[1]
             if abs(index_i - index_j) != 1:
@@ -236,16 +252,12 @@ class Agent:
                 agents=agents,
             )
 
-            # Then check if the penalty node is valid
-            is_valid, _ = self.is_valid_virtual_target(
-                target=pos,
-                agents=agents,
-                env=env
-            )
-            if is_valid:
-                self.virtual_targets.append(pos)
-                self.occupied_virtual_targets.append(False)
-                self.penalty_nodes.append(pos)
+        # Then check if the penalty node is valid
+        is_valid, _ = self.is_valid_virtual_target(target=pos, agents=agents, env=env)
+        if is_valid:
+            self.virtual_targets.append(pos)
+            self.occupied_virtual_targets.append(False)
+            self.penalty_nodes.append(pos)
 
     def is_valid_virtual_target(self, target: np.ndarray, agents: list, env):
         # not a hidden vertex
@@ -255,12 +267,16 @@ class Agent:
         if is_in_obs:
             self.invalid_targets.append(target)
             return False, True
-        other_agent_positions = np.array([other_agent.pos for other_agent in agents if (
-            other_agent.is_occupied() and other_agent.index != self.index)])
+        other_agent_positions = np.array(
+            [
+                other_agent.pos
+                for other_agent in agents
+                if (other_agent.is_occupied() and other_agent.index != self.index)
+            ]
+        )
         if len(other_agent_positions) > 0:
-            distances = np.linalg.norm(
-                target - other_agent_positions, axis=1)
-            if np.any(distances <= 20*EPS):  # not occupied by another agent
+            distances = np.linalg.norm(target - other_agent_positions, axis=1)
+            if np.any(distances <= 20 * EPS):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
                 if np.any(distances <= HEXAGON_RANGE):  # not in a coverage range
@@ -268,11 +284,9 @@ class Agent:
 
         # not a neighbour's targets
         for other_agent in agents:
-            virtual_targets = np.array(
-                [pt for pt in other_agent.virtual_targets])
+            virtual_targets = np.array([pt for pt in other_agent.virtual_targets])
             if len(virtual_targets) > 0:
-                distances = np.linalg.norm(
-                    virtual_targets - target, axis=1)
+                distances = np.linalg.norm(virtual_targets - target, axis=1)
                 distances = np.round(distances, 5)
                 if np.any(distances <= 20 * EPS):
                     return False, False
@@ -290,7 +304,11 @@ class Agent:
             if len(self.virtual_targets) > 0:
                 landmarks.append(self.index)
             self.first_time = False
-        if len(landmarks) > 0 and self.index in landmarks and landmarks[0] == self.index:
+        if (
+            len(landmarks) > 0
+            and self.index in landmarks
+            and landmarks[0] == self.index
+        ):
             if self.tc >= len(self.virtual_targets):
                 landmarks.popleft()
 
@@ -311,7 +329,10 @@ class Agent:
                     lc = landmarks[0]
                     landmark = agents[lc]
                     tc = landmark.tc
-                    if 0 <= tc < len(landmark.virtual_targets) and not landmark.occupied_virtual_targets[tc]:
+                    if (
+                        0 <= tc < len(landmark.virtual_targets)
+                        and not landmark.occupied_virtual_targets[tc]
+                    ):
                         is_penalty_node = False
                         if len(agents[lc].penalty_nodes) > 0:
                             num_vt = len(agents[lc].virtual_targets)
@@ -342,11 +363,11 @@ class Agent:
         """
         Build a graph for current agent. Nodes are occupied agents' ids.
 
-        Args: 
+        Args:
             agents (list): list of all agents.
 
         Returns:
-            dict: connectivity graph for current agent. 
+            dict: connectivity graph for current agent.
         """
         graph = {agent.index: [] for agent in agents}
         for agent in agents:
@@ -389,18 +410,8 @@ class Agent:
 
     def step(self, landmarks, agents, env):
         if self.is_occupied():
-            self.on_occupied(
-                landmarks=landmarks,
-                agents=agents,
-                env=env
-            )
+            self.on_occupied(landmarks=landmarks, agents=agents, env=env)
         elif self.is_assigned():
-            self.on_assigned(
-                agents=agents,
-                landmarks=landmarks
-            )
+            self.on_assigned(agents=agents, landmarks=landmarks)
         elif self.is_unassigned():
-            self.on_unassigned(
-                agents=agents,
-                landmarks=landmarks
-            )
+            self.on_unassigned(agents=agents, landmarks=landmarks)
