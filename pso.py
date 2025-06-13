@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import pandas as pd
 
 from environment import Environment
 from configs import *
@@ -8,19 +7,19 @@ from configs import *
 
 class PSO:
     def __init__(
-            self,
-            index: int,
-            v1: np.ndarray,
-            v2: np.ndarray,
-            env: Environment,
-            agents: list,
-            pso_weights: np.ndarray,
-            dim: int = 2,
-            max_speed: float = 0.05,
-            spread: float = 0.2,
-            w: float = 0.5,
-            c1: float = 1.0,
-            c2: float = 1.0,
+        self,
+        index: int,
+        v1: np.ndarray,
+        v2: np.ndarray,
+        env: Environment,
+        agents: list,
+        pso_weights: np.ndarray,
+        dim: int = 2,
+        max_speed: float = 0.05,
+        spread: float = 0.2,
+        w: float = 0.5,
+        c1: float = 1.0,
+        c2: float = 1.0,
     ):
         self.num_particles: int = PSO_PARTICLES
         self.dim = dim
@@ -50,8 +49,7 @@ class PSO:
         self.init_particles()
         self.initial_particles = self.positions.copy()
         self.pbest = self.positions.copy()
-        self.pbest_val = np.array([self.fitness_func(p)
-                                   for p in self.positions])
+        self.pbest_val = np.array([self.fitness_func(p) for p in self.positions])
         self.gbest = self.pbest[np.argmax(self.pbest_val)]
         self.gbest_val = np.max(self.pbest_val)  # minimize fitness function
 
@@ -66,12 +64,12 @@ class PSO:
         t = np.random.uniform(0, 1, self.num_particles).reshape(-1, 1)
 
         # Linear interpolation along the segment
-        base_positions = (1 - t) * self.v1 + t * \
-                         self.v2  # shape: (num_particles, 2)
+        base_positions = (1 - t) * self.v1 + t * self.v2  # shape: (num_particles, 2)
 
         # Random perpendicular offsets
-        offsets = np.random.uniform(-self.spread,
-                                    self.spread, self.num_particles).reshape(-1, 1)
+        offsets = np.random.uniform(
+            -self.spread, self.spread, self.num_particles
+        ).reshape(-1, 1)
         offset_vectors = offsets * perp_direction  # shape: (num_particles, 2)
 
         # Final particle positions
@@ -93,9 +91,11 @@ class PSO:
 
         if len(self.env.obstacles) > 0:
             x_in = (self.env.obstacles[:, 0] <= position[0]) & (
-                    position[0] <= self.env.obstacles[:, 0] + self.env.obstacles[:, 2])
+                position[0] <= self.env.obstacles[:, 0] + self.env.obstacles[:, 2]
+            )
             y_in = (self.env.obstacles[:, 1] <= position[1]) & (
-                    position[1] <= self.env.obstacles[:, 1] + self.env.obstacles[:, 3])
+                position[1] <= self.env.obstacles[:, 1] + self.env.obstacles[:, 3]
+            )
             in_obs = x_in & y_in
         else:
             in_obs = np.zeros(2)
@@ -105,7 +105,8 @@ class PSO:
         # Count connected boundary nodes
         connected_nodes = 0
         agent_positions = np.array(
-            [agent.pos for agent in self.agents if agent.is_occupied()])
+            [agent.pos for agent in self.agents if agent.is_occupied()]
+        )
         distances = np.linalg.norm(agent_positions - position, axis=1)
         connected_nodes = (distances <= SENSING_RANGE).sum()
 
@@ -147,13 +148,19 @@ class PSO:
         total_distance = 0
         count = 0
         agent_positions = np.array(
-            [agent.pos for agent in self.agents if agent.is_occupied()])
+            [agent.pos for agent in self.agents if agent.is_occupied()]
+        )
         distances = np.linalg.norm(position - agent_positions, axis=1)
         total_distance += np.sum(distances)
         count += len(distances)
 
-        agent_positions = np.array([agent.pos for agent in self.agents if (
-                agent.is_occupied() and agent.is_penalty_node)])
+        agent_positions = np.array(
+            [
+                agent.pos
+                for agent in self.agents
+                if (agent.is_occupied() and agent.is_penalty_node)
+            ]
+        )
         if len(agent_positions) > 0:
             distances = np.linalg.norm(position - agent_positions, axis=1)
             total_distance += np.sum(distances)
@@ -163,13 +170,12 @@ class PSO:
             return 1.0
 
         avg_distance = total_distance / count
-        efficiency = max(
-            0, 1 - abs(avg_distance - SENSING_RANGE) / SENSING_RANGE)
+        efficiency = max(0, 1 - abs(avg_distance - SENSING_RANGE) / SENSING_RANGE)
         return efficiency
 
     def fitness_func(
-            self,
-            position: np.ndarray,
+        self,
+        position: np.ndarray,
     ):
         """Fitness function of PSO algorithm"""
 
@@ -178,18 +184,20 @@ class PSO:
         f_avoidance = self.obstacle_avoidance(position)
         f_network_efficiency = self.calculate_network_efficiency(position)
 
-        f = np.array([f_coverage_area, f_connectivity,
-                      f_avoidance, f_network_efficiency])
+        f = np.array(
+            [f_coverage_area, f_connectivity, f_avoidance, f_network_efficiency]
+        )
         return self.pso_weights @ f.T
 
     def validate_positions(self):
         """Validate and correct all particle positions at once"""
-        valid_positions = np.array(
-            [self.is_valid_particle(p) for p in self.positions])
-        in_obstacle = np.array([self.env.point_is_in_obstacle(
-            p, SIZE) for p in self.positions])
-        in_range = np.array([np.linalg.norm(p - self.agent_pos)
-                             <= self.rc for p in self.positions])
+        valid_positions = np.array([self.is_valid_particle(p) for p in self.positions])
+        in_obstacle = np.array(
+            [self.env.point_is_in_obstacle(p, SIZE) for p in self.positions]
+        )
+        in_range = np.array(
+            [np.linalg.norm(p - self.agent_pos) <= self.rc for p in self.positions]
+        )
 
         # Identify invalid particles (either outside valid sector, in obstacle, or out of range)
         invalid_mask = (~valid_positions) | in_obstacle | (~in_range)
@@ -207,8 +215,8 @@ class PSO:
             self.positions[invalid_mask] = mean_position
 
     def is_valid_particle(
-            self,
-            position: np.ndarray,
+        self,
+        position: np.ndarray,
     ) -> bool:
         def cross_product(v1: np.ndarray, v2: np.ndarray):
             return v1[0] * v2[1] - v1[1] * v2[0]
@@ -238,8 +246,8 @@ class PSO:
             too_fast = speeds > self.max_speed
             too_fast = too_fast.flatten()
             self.velocities[too_fast] = (
-                                                self.velocities[too_fast] / speeds[too_fast]
-                                        ) * self.max_speed
+                self.velocities[too_fast] / speeds[too_fast]
+            ) * self.max_speed
             self.positions += self.velocities
             self.validate_positions()
 
@@ -259,23 +267,19 @@ class PSO:
         return self.gbest, self.gbest_val
 
     def save_figures(self):
-        df = pd.DataFrame(self.fitness_func_hist)
-
         # Save data
-        data_filepath = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, "pso")
-        os.makedirs(data_filepath, exist_ok=True)
-        df.to_csv(
-            f"{data_filepath}/agent_no_{self.index}_fitness.csv")
+        fitness_func_hist = np.array(fitness_func_hist)
+        data_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, "pso")
+        os.makedirs(data_dir, exist_ok=True)
+        data_filename = os.path.join(data_dir, f"agent_no_{self.index}.npy")
+        with open(data_filename, "wb") as f:
+            np.save(f, fitness_func_hist)
 
 
 def find_penalty_node(
-        index: int,
-        v1: np.ndarray,
-        v2: np.ndarray,
-        env: Environment,
-        agents: list
+    index: int, v1: np.ndarray, v2: np.ndarray, env: Environment, agents: list
 ) -> np.ndarray:
-    pso_weights = np.array([.45, .3, .15, .1])
+    pso_weights = np.array([0.45, 0.3, 0.15, 0.1])
     pso = PSO(
         index=index,
         v1=v1,

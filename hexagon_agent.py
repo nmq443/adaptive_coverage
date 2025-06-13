@@ -136,19 +136,7 @@ class Agent:
 
     def obstacle_behaviour(self):
         vo = np.zeros(2)
-        if len(OBSTACLES) > 0:
-            for obs in OBSTACLES:
-                obs_point = nearest_point_to_obstacle(self.pos, obs)
-                obs_rel = self.pos - obs_point
-                obs_dis = np.linalg.norm(obs_rel)
-                if obs_dis < AVOIDANCE_RANGE:
-                    vo += (
-                        2
-                        * (AVOIDANCE_RANGE - obs_dis)
-                        / (AVOIDANCE_RANGE - SIZE)
-                        * obs_rel
-                        / obs_dis
-                    )
+        # TODO: implement this behaviour
         return vo
 
     def separation_behaviour(self, agents):
@@ -220,12 +208,14 @@ class Agent:
             if len(self.hidden_vertices) > 0:
                 for i in range(len(self.hidden_vertices) - 1):
                     self.compute_penalty_node(
+                        phi_0=phi_0,
                         v1=hidden_vertices[i],
                         v2=hidden_vertices[i + 1],
                         agents=agents,
                         env=env,
                     )
                 self.compute_penalty_node(
+                    phi_0=phi_0,
                     v1=hidden_vertices[0],
                     v2=hidden_vertices[-1],
                     agents=agents,
