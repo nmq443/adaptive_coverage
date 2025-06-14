@@ -7,12 +7,6 @@ from pso import find_penalty_node
 from utils import ray_intersects_aabb, nearest_points_on_obstacles
 
 
-class State(Enum):
-    OCCUPIED = 0
-    UNASSIGNED = 1
-    ASSIGNED = 2
-
-
 class Agent:
     def __init__(
         self,
@@ -32,7 +26,7 @@ class Agent:
         self.hidden_vertices: list = []
         self.penalty_nodes: list[np.ndarray] = []
         self.goal: np.ndarray = None
-        self.state: State = State.UNASSIGNED
+        self.state: str = "unassigned"
         self.first_time: bool = True
         self.route_id: int = 0
         self.route: list[int] = []
@@ -42,21 +36,16 @@ class Agent:
         self.invalid_targets: list = []
 
     def is_occupied(self):
-        return self.state == State.OCCUPIED
+        return self.state == "occupied"
 
     def is_assigned(self):
-        return self.state == State.ASSIGNED
+        return self.state == "assigned"
 
     def is_unassigned(self):
-        return self.state == State.UNASSIGNED
+        return self.state == "unassigned"
 
     def set_state(self, state: str):
-        if state == "occupied":
-            self.state = State.OCCUPIED
-        if state == "unassigned":
-            self.state = State.UNASSIGNED
-        if state == "assigned":
-            self.state = State.ASSIGNED
+        self.state = state
 
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
@@ -91,8 +80,6 @@ class Agent:
         for i in range(len(self.virtual_targets)):
             if not self.occupied_virtual_targets[i]:
                 pygame.draw.circle(screen, "green", self.virtual_targets[i], 3)
-        if self.goal is not None and not self.reached_target(self.goal):
-            pygame.draw.circle(screen, "purple", self.goal, 3)
         text_surface = font.render(str(self.index), True, "black")
         text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
@@ -110,9 +97,11 @@ class Agent:
         if self.route_id >= len(self.route) - 1:
             self.route_id = len(self.route) - 1
             cur_node = agents[self.route[self.route_id]]
-            if np.linalg.norm(cur_node.pos - self.pos) <= SIZE * 2 and self.flag == 0:
+            if (
+                np.linalg.norm(cur_node.pos - self.pos) <= SENSING_RANGE
+                and self.flag == 0
+            ):
                 self.flag = 1
-                return
         if self.flag == 0:
             dest1 = agents[self.route[self.route_id]].pos
             dest2 = None
@@ -123,6 +112,7 @@ class Agent:
                 self.route_id += 1
 
     def move_to_dest(self, agents, dest: np.ndarray = None, env=None):
+        self.set_goal(dest)
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
         vo = self.obstacle_behaviour()
@@ -325,6 +315,7 @@ class Agent:
         """
         Assignment phase.
         """
+        print(f"Agent {self.index} has route {self.route}")
         self.mobility_control(agents)
         if self.flag == 1:
             if self.goal is not None:
@@ -362,11 +353,15 @@ class Agent:
         self.stop()
         if len(landmarks) > 0:
             lc = landmarks[0]
+            all_assigned = True
+            for occupied in agents[lc].occupied_virtual_targets:
+                if not occupied:
+                    all_assigned = False
+            if all_assigned:
+                return
             route = self.get_shortest_path(lc, agents)
-            print(f"Agent {self.index} found route {route}")
+            # print(f"Agent {self.index} found route {route}")
             if len(route) > 0:
-                route = route[1:]
-                print(f"Agent {self.index} has route {self.route}")
                 self.route = route
                 self.set_state("assigned")
 
@@ -380,21 +375,17 @@ class Agent:
         Returns:
             numpy.ndarray: connectivity graph for current agent.
         """
-        # graph = {agent.index: [] for agent in agents}
-        # for agent in agents:
-        #     for other_agent in agents:
-        #         if other_agent.index == agent.index or not other_agent.is_occupied():
-        #             continue
-        #         graph[agent.index].append(other_agent.index)
-        #         graph[other_agent.index].append(agent.index)
-        # return graph
         n = len(agents)
         graph = np.zeros((n, n))
         for i in range(n):
+            if not agents[i].is_occupied():
+                continue
             for j in range(n):
+                if not agents[j].is_occupied():
+                    continue
                 dist = np.linalg.norm(agents[i].pos - agents[j].pos)
                 if dist <= SENSING_RANGE:
-                    graph[i][j] = graph[j][i] = 1
+                    graph[i][j] = graph[j][i] = dist
         return graph
 
     def get_shortest_path(self, landmark_id, agents):
@@ -408,19 +399,28 @@ class Agent:
         Returns:
             list: shortest path found.
         """
-        print(f"Finding shortest path from agent {self.index} to agent {landmark_id}")
         graph = self.build_graph(agents)
+        agents_pos = np.array(
+            [
+                agent.pos
+                for agent in agents
+                if agent.is_occupied() and agent.index != self.index
+            ]
+        )
+        distances = np.linalg.norm(self.pos - agents_pos, axis=1)
+        start = int(np.argmin(distances))
+
         # bfs shortest path
         visited = set()
-        start = (self.index, [self.index])
-        # (current_node, path_to_current)
-        queue = deque([start])
+        start_node = (start, [start])
+        queue = deque([start_node])
 
+        # print(f"Start: {start[0]}, end: {end}")
         while queue:
             current, path = queue.popleft()
             visited.add(current)
 
-            for neighbor in graph[current]:
+            for neighbor in range(len(graph[current])):
                 neighbor = int(neighbor)
                 if neighbor in visited:
                     continue
@@ -430,7 +430,7 @@ class Agent:
                     return path + [neighbor]
                 queue.append((neighbor, path + [neighbor]))
 
-        return []
+        return [start_node[0]]  # if there is only one element
 
     def step(self, landmarks, agents, env):
         if self.is_occupied():

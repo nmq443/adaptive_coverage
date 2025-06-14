@@ -25,6 +25,7 @@ class Simulator:
 
     def init(self):
         pygame.init()
+        pygame.display.set_caption("Distributed Coverage Control")
         if CONTROLLER == "hexagon":
             if ORIGINAL_METHOD:
                 dir = "original"

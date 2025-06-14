@@ -18,7 +18,9 @@ class Environment:
 
     def init(self):
         for obs in self.obstacles:
-            self.obstacles_rects.append(pygame.rect.Rect(obs[0], obs[1], obs[2], obs[3]))
+            self.obstacles_rects.append(
+                pygame.rect.Rect(obs[0], obs[1], obs[2], obs[3])
+            )
         for i in range(len(self.vertices) - 1):
             edge_start = self.vertices[i]
             edge_end = self.vertices[i + 1]
@@ -29,10 +31,9 @@ class Environment:
 
     def render(self, surface):
         for edge in self.edges:
-            pygame.draw.line(surface, 'black', edge[0], edge[1], LINE_WIDTH)
+            pygame.draw.line(surface, "black", edge[0], edge[1], 5)
         for obs_rect in self.obstacles_rects:
-            pygame.draw.rect(
-                surface, 'black', obs_rect)
+            pygame.draw.rect(surface, "black", obs_rect)
 
     def point_is_in_environment(self, point):
         """
@@ -85,10 +86,10 @@ class Environment:
         # Calculate distance from the closest points to the circle center
         dx = closest_x - point[0]
         dy = closest_y - point[1]
-        distance_squared = dx ** 2 + dy ** 2
+        distance_squared = dx**2 + dy**2
 
         # Check if the closest point is within the circle's radius
-        intersects = distance_squared <= agent_radius ** 2
+        intersects = distance_squared <= agent_radius**2
         # print(f"Distances squared: {distance_squared}, intersects: {intersects}")
 
         # Return True if the circle intersects with any obstacle
