@@ -197,7 +197,7 @@ class PSO:
         """Validate and correct all particle positions."""
         valid_positions = np.array([self.is_valid_particle(p) for p in self.positions])
         in_obstacle = np.array(
-            [self.env.point_is_in_obstacle(p, SIZE) for p in self.positions]
+            [self.env.point_is_in_obstacle(p) for p in self.positions]
         )
         in_range = np.array(
             [

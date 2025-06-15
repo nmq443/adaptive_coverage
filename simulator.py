@@ -110,7 +110,7 @@ class Simulator:
         imageio.imwrite(start_img_path, self.frames[0])
         imageio.imwrite(end_img_path, self.frames[-1])
         self.swarm.save_data(self.res_dir)
-        self.logger.info(f"Final adjacent graph: \n{self.swarm.graph}")
+        self.logger.info(f"Final lambda2 value: {self.swarm.ld2s[-1]}")
 
     def execute(self):
         self.init()

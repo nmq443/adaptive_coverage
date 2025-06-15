@@ -16,7 +16,16 @@ class Agent:
         self.pos: np.ndarray = init_pos.copy()
         self.vel: np.ndarray = np.zeros(2)
         self.goal: np.ndarray = None
-        self.trajectory: list = [init_pos.copy()]
+        self.traj: list = [init_pos.copy()]
+
+    def get_travel_distance(self):
+        """Get total travel distance."""
+        traj = np.array(self.traj)
+        if len(traj) < 2:
+            return 0.0
+        displacements = traj[1:] - traj[:-1]
+        distances = np.linalg.norm(displacements, axis=1)
+        return np.sum(distances)
 
     def obstacle_behaviour(self):
         if len(OBSTACLES) == 0:
@@ -51,7 +60,7 @@ class Agent:
         if self.terminated(goal):
             self.stop()
         else:
-            self.trajectory.append(self.pos.copy())
+            self.traj.append(self.pos.copy())
             vg = self.goal_behaviour(goal)
             vo = self.obstacle_behaviour()
             self.vel = vg + vo
@@ -100,7 +109,7 @@ class Agent:
                 width=2,
             )
         if SHOW_TRAJECTORY:
-            for pt in self.trajectory:
+            for pt in self.traj:
                 pygame.draw.circle(
                     surface=surface,
                     center=pt,

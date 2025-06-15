@@ -11,18 +11,18 @@ EPS = meters2pixels(0.01, SCALE)
 CENTER = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2])  # density function center
 CENTER_COLOR = "purple"
 CENTER_SIZE = meters2pixels(0.5, SCALE)
-LIMIT_RUNNING = False
-SAVE_VIDEO = False
+LIMIT_RUNNING = True
+SAVE_VIDEO = True
 FPS = 30
-ITERATIONS = 300
+ITERATIONS = 50
 FONT_SIZE = 13
 SHOW_SENSING_RANGE = False
 SHOW_CONNECTIONS = False
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
 NUM_AGENTS = 30
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(0.5, SCALE)
@@ -61,7 +61,7 @@ if CONTROLLER == "hexagon":
     UNASSIGNED_AGENT_COLOR = COLOR
     PENALTY_AGENT_COLOR = "green"
     USE_PENALTY_NODE = True
-    ORIGINAL_METHOD = True
+    ORIGINAL_METHOD = False
     RHO = 1.0
     NV = 6
     # PSO
@@ -78,7 +78,7 @@ else:
 # Area 3 is an octagon
 # Area 4 is an office-like environment
 # Area 5 is a simple non-convex environment
-ENV = 4
+ENV = 1
 VERTICES = np.array(
     [
         [0, 0],

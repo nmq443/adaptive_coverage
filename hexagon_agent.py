@@ -17,7 +17,7 @@ class Agent:
         self.index: int = index
         self.pos: np.ndarray = init_pos
         self.vel: np.ndarray = np.zeros(2)
-        self.trajectory: list = [self.pos.copy()]
+        self.traj: list = [self.pos.copy()]
 
         # Distributed Control Parameters
         self.source: int = -1
@@ -122,10 +122,19 @@ class Agent:
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
         vo = self.obstacle_behaviour()
-        self.trajectory.append(self.pos.copy())
+        self.traj.append(self.pos.copy())
         self.vel = va + vs + vo
         self.limit_speed()
         self.pos += self.vel
+
+    def get_travel_distance(self):
+        """Get total travel distance."""
+        traj = np.array(self.traj)
+        if len(traj) < 2:
+            return 0.0
+        displacements = traj[1:] - traj[:-1]
+        distances = np.linalg.norm(displacements, axis=1)
+        return np.sum(distances)
 
     def alignment_behaviour(self, dest: np.ndarray):
         return KG * (dest - self.pos)
@@ -293,7 +302,7 @@ class Agent:
         # not a hidden vertex
         if not env.point_is_in_environment(target):
             return False, True
-        is_in_obs = env.point_is_in_obstacle(target, SIZE)
+        is_in_obs = env.point_is_in_obstacle(target)
         if is_in_obs:
             self.invalid_targets.append(target)
             return False, True
