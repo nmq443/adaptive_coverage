@@ -1,23 +1,35 @@
 import numpy as np
+from environment import Environment
 from shapely.geometry import Polygon, Point, LineString
 from configs import *
 from utils import perpendicular
 from scipy.spatial import Voronoi
 
 
-def density_func(q):
-    q = q - CENTER
+def density_func(q: np.ndarray):
     """
-    exponent = q[0] ** 2 + q[1] ** 2
-    k = -0.0005
-    return np.exp(k * exponent)
+    Distribution density function. Right now I'm using uniform distribution.
+
+    Args:
+        q (numpy.ndarray): 2D position.
+
+    Returns:
+        float: f(q) represents the importance of q.
     """
     return 1
 
 
-def centroid_region(agent_pos, vertices, resolution=20):
+def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int = 20):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
+
+    Args:
+        agent_pos (numpy.ndarray): current agent's position.
+        vertices (numpy.ndarray): vertices of the current agent's voronoi partition.
+        resolution (int): number of grid points used to compute integral.
+
+    Returns:
+        numpy.ndarray: centroid of current agent's voronoi partition.
     """
     polygon = Polygon(vertices)
     xmax = np.max(vertices[:, 0])
@@ -79,25 +91,16 @@ def centroid_region(agent_pos, vertices, resolution=20):
     return centroid
 
 
-def lloyd(agent, agents, env):
+def lloyd(agent, agents: list, env: Environment):
     """
     Continuous lloyd algorithm to find centroidal voronoi diagrams.
 
-    Parameters
-    ----------
-    points : np.ndarray
-        The generators array.
-    polygon : shapely.Polygon
-        The bounding polygon.
-    iterations : int
-        Number of iterations
-
-    Returns
-    -------
-    new_points : np.ndarray
-        New generators position.
-    trajectories: np.ndarray
-        The trajectories of all generators.
+    Args:
+        agent (Agent): current agent.
+        agents (list): list of all agents.
+        env (Environment): simulation environment.
+    Returns:
+        numpy.ndarray: goal for current agent.
     """
     generators = [agent.index]
     for other in agents:
@@ -128,7 +131,18 @@ def lloyd(agent, agents, env):
     return goal
 
 
-def handle_goal(goal, agent_pos, env):
+def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
+    """
+    Project virtual goal to simulation environment.
+
+    Args:
+        goal (numpy.ndarray): virtual goal.
+        agent_pos (numpy.ndarray): current agent's position.
+        env (Environment): simulation environment.
+
+    Returns:
+        numpy.ndarray: projected goal onto the simulation environment.
+    """
     original_goal = goal
 
     for obs in env.obstacles:
@@ -159,21 +173,16 @@ def handle_goal(goal, agent_pos, env):
     return goal
 
 
-def compute_voronoi_diagrams(generators, env):
+def compute_voronoi_diagrams(generators: np.ndarray, env: Environment):
     """
     Compute bounded voronoi diagrams inside a polygon.
 
-    Parameters
-    ----------
-    generators : np.ndarray
-        The generators array for computing polygon.
-    polygon : shapely.Polygon
-        The bounding polygon.
+    Args:
+        generators (numpy.ndarray): the generators array for computing polygon.
+        env (Environment): simulation environment.
 
-    Returns
-    -------
-    vor : scipy.spatial.Voronoi
-        The resulting voronoi
+    Returns:
+        vor (scipy.spatial.Voronoi): the resulting voronoi
     """
     mirroreds = []
     # mirror over edges

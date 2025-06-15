@@ -4,22 +4,20 @@ import numpy as np
 from utils import meters2pixels
 
 # Simulation settings
-SCREEN_SIZE = (1920, 1088)
+SCREEN_SIZE = (1600, 900)
 RANDOM_INIT = False
 SCALE = 50
-LINE_WIDTH = 5
 EPS = meters2pixels(0.01, SCALE)
 CENTER = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2])  # density function center
 CENTER_COLOR = "purple"
 CENTER_SIZE = meters2pixels(0.5, SCALE)
-LIMIT_RUNNING = True
-SAVE_VIDEO = True
+LIMIT_RUNNING = False
+SAVE_VIDEO = False
 FPS = 30
 ITERATIONS = 300
-RIDGE_COLOR = "black"
 FONT_SIZE = 13
 SHOW_SENSING_RANGE = False
-SHOW_CONNECTIONS = True
+SHOW_CONNECTIONS = False
 SHOW_TRAJECTORY = False
 
 # Swarm settings
@@ -34,9 +32,9 @@ COLOR = "red"
 GOAL_COLOR = "green"
 SENSING_COLOR = "blue"
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(6.0, SCALE)  # rc and rs
+SENSING_RANGE = meters2pixels(5, SCALE)  # rc and rs
 AVOIDANCE_RANGE = SIZE + meters2pixels(0.2, SCALE)  # ra
-VMAX = meters2pixels(0.1, SCALE)
+VMAX = meters2pixels(0.05, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 8, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
@@ -44,7 +42,7 @@ AGENT_ANCHOR_POS = np.array(
 KG = 0.5
 KA = 0.5
 BETA_C = 1.0
-KO = 1.0
+KO = 0.5
 NUM_ROWS = 5
 NUM_COLS = 6
 INIT_POS = []

@@ -4,6 +4,16 @@ from configs import *
 
 
 def meters2pixels(x, scale):
+    """
+    Convert from meter to pixel.
+
+    Args:
+        x (float): value in meters.
+        scale (float): how much to scale.
+
+    Returns:
+        float: value in pixels.
+    """
     return x * scale
 
 
@@ -26,7 +36,17 @@ def perpendicular(x: np.array, a: np.array, b: np.array):
 
 
 def ray_intersects_aabb(p1, p2, obstacles):
-    """Test if segment [p1, p2] intersects any AABB in 'obstacles'."""
+    """
+    Test if segment [p1, p2] intersects any AABB in 'obstacles'.
+
+    Args:
+        p1 (numpy.ndarray): start position.
+        p2 (numpy.ndarray): end position.
+        obstacles (numpy.ndarray): list of obstacles.
+
+    Returns:
+        bool: if segment [p1, p2] intersects any AABB in 'obstacles'.
+    """
     if len(obstacles) <= 0:
         return False
     p1 = np.asarray(p1)
@@ -76,7 +96,7 @@ def get_relative_index(cur_agent_pos, target_agent_pos):
     return int(np.mean(angles) % (2 * np.pi)) % 6
 
 
-def nearest_points_on_obstacles(agent_pos, obstacles):
+def nearest_points_on_obstacles(agent_pos: np.ndarray, obstacles: np.ndarray):
     """
     Vectorized computation of the nearest point on each rectangular obstacle.
 
@@ -98,6 +118,13 @@ def nearest_points_on_obstacles(agent_pos, obstacles):
 
 
 def draw_voronoi(vor, surface):
+    """
+    Draw voronoi on screen.
+
+    Args:
+        vor (scipy.spatial.Voronoi): voronoi partition.
+        surface (pygame.Surface): surface to render on.
+    """
     # Plot ridges
     for region in vor.filtered_regions:
         vertices = vor.vertices[region + [region[0]], :]

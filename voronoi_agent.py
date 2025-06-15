@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+from environment import Environment
 from configs import *
 from lloyd import lloyd
 from utils import nearest_points_on_obstacles
@@ -8,32 +9,44 @@ from utils import nearest_points_on_obstacles
 class Agent:
     def __init__(
         self,
-        index,
-        init_pos,
+        index: int,
+        init_pos: np.ndarray,
     ):
-        self.index = index
-        self.pos = init_pos.copy()
-        self.vel = np.zeros(2)
-        self.goal = None
-        self.trajectory = [init_pos.copy()]
+        self.index: int = index
+        self.pos: np.ndarray = init_pos.copy()
+        self.vel: np.ndarray = np.zeros(2)
+        self.goal: np.ndarray = None
+        self.trajectory: list = [init_pos.copy()]
 
     def obstacle_behaviour(self):
-        vo = np.zeros(2)
-        if len(OBSTACLES) > 0:
-            for obs in OBSTACLES:
-                obs_point = nearest_points_on_obstacles(self.pos, OBSTACLES)
-                obs_rel = self.pos - obs_point
-                obs_dis = np.linalg.norm(obs_rel)
-                if obs_dis < SENSING_RANGE:
-                    vo += (
-                        KO * (1 / obs_dis**2 - 1 / SENSING_RANGE**2) * obs_rel / obs_dis
-                    )
+        if len(OBSTACLES) == 0:
+            return np.zeros(2)
+
+        obs_pts = nearest_points_on_obstacles(self.pos, OBSTACLES)
+        diff = self.pos - obs_pts
+        dist = np.linalg.norm(diff, axis=1) - SIZE
+        dist = np.clip(dist, 1e-4, None)  # avoid division by zero
+
+        mask = dist < AVOIDANCE_RANGE
+        if not np.any(mask):
+            return np.zeros(2)
+
+        diff_valid = diff[mask]
+        dist_valid = dist[mask][:, np.newaxis]
+
+        force = (
+            KO
+            * (1.0 / dist_valid - 1.0 / AVOIDANCE_RANGE)
+            * diff_valid
+            / (dist_valid**2)
+        )
+        vo = np.sum(force, axis=0)
         return vo
 
-    def goal_behaviour(self, goal):
+    def goal_behaviour(self, goal: np.ndarray):
         return -KG * (self.pos - goal)
 
-    def move_to_goal(self, goal):
+    def move_to_goal(self, goal: np.ndarray):
         self.goal = goal
         if self.terminated(goal):
             self.stop()
@@ -45,10 +58,10 @@ class Agent:
             self.limit_speed()
             self.pos += self.vel
 
-    def terminated(self, goal):
+    def terminated(self, goal: np.ndarray):
         return np.linalg.norm(self.pos - goal) <= EPS
 
-    def update(self, vel):
+    def update(self, vel: np.ndarray):
         self.vel = vel
         self.limit_speed()
         self.pos += self.vel
@@ -61,14 +74,20 @@ class Agent:
         if v >= VMAX:
             self.vel = self.vel / v * VMAX
 
-    def step(self, agents, env):
+    def step(self, agents: list, env: Environment):
         if self.goal is not None and not self.terminated(self.goal):
             self.move_to_goal(self.goal)
         else:
             self.goal = lloyd(self, agents, env)
         # lloyd(self, agents, env)
 
-    def render(self, surface, font, agents, timestep):
+    def render(
+        self,
+        surface: pygame.Surface,
+        font: pygame.font.Font,
+        agents: list,
+        timestep: int,
+    ):
         pygame.draw.circle(surface, COLOR, self.pos, SIZE)
         if self.goal is not None:
             pygame.draw.circle(surface, GOAL_COLOR, self.goal, int(SIZE / 5))
