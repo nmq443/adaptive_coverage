@@ -26,6 +26,7 @@ class Agent:
         self.hidden_vertices: list[np.ndarray] = []
         self.penalty_nodes: list[np.ndarray] = []
         self.goal: np.ndarray = None
+        self.assigned_target: np.ndarray = None
         self.state: str = "unassigned"
         self.first_time: bool = True
         self.route_id: int = 0
@@ -84,8 +85,10 @@ class Agent:
                     ):
                         pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         for i in range(len(self.virtual_targets)):
-            if not self.occupied_virtual_targets[i]:
-                pygame.draw.circle(screen, "green", self.virtual_targets[i], 3)
+            # if not self.occupied_virtual_targets[i]:
+            pygame.draw.circle(screen, "green", self.virtual_targets[i], int(SIZE / 2))
+        # if self.goal is not None:
+        #     pygame.draw.circle(screen, "purple", self.goal, 3)
         text_surface = font.render(str(self.index), True, "black")
         text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
         screen.blit(text_surface, text_rect)
@@ -95,35 +98,35 @@ class Agent:
 
     def limit_speed(self):
         speed = np.linalg.norm(self.vel)
-        if speed > VMAX:
-            self.vel = (self.vel / speed) * VMAX
+        if speed >= VMAX:
+            self.vel = (self.vel / (speed + 1e-8)) * VMAX
 
     def mobility_control(self, agents: list):
-        # print(f"Agent {self.index} has route {self.route}")
-        if self.route_id >= len(self.route) - 1:
-            self.route_id = len(self.route) - 1
+        if self.route_id == len(self.route) - 2:
             cur_node = agents[self.route[self.route_id]]
-            if (
-                np.linalg.norm(cur_node.pos - self.pos) <= SENSING_RANGE
-                and self.flag == 0
-            ):
+            if np.linalg.norm(cur_node.pos - self.pos) <= SIZE * 4 and self.flag == 0:
                 self.flag = 1
         if self.flag == 0:
             dest1 = agents[self.route[self.route_id]].pos
             dest2 = None
-            if self.route_id + 1 <= len(self.route) - 1:
+            if self.route_id + 1 < len(self.route) - 1:
                 dest2 = agents[self.route[self.route_id + 1]].pos
             self.move_to_dest(dest=dest1, agents=agents)
             if dest2 is not None and np.linalg.norm(dest2 - self.pos) <= SENSING_RANGE:
-                self.route_id += 1
+                if np.linalg.norm(self.pos - dest1) <= SIZE * 4:
+                    self.route_id += 1
+
+    def random_behaviour(self):
+        return KR * np.random.rand(2)
 
     def move_to_dest(self, agents, dest: np.ndarray = None):
         self.set_goal(dest)
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
         vo = self.obstacle_behaviour()
+        vr = self.random_behaviour()
         self.traj.append(self.pos.copy())
-        self.vel = va + vs + vo
+        self.vel = va + vs + vo + vr
         self.limit_speed()
         self.pos += self.vel
 
@@ -367,36 +370,17 @@ class Agent:
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
-        print(f"Agent {self.index} has route {self.route}")
+        # print(f"Agent {self.index} has route {self.route}")
+        # print(f"Agent {self.index} has goal {self.goal}")
         self.mobility_control(agents)
         if self.flag == 1:
             if self.goal is not None:
+                self.set_goal(self.assigned_target)
                 if self.reached_target(self.goal):
                     self.stop()
                     self.set_state("occupied")
                 else:
                     self.move_to_dest(dest=self.goal, agents=agents)
-            else:
-                if len(landmarks) > 0:
-                    lc = landmarks[0]
-                    landmark = agents[lc]
-                    tc = landmark.tc
-                    if (
-                        0 <= tc < len(landmark.virtual_targets)
-                        and not landmark.occupied_virtual_targets[tc]
-                    ):
-                        is_penalty_node = False
-                        if len(agents[lc].penalty_nodes) > 0:
-                            num_vt = len(agents[lc].virtual_targets)
-                            num_pen = len(agents[lc].penalty_nodes)
-                            if tc >= num_vt - num_pen:
-                                is_penalty_node = True
-                        target = landmark.virtual_targets[tc]
-                        self.set_goal(target)
-                        self.source = landmark.index
-                        self.is_penalty_node = is_penalty_node
-                        landmark.occupied_virtual_targets[tc] = True
-                        landmark.tc += 1
 
     def on_unassigned(self, landmarks: deque, agents: list):
         """
@@ -409,16 +393,29 @@ class Agent:
         self.stop()
         if len(landmarks) > 0:
             lc = landmarks[0]
-            all_assigned = True
-            for occupied in agents[lc].occupied_virtual_targets:
-                if not occupied:
-                    all_assigned = False
-            if all_assigned:
-                return
-            route = self.get_shortest_path(lc, agents)
-            if len(route) > 0:
-                self.route = route
-                self.set_state("assigned")
+            landmark = agents[lc]
+            tc = landmark.tc
+            if (
+                0 <= tc < len(landmark.virtual_targets)
+                and not landmark.occupied_virtual_targets[tc]
+            ):
+                is_penalty_node = False
+                if len(agents[lc].penalty_nodes) > 0:
+                    num_vt = len(agents[lc].virtual_targets)
+                    num_pen = len(agents[lc].penalty_nodes)
+                    if tc >= num_vt - num_pen:
+                        is_penalty_node = True
+                target = landmark.virtual_targets[tc]
+                self.assigned_target = target
+                self.source = landmark.index
+                self.is_penalty_node = is_penalty_node
+                landmark.occupied_virtual_targets[tc] = True
+                landmark.tc += 1
+                route = self.get_shortest_path(lc, agents)
+                route.append(self.assigned_target)
+                if len(route) > 0:
+                    self.route = route
+                    self.set_state("assigned")
 
     def build_graph(self, agents: list):
         """
