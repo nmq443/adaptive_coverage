@@ -3,29 +3,33 @@ import pygame
 import shutil
 import logging
 import imageio
+from swarm import Swarm
+from environment import Environment
 from configs import *
 
 
 class Simulator:
-    def __init__(self, swarm, env):
-        self.screen_size = SCREEN_SIZE
-        self.swarm = swarm
-        self.env = env
-        self.running = True
-        self.frames = []
-        self.fps = FPS
-        self.iterations = ITERATIONS
-        self.font = None
-        self.clock = pygame.time.Clock()
+    def __init__(self, swarm: Swarm, env: Environment):
+        self.swarm: Swarm = swarm
+        self.env: Environment = env
+        self.running: bool = True
+        self.fps: int = FPS
+        self.font: pygame.font.Font = None
+        self.clock: pygame.time.Clock = pygame.time.Clock()
         self.logger = logging.getLogger(__name__)
-        self.first_click = True
-        self.start = False
-        self.res_dir = None
-        self.timestep = 0
+        self.frames: list = []
+        self.first_click: bool = True
+        self.start: np.ndarray = False
+        self.res_dir: str = None
+        self.timestep: int = 0
+        self.video_writer = None
 
     def init(self):
         pygame.init()
         pygame.display.set_caption("Distributed Coverage Control")
+        self.screen = pygame.display.set_mode(SCREEN_SIZE)
+
+        # saving directories
         if CONTROLLER == "hexagon":
             if ORIGINAL_METHOD:
                 dir = "original"
@@ -50,11 +54,20 @@ class Simulator:
                 shutil.rmtree(log_dir)
             os.makedirs(log_dir, exist_ok=True)
             log_file = os.path.join(log_dir, LOG_FILE)
-        self.screen = pygame.display.set_mode(self.screen_size)
         self.font = pygame.font.SysFont("monospace", FONT_SIZE, True)
+
+        # init swarm
         if not RANDOM_INIT:
             self.swarm.init_agents()
             self.start = True
+
+        # video
+        if LIMIT_RUNNING and SAVE_VIDEO:
+            video_path = os.path.join(self.res_dir, VIDEO_NAME)
+            self.video_writer = imageio.get_writer(video_path, fps=self.fps)
+            self.logger.info(f"Video writer initialized: {video_path}")
+
+        # logging
         logging.basicConfig(
             format="%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
             datefmt="%m-%d %H:%M",
@@ -75,7 +88,6 @@ class Simulator:
         self.logger.info(f"Using {CONTROLLER} method")
 
     def loop(self):
-        # pygame.draw.circle(self.screen, CENTER_COLOR, CENTER, CENTER_SIZE) # center of density function
         self.env.render(self.screen)
         if CONTROLLER == "voronoi":
             self.swarm.render(self.screen, self.env, self.font, self.timestep)
@@ -83,8 +95,11 @@ class Simulator:
             self.swarm.render(self.screen, self.font, self.timestep)
         data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
         frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        if len(self.swarm.agents) > 0:
+        if len(self.swarm.agents) > 0 and self.video_writer is not None:
+            self.video_writer.append_data(frame)
+        if len(self.swarm.agents) > 0 and self.timestep == 0:
             self.frames.append(frame)
+
         self.swarm.step(self.env)
         self.clock.tick(self.fps)
 
@@ -103,14 +118,20 @@ class Simulator:
                     self.first_click = False
 
     def save_results(self):
+        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+        self.frames.append(frame)
+
         video_path = os.path.join(self.res_dir, VIDEO_NAME)
         start_img_path = os.path.join(self.res_dir, START_FIG)
         end_img_path = os.path.join(self.res_dir, FINAL_FIG)
-        imageio.mimsave(video_path, self.frames, fps=self.fps)
+        if self.video_writer is not None:
+            self.video_writer.close()
+            self.logger.info(f"Video saved to {video_path}")
         imageio.imwrite(start_img_path, self.frames[0])
         imageio.imwrite(end_img_path, self.frames[-1])
         self.swarm.save_data(self.res_dir)
-        self.logger.info(f"Final lambda2 value: {self.swarm.ld2s[-1]}")
+        self.logger.info(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 
     def execute(self):
         self.init()
@@ -119,9 +140,8 @@ class Simulator:
             if LIMIT_RUNNING and self.start:
                 self.timestep = i
                 if (i + 1) % 10 == 0:
-                    # print(f"Iteration {i + 1}/{self.iterations}")
-                    self.logger.info(f"Iteration {i + 1}/{self.iterations}")
-                if i >= self.iterations:
+                    self.logger.info(f"Iteration {i + 1}/{ITERATIONS}")
+                if i >= ITERATIONS:
                     self.running = False
                 i += 1
             self.handle_input()

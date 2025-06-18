@@ -4,7 +4,7 @@ from environment import Environment
 from collections import deque
 from configs import *
 from pso import find_penalty_node
-from utils import ray_intersects_aabb, nearest_points_on_obstacles
+from utils import ray_intersects_aabb, nearest_points_on_obstacles, normalize_angle
 
 
 class Agent:
@@ -63,14 +63,8 @@ class Agent:
                 screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
             )
         color = COLOR
-        if self.is_occupied():
-            color = OCCUPIED_AGENT_COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR
-        elif self.is_assigned():
-            color = ASSIGNED_AGENT_COLOR
-        elif self.is_unassigned():
-            color = UNASSIGNED_AGENT_COLOR
         pygame.draw.circle(
             surface=screen,
             center=self.pos,
@@ -213,6 +207,7 @@ class Agent:
         if self.source != -1:
             direction = agents[self.source].pos - self.pos
             phi_0 = np.arctan2(direction[1], direction[0])
+            phi_0 = normalize_angle(phi_0)
         else:
             phi_0 = 0.0
         virtual_targets = []
@@ -220,6 +215,7 @@ class Agent:
         hidden_vertices = []
         for i in range(6):
             phi = phi_0 + 2 * np.pi * i / 6
+            phi = normalize_angle(phi)
             virtual_target = self.pos + np.array(
                 [HEXAGON_RANGE * np.cos(phi), HEXAGON_RANGE * np.sin(phi)]
             )

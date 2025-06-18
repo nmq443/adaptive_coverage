@@ -131,3 +131,8 @@ def draw_voronoi(vor, surface):
         for i in range(len(vertices) - 1):
             pygame.draw.line(surface, "black", vertices[i], vertices[i + 1], 5)
         pygame.draw.line(surface, "black", vertices[0], vertices[-1], 5)
+
+
+def normalize_angle(angle: float):
+    """Normalize angle."""
+    return np.arctan2(np.sin(angle), np.cos(angle))
