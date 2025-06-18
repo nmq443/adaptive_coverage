@@ -58,9 +58,19 @@ class Agent:
         agents: list,
         timestep: int,
     ):
+        for i in range(len(self.virtual_targets)):
+            pygame.draw.circle(
+                screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
+            )
         color = COLOR
+        if self.is_occupied():
+            color = OCCUPIED_AGENT_COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR
+        elif self.is_assigned():
+            color = ASSIGNED_AGENT_COLOR
+        elif self.is_unassigned():
+            color = UNASSIGNED_AGENT_COLOR
         pygame.draw.circle(
             surface=screen,
             center=self.pos,
@@ -84,13 +94,10 @@ class Agent:
                         and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
                     ):
                         pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
-        for i in range(len(self.virtual_targets)):
-            # if not self.occupied_virtual_targets[i]:
-            pygame.draw.circle(screen, "green", self.virtual_targets[i], int(SIZE / 2))
-        # if self.goal is not None:
-        #     pygame.draw.circle(screen, "purple", self.goal, 3)
         text_surface = font.render(str(self.index), True, "black")
-        text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
+        text_rect = text_surface.get_rect(
+            center=(self.pos[0] + SIZE, self.pos[1] - SIZE)
+        )
         screen.blit(text_surface, text_rect)
 
     def stop(self):
@@ -321,7 +328,7 @@ class Agent:
             if np.any(distances <= 20 * EPS):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= HEXAGON_RANGE):  # not in a coverage range
+                if np.any(distances <= SENSING_RANGE):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets
@@ -332,9 +339,12 @@ class Agent:
                 distances = np.round(distances, 5)
                 if np.any(distances <= 20 * EPS):
                     return False, False
+                if self.is_penalty_node:
+                    if np.any(distances <= SENSING_RANGE):  # not in a coverage range
+                        return False, False
 
         # If behind an obstacle
-        if ray_intersects_aabb(self.pos, target, env.obstacles):
+        if ray_intersects_aabb(self.pos, target, OBSTACLES):
             return False, True
 
         return True, False
@@ -437,7 +447,8 @@ class Agent:
                     continue
                 dist = np.linalg.norm(agents[i].pos - agents[j].pos)
                 if dist <= SENSING_RANGE:
-                    graph[i][j] = graph[j][i] = dist
+                    if not ray_intersects_aabb(agents[j].pos, agents[i].pos, OBSTACLES):
+                        graph[i][j] = graph[j][i] = dist
         return graph
 
     def get_shortest_path(self, landmark_id: int, agents: list):

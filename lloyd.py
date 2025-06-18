@@ -54,7 +54,7 @@ def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int
 
     # Vectorized sensing range check
     distances = np.linalg.norm(grid_points - agent_pos, axis=1).reshape(xx.shape)
-    mask_range = distances <= SENSING_RANGE
+    mask_range = distances <= VALID_RANGE
 
     mask = mask_polygon & mask_range
 
