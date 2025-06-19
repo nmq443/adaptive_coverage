@@ -114,7 +114,8 @@ else:
                         self.agents.append(Agent(i * NUM_COLS + j, INIT_POS[i][j]))
                 # for agent in self.agents:
                 #     print(agent.index)
-                self.determine_root(0, self.agents[0].pos)
+                # self.determine_root(0, self.agents[0].pos)
+                self.determine_root(NUM_AGENTS - 1, self.agents[NUM_AGENTS - 1].pos)
 
         def determine_root(self, agent_id, agent_goal):
             self.agents[agent_id].set_state("occupied")
