@@ -39,7 +39,9 @@ class Environment:
         Args:
             surface (pygame.Surface): surface to render on.
         """
-        for edge in self.edges:
+        for i, edge in enumerate(self.edges):
+            if ENV == 4 and i == len(self.edges) - 1:
+                continue
             pygame.draw.line(surface, "black", edge[0], edge[1], 5)
         for obs_rect in self.obstacles_rects:
             pygame.draw.rect(surface, "black", obs_rect)
