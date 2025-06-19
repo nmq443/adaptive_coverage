@@ -17,8 +17,13 @@ class Environment:
         self.init()
 
     def init(self):
+        """
+        Initialize the obstacles, rectangles.
+        """
         for obs in self.obstacles:
-            self.obstacles_rects.append(pygame.rect.Rect(obs[0], obs[1], obs[2], obs[3]))
+            self.obstacles_rects.append(
+                pygame.rect.Rect(obs[0], obs[1], obs[2], obs[3])
+            )
         for i in range(len(self.vertices) - 1):
             edge_start = self.vertices[i]
             edge_end = self.vertices[i + 1]
@@ -27,20 +32,24 @@ class Environment:
         edge_end = self.vertices[0]
         self.edges.append([edge_start, edge_end])
 
-    def render(self, surface):
-        for edge in self.edges:
-            pygame.draw.line(surface, 'black', edge[0], edge[1], LINE_WIDTH)
-        for obs_rect in self.obstacles_rects:
-            pygame.draw.rect(
-                surface, 'black', obs_rect)
+    def render(self, surface: pygame.Surface):
+        """
+        Render the obstacles to the screen.
 
-    def point_is_in_environment(self, point):
+        Args:
+            surface (pygame.Surface): surface to render on.
+        """
+        for edge in self.edges:
+            pygame.draw.line(surface, "black", edge[0], edge[1], 5)
+        for obs_rect in self.obstacles_rects:
+            pygame.draw.rect(surface, "black", obs_rect)
+
+    def point_is_in_environment(self, point: np.ndarray):
         """
         Check if a circle (agent) with given radius is inside or near the polygon.
 
         Args:
-            point (tuple): (x, y) position of the agent.
-            radius_pixels (float): radius of the agent in pixels.
+            point (np.ndarray): (x, y) position of the agent.
 
         Returns:
             bool: True if the entire circle is within or touches the polygon.
@@ -57,7 +66,16 @@ class Environment:
 
         return False
 
-    def contains(self, point):
+    def contains(self, point: np.ndarray):
+        """
+        Check if the environment contains this point or not.
+
+        Args:
+            point (numpy.ndarray): point to check.
+
+        Returns:
+            bool: point is contained or not.
+        """
         shapely_point = Point(point)
         if self.polygon.contains(shapely_point):
             return True
@@ -65,8 +83,16 @@ class Environment:
             return True
         return False
 
-    def point_is_in_obstacle(self, point: np.ndarray, agent_radius: float):
-        """Obstacle is a rectangle with (x, y, width, height) values"""
+    def point_is_in_obstacle(self, point: np.ndarray):
+        """
+        Check if point is in any obstacle. Obstacle is a rectangle with (x, y, width, height) values.
+
+        Args:
+            point (numpy.ndarray): point to check.
+
+        Returns:
+            bool: if point is in any obstacle.
+        """
         if len(self.obstacles) <= 0:
             return False
         x = self.obstacles[:, 0]
@@ -85,10 +111,10 @@ class Environment:
         # Calculate distance from the closest points to the circle center
         dx = closest_x - point[0]
         dy = closest_y - point[1]
-        distance_squared = dx ** 2 + dy ** 2
+        distance_squared = dx**2 + dy**2
 
         # Check if the closest point is within the circle's radius
-        intersects = distance_squared <= agent_radius ** 2
+        intersects = distance_squared <= SIZE**2
         # print(f"Distances squared: {distance_squared}, intersects: {intersects}")
 
         # Return True if the circle intersects with any obstacle

@@ -15,15 +15,13 @@ class PSO:
         agents: list,
         pso_weights: np.ndarray,
         dim: int = 2,
-        max_speed: float = 0.05,
-        spread: float = 0.2,
         w: float = 0.5,
         c1: float = 1.0,
         c2: float = 1.0,
     ):
         self.num_particles: int = PSO_PARTICLES
         self.dim = dim
-        self.max_speed: float = max_speed
+        self.max_speed: float = PSO_VMAX
         self.spread: float = PSO_SPREAD
         self.num_iterations: int = PSO_ITERATIONS
 
@@ -31,9 +29,7 @@ class PSO:
         self.env: Environment = env
         self.index: int = index
         self.agent = self.agents[self.index]
-        self.agent_pos = self.agent.pos
-        self.rc = SENSING_RANGE
-        self.ra = AVOIDANCE_RANGE
+        self.agent_pos: np.ndarray = self.agent.pos
 
         self.positions = None
         self.velocities = None
@@ -77,10 +73,10 @@ class PSO:
         self.velocities = np.zeros_like(self.positions)
 
     def calculate_coverage(self, position: np.ndarray):
-        xmin = position[0] - SIZE
-        xmax = position[0] + SIZE
-        ymin = position[1] - SIZE
-        ymax = position[1] + SIZE
+        xmin = position[0] - SENSING_RANGE
+        xmax = position[0] + SENSING_RANGE
+        ymin = position[1] - SENSING_RANGE
+        ymax = position[1] + SENSING_RANGE
         resolution = 100
         x_vals = np.linspace(xmin, xmax, resolution)
         y_vals = np.linspace(ymin, ymax, resolution)
@@ -135,7 +131,7 @@ class PSO:
             distances = np.linalg.norm(position - obs_pos, axis=1)
             min_distance = distances[np.argmin(distances)]
             # min_clearance += np.sqrt(2) * 0.5 * self.env.tile_size
-            min_clearance += self.ra
+            min_clearance += AVOIDANCE_RANGE
             if min_distance <= min_clearance:
                 penalty = np.exp(min_clearance - min_distance) - 1
             else:
@@ -177,7 +173,15 @@ class PSO:
         self,
         position: np.ndarray,
     ):
-        """Fitness function of PSO algorithm"""
+        """
+        Fitness function of PSO algorithm.
+
+        Args:
+            position (numpy.ndarray): current particle's position.
+
+        Returns:
+            float: fitness value of current particle.
+        """
 
         f_coverage_area = self.calculate_coverage(position)
         f_connectivity = self.connectivity_metric(position)
@@ -190,13 +194,16 @@ class PSO:
         return self.pso_weights @ f.T
 
     def validate_positions(self):
-        """Validate and correct all particle positions at once"""
+        """Validate and correct all particle positions."""
         valid_positions = np.array([self.is_valid_particle(p) for p in self.positions])
         in_obstacle = np.array(
-            [self.env.point_is_in_obstacle(p, SIZE) for p in self.positions]
+            [self.env.point_is_in_obstacle(p) for p in self.positions]
         )
         in_range = np.array(
-            [np.linalg.norm(p - self.agent_pos) <= self.rc for p in self.positions]
+            [
+                np.linalg.norm(p - self.agent_pos) <= SENSING_RANGE
+                for p in self.positions
+            ]
         )
 
         # Identify invalid particles (either outside valid sector, in obstacle, or out of range)
@@ -279,6 +286,19 @@ class PSO:
 def find_penalty_node(
     index: int, v1: np.ndarray, v2: np.ndarray, env: Environment, agents: list
 ) -> np.ndarray:
+    """
+    Find penalty node using PSO.
+
+    Args:
+        index (int): index of current agent.
+        v1 (numpy.ndarray): first hidden vertex.
+        v2 (numpy.ndarray): second hidden vertex.
+        env (Environment): simulation environment.
+        agents (list): list of all agents.
+
+    Returns:
+        numpy.ndarray: final solution.
+    """
     pso_weights = np.array([0.45, 0.3, 0.15, 0.1])
     pso = PSO(
         index=index,

@@ -1,68 +1,67 @@
 import pygame
 import numpy as np
-from shapely.geometry import LineString
-from enum import Enum
+from environment import Environment
 from collections import deque
 from configs import *
 from pso import find_penalty_node
-from utils import ray_intersects_aabb, nearest_points_on_obstacles
-
-
-class State(Enum):
-    OCCUPIED = 0
-    UNASSIGNED = 1
-    ASSIGNED = 2
+from utils import ray_intersects_aabb, nearest_points_on_obstacles, normalize_angle
 
 
 class Agent:
     def __init__(
         self,
-        index,
-        init_pos,
+        index: int,
+        init_pos: np.ndarray,
     ):
         # Behaviour Control Parameters
-        self.index = index
-        self.pos = init_pos
-        self.vel = np.zeros(2)
-        self.trajectory = [self.pos.copy()]
+        self.index: int = index
+        self.pos: np.ndarray = init_pos
+        self.vel: np.ndarray = np.zeros(2)
+        self.traj: list = [self.pos.copy()]
 
         # Distributed Control Parameters
         self.source: int = -1
         self.virtual_targets: list[np.ndarray] = []
         self.occupied_virtual_targets: list[np.ndarray] = []
-        self.hidden_vertices: list = []
+        self.hidden_vertices: list[np.ndarray] = []
         self.penalty_nodes: list[np.ndarray] = []
         self.goal: np.ndarray = None
-        self.state: State = State.UNASSIGNED
+        self.assigned_target: np.ndarray = None
+        self.state: str = "unassigned"
         self.first_time: bool = True
         self.route_id: int = 0
         self.route: list[int] = []
-        self.flag = 0
+        self.flag: int = 0
         self.tc: int = 0
         self.is_penalty_node: bool = False
         self.invalid_targets: list = []
 
     def is_occupied(self):
-        return self.state == State.OCCUPIED
+        return self.state == "occupied"
 
     def is_assigned(self):
-        return self.state == State.ASSIGNED
+        return self.state == "assigned"
 
     def is_unassigned(self):
-        return self.state == State.UNASSIGNED
+        return self.state == "unassigned"
 
     def set_state(self, state: str):
-        if state == "occupied":
-            self.state = State.OCCUPIED
-        if state == "unassigned":
-            self.state = State.UNASSIGNED
-        if state == "assigned":
-            self.state = State.ASSIGNED
+        self.state = state
 
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def render(self, screen, font, agents, timestep):
+    def render(
+        self,
+        screen: pygame.Surface,
+        font: pygame.font.Font,
+        agents: list,
+        timestep: int,
+    ):
+        for i in range(len(self.virtual_targets)):
+            pygame.draw.circle(
+                screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
+            )
         color = COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR
@@ -81,20 +80,18 @@ class Agent:
                 width=2,
             )
         if SHOW_CONNECTIONS and timestep >= 10:
-            for other in agents:
-                if (
-                    other.index != self.index
-                    and other.is_occupied()
-                    and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
-                ):
-                    pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
-        for i in range(len(self.virtual_targets)):
-            if not self.occupied_virtual_targets[i]:
-                pygame.draw.circle(screen, "green", self.virtual_targets[i], 3)
-        if self.goal is not None and not self.reached_target(self.goal):
-            pygame.draw.circle(screen, "purple", self.goal, 3)
+            if self.is_occupied():
+                for other in agents:
+                    if (
+                        other.index != self.index
+                        and other.is_occupied()
+                        and np.linalg.norm(self.pos - other.pos) < SENSING_RANGE
+                    ):
+                        pygame.draw.line(screen, SENSING_COLOR, self.pos, other.pos)
         text_surface = font.render(str(self.index), True, "black")
-        text_rect = text_surface.get_rect(center=(self.pos[0] + 10, self.pos[1] - 10))
+        text_rect = text_surface.get_rect(
+            center=(self.pos[0] + SIZE, self.pos[1] - SIZE)
+        )
         screen.blit(text_surface, text_rect)
 
     def stop(self):
@@ -102,34 +99,46 @@ class Agent:
 
     def limit_speed(self):
         speed = np.linalg.norm(self.vel)
-        if speed > VMAX:
-            self.vel = (self.vel / speed) * VMAX
+        if speed >= VMAX:
+            self.vel = (self.vel / (speed + 1e-8)) * VMAX
 
     def mobility_control(self, agents: list):
-        # print(f"Agent {self.index} has route {self.route}")
-        if self.route_id >= len(self.route) - 1:
-            self.route_id = len(self.route) - 1
+        if self.route_id == len(self.route) - 2:
             cur_node = agents[self.route[self.route_id]]
-            if np.linalg.norm(cur_node.pos - self.pos) <= SIZE * 2 and self.flag == 0:
+            if np.linalg.norm(cur_node.pos - self.pos) <= SIZE * 4 and self.flag == 0:
                 self.flag = 1
-                return
         if self.flag == 0:
             dest1 = agents[self.route[self.route_id]].pos
             dest2 = None
-            if self.route_id + 1 <= len(self.route) - 1:
+            if self.route_id + 1 < len(self.route) - 1:
                 dest2 = agents[self.route[self.route_id + 1]].pos
             self.move_to_dest(dest=dest1, agents=agents)
             if dest2 is not None and np.linalg.norm(dest2 - self.pos) <= SENSING_RANGE:
-                self.route_id += 1
+                if np.linalg.norm(self.pos - dest1) <= SIZE * 4:
+                    self.route_id += 1
 
-    def move_to_dest(self, agents, dest: np.ndarray = None, env=None):
+    def random_behaviour(self):
+        return KR * np.random.rand(2)
+
+    def move_to_dest(self, agents, dest: np.ndarray = None):
+        self.set_goal(dest)
         va = self.alignment_behaviour(dest)
         vs = self.separation_behaviour(agents)
         vo = self.obstacle_behaviour()
-        self.trajectory.append(self.pos.copy())
-        self.vel = va + vs + vo
+        vr = self.random_behaviour()
+        self.traj.append(self.pos.copy())
+        self.vel = va + vs + vo + vr
         self.limit_speed()
         self.pos += self.vel
+
+    def get_travel_distance(self):
+        """Get total travel distance."""
+        traj = np.array(self.traj)
+        if len(traj) < 2:
+            return 0.0
+        displacements = traj[1:] - traj[:-1]
+        distances = np.linalg.norm(displacements, axis=1)
+        return np.sum(distances)
 
     def alignment_behaviour(self, dest: np.ndarray):
         return KG * (dest - self.pos)
@@ -159,7 +168,7 @@ class Agent:
         vo = np.sum(force, axis=0)
         return vo
 
-    def separation_behaviour(self, agents):
+    def separation_behaviour(self, agents: list):
         positions = np.array(
             [agent.pos for agent in agents if agent.index != self.index]
         )
@@ -189,15 +198,16 @@ class Agent:
         )
         return va
 
-    def reached_target(self, goal):
+    def reached_target(self, goal: np.ndarray):
         distance = np.linalg.norm(goal - self.pos)
         distance = np.round(distance, 3)
         return distance <= EPS
 
-    def generate_virtual_targets(self, agents, env):
+    def generate_virtual_targets(self, agents: list, env: Environment):
         if self.source != -1:
             direction = agents[self.source].pos - self.pos
             phi_0 = np.arctan2(direction[1], direction[0])
+            phi_0 = normalize_angle(phi_0)
         else:
             phi_0 = 0.0
         virtual_targets = []
@@ -205,6 +215,7 @@ class Agent:
         hidden_vertices = []
         for i in range(6):
             phi = phi_0 + 2 * np.pi * i / 6
+            phi = normalize_angle(phi)
             virtual_target = self.pos + np.array(
                 [HEXAGON_RANGE * np.cos(phi), HEXAGON_RANGE * np.sin(phi)]
             )
@@ -241,7 +252,19 @@ class Agent:
                     env=env,
                 )
 
-    def compute_penalty_node(self, v1, v2, phi_0, env, agents):
+    def compute_penalty_node(
+        self, v1: list, v2: list, phi_0: float, env: Environment, agents: list
+    ):
+        """
+        Compute penalty node for coverage interior angle.
+
+        Args:
+            v1 (list): hidden vertex 1, with v1[0] is 2D position, v1[1] is its index.
+            v2 (list): hidden vertex 1, with v2[0] is 2D position, v2[1] is its index.
+            phi_0 (float): angle between source agent and current agent (if current agent is not the first agent).
+            env (Environment): simulation environment.
+            agents (list): list of all agents.
+        """
         if ORIGINAL_METHOD:
             phi1 = 2 * np.pi * v1[1] / 6
             phi2 = 2 * np.pi * v2[1] / 6
@@ -268,11 +291,24 @@ class Agent:
             self.occupied_virtual_targets.append(False)
             self.penalty_nodes.append(pos)
 
-    def is_valid_virtual_target(self, target: np.ndarray, agents: list, env):
+    def is_valid_virtual_target(
+        self, target: np.ndarray, agents: list, env: Environment
+    ):
+        """
+        Check if a virtual target is valid or not.
+
+        Args:
+            target (numpy.ndarray): virtual target to check.
+            agents (list): list of all agents.
+            env (Environment): simulation environment.
+
+        Returns:
+            tuple (bool, bool): check if is a valid vertex and if not, is it a hidden vertex.
+        """
         # not a hidden vertex
         if not env.point_is_in_environment(target):
             return False, True
-        is_in_obs = env.point_is_in_obstacle(target, SIZE)
+        is_in_obs = env.point_is_in_obstacle(target)
         if is_in_obs:
             self.invalid_targets.append(target)
             return False, True
@@ -288,7 +324,7 @@ class Agent:
             if np.any(distances <= 20 * EPS):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= HEXAGON_RANGE):  # not in a coverage range
+                if np.any(distances <= SENSING_RANGE):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets
@@ -299,14 +335,25 @@ class Agent:
                 distances = np.round(distances, 5)
                 if np.any(distances <= 20 * EPS):
                     return False, False
+                if self.is_penalty_node:
+                    if np.any(distances <= SENSING_RANGE):  # not in a coverage range
+                        return False, False
 
         # If behind an obstacle
-        if ray_intersects_aabb(self.pos, target, env.obstacles):
+        if ray_intersects_aabb(self.pos, target, OBSTACLES):
             return False, True
 
         return True, False
 
-    def on_occupied(self, landmarks, agents, env):
+    def on_occupied(self, landmarks: deque, agents: list, env: Environment):
+        """
+        Occupation phase.
+
+        Args:
+            landmarks (deque): queue of landmarks.
+            agents (list): list of all agents.
+            env (Environment): simulation environment.
+        """
         self.stop()
         if self.first_time:
             self.generate_virtual_targets(agents, env)
@@ -321,54 +368,62 @@ class Agent:
             if self.tc >= len(self.virtual_targets):
                 landmarks.popleft()
 
-    def on_assigned(self, agents, landmarks):
+    def on_assigned(self, agents: list, landmarks: deque):
         """
         Assignment phase.
+
+        Args:
+            agents (list): list of all agents.
+            landmarks (deque): queue of landmarks.
         """
+        # print(f"Agent {self.index} has route {self.route}")
+        # print(f"Agent {self.index} has goal {self.goal}")
         self.mobility_control(agents)
         if self.flag == 1:
             if self.goal is not None:
+                self.set_goal(self.assigned_target)
                 if self.reached_target(self.goal):
                     self.stop()
                     self.set_state("occupied")
                 else:
                     self.move_to_dest(dest=self.goal, agents=agents)
-            else:
-                if len(landmarks) > 0:
-                    lc = landmarks[0]
-                    landmark = agents[lc]
-                    tc = landmark.tc
-                    if (
-                        0 <= tc < len(landmark.virtual_targets)
-                        and not landmark.occupied_virtual_targets[tc]
-                    ):
-                        is_penalty_node = False
-                        if len(agents[lc].penalty_nodes) > 0:
-                            num_vt = len(agents[lc].virtual_targets)
-                            num_pen = len(agents[lc].penalty_nodes)
-                            if tc >= num_vt - num_pen:
-                                is_penalty_node = True
-                        target = landmark.virtual_targets[tc]
-                        self.set_goal(target)
-                        self.source = landmark.index
-                        self.is_penalty_node = is_penalty_node
-                        landmark.occupied_virtual_targets[tc] = True
-                        landmark.tc += 1
 
-    def on_unassigned(self, landmarks, agents):
+    def on_unassigned(self, landmarks: deque, agents: list):
         """
         Unassignment phase.
+
+        Args:
+            agents (list): list of all agents.
+            landmarks (deque): queue of landmarks.
         """
         self.stop()
         if len(landmarks) > 0:
             lc = landmarks[0]
-            route = self.get_shortest_path(lc, agents)
-            if len(route) > 0:
-                route = route[1:]
-                self.route = route
-                self.set_state("assigned")
+            landmark = agents[lc]
+            tc = landmark.tc
+            if (
+                0 <= tc < len(landmark.virtual_targets)
+                and not landmark.occupied_virtual_targets[tc]
+            ):
+                is_penalty_node = False
+                if len(agents[lc].penalty_nodes) > 0:
+                    num_vt = len(agents[lc].virtual_targets)
+                    num_pen = len(agents[lc].penalty_nodes)
+                    if tc >= num_vt - num_pen:
+                        is_penalty_node = True
+                target = landmark.virtual_targets[tc]
+                self.assigned_target = target
+                self.source = landmark.index
+                self.is_penalty_node = is_penalty_node
+                landmark.occupied_virtual_targets[tc] = True
+                landmark.tc += 1
+                route = self.get_shortest_path(lc, agents)
+                route.append(self.assigned_target)
+                if len(route) > 0:
+                    self.route = route
+                    self.set_state("assigned")
 
-    def build_graph(self, agents):
+    def build_graph(self, agents: list):
         """
         Build a graph for current agent. Nodes are occupied agents' ids.
 
@@ -376,18 +431,23 @@ class Agent:
             agents (list): list of all agents.
 
         Returns:
-            dict: connectivity graph for current agent.
+            numpy.ndarray: connectivity graph for current agent.
         """
-        graph = {agent.index: [] for agent in agents}
-        for agent in agents:
-            for other_agent in agents:
-                if other_agent.index == agent.index or not other_agent.is_occupied():
+        n = len(agents)
+        graph = np.zeros((n, n))
+        for i in range(n):
+            if not agents[i].is_occupied():
+                continue
+            for j in range(n):
+                if not agents[j].is_occupied():
                     continue
-                graph[agent.index].append(other_agent.index)
-                graph[other_agent.index].append(agent.index)
+                dist = np.linalg.norm(agents[i].pos - agents[j].pos)
+                if dist <= SENSING_RANGE:
+                    if not ray_intersects_aabb(agents[j].pos, agents[i].pos, OBSTACLES):
+                        graph[i][j] = graph[j][i] = dist
         return graph
 
-    def get_shortest_path(self, landmark_id, agents):
+    def get_shortest_path(self, landmark_id: int, agents: list):
         """
         Get shortest path from current agent to current activated landmark.
 
@@ -399,25 +459,47 @@ class Agent:
             list: shortest path found.
         """
         graph = self.build_graph(agents)
+        agents_pos = np.array(
+            [
+                agent.pos
+                for agent in agents
+                if agent.is_occupied() and agent.index != self.index
+            ]
+        )
+        distances = np.linalg.norm(self.pos - agents_pos, axis=1)
+        start = int(np.argmin(distances))
+
         # bfs shortest path
         visited = set()
-        # (current_node, path_to_current)
-        queue = deque([(self.index, [self.index])])
+        start_node = (start, [start])
+        queue = deque([start_node])
 
+        # print(f"Start: {start[0]}, end: {end}")
         while queue:
             current, path = queue.popleft()
             visited.add(current)
 
-            for neighbor in graph.get(current, []):
+            for neighbor in range(len(graph[current])):
+                neighbor = int(neighbor)
                 if neighbor in visited:
+                    continue
+                if graph[current][neighbor] == 0:
                     continue
                 if neighbor == landmark_id:
                     return path + [neighbor]
                 queue.append((neighbor, path + [neighbor]))
 
-        return []
+        return [start_node[0]]  # if there is only one element
 
-    def step(self, landmarks, agents, env):
+    def step(self, landmarks: deque, agents: list, env: Environment):
+        """
+        Run the distributed control.
+
+        Args:
+            env (Environment): simulation environment.
+            agents (list): list of all agents.
+            landmarks (deque): queue of landmarks.
+        """
         if self.is_occupied():
             self.on_occupied(landmarks=landmarks, agents=agents, env=env)
         elif self.is_assigned():

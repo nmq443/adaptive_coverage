@@ -4,27 +4,25 @@ import numpy as np
 from utils import meters2pixels
 
 # Simulation settings
-SCREEN_SIZE = (1920, 1088)
+SCREEN_SIZE = (1600, 900)
 RANDOM_INIT = False
 SCALE = 50
-LINE_WIDTH = 5
-EPS = meters2pixels(0.01, SCALE)
+EPS = meters2pixels(0.05, SCALE)
 CENTER = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2])  # density function center
 CENTER_COLOR = "purple"
 CENTER_SIZE = meters2pixels(0.5, SCALE)
 LIMIT_RUNNING = True
 SAVE_VIDEO = True
 FPS = 30
-ITERATIONS = 300
-RIDGE_COLOR = "black"
+ITERATIONS = 50
 FONT_SIZE = 13
 SHOW_SENSING_RANGE = False
 SHOW_CONNECTIONS = True
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
 NUM_AGENTS = 30
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(0.5, SCALE)
@@ -32,19 +30,21 @@ if RANDOM_INIT:
 # Agent's settings
 COLOR = "red"
 GOAL_COLOR = "green"
-SENSING_COLOR = "blue"
+SENSING_COLOR = COLOR
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(6.0, SCALE)  # rc and rs
-AVOIDANCE_RANGE = SIZE + meters2pixels(0.2, SCALE)  # ra
-VMAX = meters2pixels(0.1, SCALE)
-DIST_BTW_AGENTS = meters2pixels(0.7, SCALE)
+SENSING_RANGE = meters2pixels(5, SCALE)  # rc and rs
+AVOIDANCE_RANGE = SIZE * 2 + meters2pixels(0.1, SCALE)  # ra
+VMAX = meters2pixels(0.05, SCALE)
+DIST_BTW_AGENTS = meters2pixels(0.8, SCALE)
+KG = 0.1
+KA = 0.1
+BETA_C = 1.0
+KO = 0.5
+KR = 0.1
+
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 8, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
 )
-KG = 0.5
-KA = 0.5
-BETA_C = 1.0
-KO = 1.0
 NUM_ROWS = 5
 NUM_COLS = 6
 INIT_POS = []
@@ -52,18 +52,19 @@ for i in range(NUM_ROWS):
     pos = []
     for j in range(NUM_COLS):
         x = AGENT_ANCHOR_POS[0] + j * DIST_BTW_AGENTS
-        y = AGENT_ANCHOR_POS[1] + i * DIST_BTW_AGENTS
+        y = AGENT_ANCHOR_POS[1] + (NUM_ROWS - i - 1) * DIST_BTW_AGENTS
         pos.append([x, y])
     INIT_POS.append(pos)
 INIT_POS = np.array(INIT_POS)
+
 if CONTROLLER == "hexagon":
     HEXAGON_RANGE = 0.8 * SENSING_RANGE  # rh
     ASSIGNED_AGENT_COLOR = "blue"
-    OCCUPIED_AGENT_COLOR = "black"
-    UNASSIGNED_AGENT_COLOR = COLOR
+    OCCUPIED_AGENT_COLOR = COLOR
+    UNASSIGNED_AGENT_COLOR = "black"
     PENALTY_AGENT_COLOR = "green"
     USE_PENALTY_NODE = True
-    ORIGINAL_METHOD = True
+    ORIGINAL_METHOD = False
     RHO = 1.0
     NV = 6
     # PSO
@@ -80,20 +81,23 @@ else:
 # Area 3 is an octagon
 # Area 4 is an office-like environment
 # Area 5 is a simple non-convex environment
-ENV = 4
-VERTICES = np.array(
-    [
-        [0, 0],
-        [SCREEN_SIZE[0], 0],
-        [SCREEN_SIZE[0], SCREEN_SIZE[1]],
-        [0, SCREEN_SIZE[1]],
-    ],
-    dtype=float,
-)
-ENV_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3])
+# Area 6 is a corridor-like environment
+ENV = 1
 # obstacles are saved in (x, y, width, height) format
+ENV_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3])
+OFFSET = meters2pixels(1, SCALE)  # offset the vertices
 if ENV == 1:
+    VERTICES = np.array(
+        [
+            [0 + OFFSET, 0 + OFFSET],
+            [SCREEN_SIZE[0] - OFFSET, 0 + OFFSET],
+            [SCREEN_SIZE[0] - OFFSET, SCREEN_SIZE[1] - OFFSET],
+            [0 + OFFSET, SCREEN_SIZE[1] - OFFSET],
+        ],
+        dtype=float,
+    )
     OBSTACLES = np.array([])
+    ITERATIONS = 2500
 elif ENV == 2:
     VERTICES = np.array(
         [
@@ -125,6 +129,17 @@ elif ENV == 3:
     OBSTACLES = np.array([])
     ITERATIONS = 500
 elif ENV == 4:
+    VERTICES = np.array(
+        [
+            [0, 0],
+            [SCREEN_SIZE[0], 0],
+            [SCREEN_SIZE[0], SCREEN_SIZE[1]],
+            [0, SCREEN_SIZE[1]],
+        ],
+        dtype=float,
+    )
+
+    INIT_POS += np.array([SCREEN_SIZE[0] / 10 * 0, SCREEN_SIZE[1] / 5])
     OBSTACLES = np.array(
         [
             # upper half
@@ -195,10 +210,64 @@ elif ENV == 4:
             ],
         ]
     )
-    ITERATIONS = 1000
+    ITERATIONS = 2000
 elif ENV == 5:
+    VERTICES = np.array(
+        [
+            [0, 0],
+            [SCREEN_SIZE[0], 0],
+            [SCREEN_SIZE[0], SCREEN_SIZE[1]],
+            [0, SCREEN_SIZE[1]],
+        ],
+        dtype=float,
+    )
+
     OBSTACLES = np.array(
         [[ENV_ANCHOR_POS[0], ENV_ANCHOR_POS[1], SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3]]
+    )
+    ITERATIONS = 2000
+    if CONTROLLER == "hexagon":
+        ITERATIONS = 5000
+elif ENV == 6:
+    VERTICES = np.array(
+        [
+            [0, 0],
+            [SCREEN_SIZE[0], 0],
+            [SCREEN_SIZE[0], SCREEN_SIZE[1]],
+            [0, SCREEN_SIZE[1]],
+        ],
+        dtype=float,
+    )
+
+    OBSTACLES = np.array(
+        [
+            # upper half
+            [
+                SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 12,
+                0,
+                SCREEN_SIZE[0] / 10,
+                SCREEN_SIZE[1] / 3,
+            ],
+            [
+                SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 12,
+                0,
+                SCREEN_SIZE[0] / 10,
+                SCREEN_SIZE[1] / 3,
+            ],
+            # lower half
+            [
+                SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 6,
+                SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20,
+                SCREEN_SIZE[0] / 10,
+                SCREEN_SIZE[1] / 3 * 2,
+            ],
+            [
+                SCREEN_SIZE[0] / 2 + SCREEN_SIZE[0] / 6,
+                SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20,
+                SCREEN_SIZE[0] / 10,
+                SCREEN_SIZE[1] / 3 * 2,
+            ],
+        ]
     )
     ITERATIONS = 1000
 
