@@ -55,7 +55,7 @@ def compute_coverage_percentage(positions):
 
     # Step 5: Return coverage ratio within polygon
     return (
-        valid_covered.sum() / inside_polygon_points.shape[0]
+        valid_covered.sum() / (inside_polygon_points.shape[0] - in_obs.sum())
         if inside_polygon_points.shape[0] > 0
         else 0.0
     )
