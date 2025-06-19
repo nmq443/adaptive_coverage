@@ -7,7 +7,7 @@ from utils import meters2pixels
 SCREEN_SIZE = (1600, 900)
 RANDOM_INIT = False
 SCALE = 50
-EPS = meters2pixels(0.05, SCALE)
+EPS = meters2pixels(0.075, SCALE)
 CENTER = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 2])  # density function center
 CENTER_COLOR = "purple"
 CENTER_SIZE = meters2pixels(0.5, SCALE)
@@ -25,25 +25,25 @@ CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
 # CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
 NUM_AGENTS = 30
 if RANDOM_INIT:
-    AGENT_SPREAD = meters2pixels(0.5, SCALE)
+    AGENT_SPREAD = meters2pixels(1.0, SCALE)
 
 # Agent's settings
 COLOR = "red"
 GOAL_COLOR = "green"
 SENSING_COLOR = COLOR
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(5, SCALE)  # rc and rs
+SENSING_RANGE = meters2pixels(6.0, SCALE)  # rc and rs
 AVOIDANCE_RANGE = SIZE * 2 + meters2pixels(0.1, SCALE)  # ra
-VMAX = meters2pixels(0.05, SCALE)
+VMAX = meters2pixels(0.1, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.8, SCALE)
 KG = 0.1
-KA = 0.1
+KA = 0.0
 BETA_C = 1.0
-KO = 0.5
-KR = 0.1
+KO = 1.0
+KR = 0.0
 
 AGENT_ANCHOR_POS = np.array(
-    [SCREEN_SIZE[0] / 8, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
+    [SCREEN_SIZE[0] / 7, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
 )
 NUM_ROWS = 5
 NUM_COLS = 6
@@ -82,7 +82,7 @@ else:
 # Area 4 is an office-like environment
 # Area 5 is a simple non-convex environment
 # Area 6 is a corridor-like environment
-ENV = 1
+ENV = 4
 # obstacles are saved in (x, y, width, height) format
 ENV_ANCHOR_POS = np.array([SCREEN_SIZE[0] / 2, SCREEN_SIZE[1] / 3])
 OFFSET = meters2pixels(1, SCALE)  # offset the vertices
@@ -129,37 +129,26 @@ elif ENV == 3:
     OBSTACLES = np.array([])
     ITERATIONS = 500
 elif ENV == 4:
-    VERTICES = np.array(
-        [
-            [0, 0],
-            [SCREEN_SIZE[0], 0],
-            [SCREEN_SIZE[0], SCREEN_SIZE[1]],
-            [0, SCREEN_SIZE[1]],
-        ],
-        dtype=float,
-    )
-
-    INIT_POS += np.array([SCREEN_SIZE[0] / 10 * 0, SCREEN_SIZE[1] / 5])
+    INIT_POS += np.array([-SCREEN_SIZE[0] / 10, 0])
     OBSTACLES = np.array(
         [
             # upper half
-            [0, SCREEN_SIZE[1] / 3, SCREEN_SIZE[0] / 6, SCREEN_SIZE[1] / 20],
             [
                 SCREEN_SIZE[0] / 5,
                 SCREEN_SIZE[1] / 3,
-                SCREEN_SIZE[0] / 8 * 2,
+                SCREEN_SIZE[0] / 8 * 1.5,
                 SCREEN_SIZE[1] / 20,
             ],
             [
-                SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 12,
+                SCREEN_SIZE[0] / 5,
                 0,
                 SCREEN_SIZE[0] / 25,
                 SCREEN_SIZE[1] / 3,
             ],
             [
-                SCREEN_SIZE[0] / 2,
+                SCREEN_SIZE[0] / 2 * 0.9,
                 SCREEN_SIZE[1] / 3,
-                SCREEN_SIZE[0] / 8 * 2,
+                SCREEN_SIZE[0] / 8 * 2.25,
                 SCREEN_SIZE[1] / 20,
             ],
             [
@@ -175,23 +164,22 @@ elif ENV == 4:
                 SCREEN_SIZE[1] / 20,
             ],
             # lower half
-            # [0, SCREEN_SIZE[1] / 2, SCREEN_SIZE[0] / 5, SCREEN_SIZE[1] / 20],
             [
-                SCREEN_SIZE[0] / 7 * 2,
-                SCREEN_SIZE[1] / 2,
                 SCREEN_SIZE[0] / 5,
+                SCREEN_SIZE[1] / 2,
+                SCREEN_SIZE[0] / 5 * 1.25,
                 SCREEN_SIZE[1] / 20,
             ],
             [
-                SCREEN_SIZE[0] / 5 + SCREEN_SIZE[0] / 6,
+                SCREEN_SIZE[0] / 5,
                 SCREEN_SIZE[1] / 2 + SCREEN_SIZE[1] / 20,
                 SCREEN_SIZE[0] / 25,
                 SCREEN_SIZE[1] / 3 * 2,
             ],
             [
-                SCREEN_SIZE[0] / 7 * 2 + SCREEN_SIZE[0] / 5 * 1.5,
+                SCREEN_SIZE[0] / 4 + SCREEN_SIZE[0] / 5 * 1.25,
                 SCREEN_SIZE[1] / 2,
-                SCREEN_SIZE[0] / 5,
+                SCREEN_SIZE[0] / 5 * 1.5,
                 SCREEN_SIZE[1] / 20,
             ],
             [
@@ -210,6 +198,29 @@ elif ENV == 4:
             ],
         ]
     )
+    # XMIN = np.min(OBSTACLES[:, 0])
+    # XMAX = np.max(OBSTACLES[:, 0] + OBSTACLES[:, 2])
+    # YMIN = np.min(OBSTACLES[:, 1])
+    # YMAX = np.max(OBSTACLES[:, 1] + OBSTACLES[:, 3])
+    # VERTICES = np.array(
+    #     [
+    #         [XMIN, YMIN],
+    #         [XMAX, YMIN],
+    #         [XMAX, YMAX],
+    #         [XMIN, YMAX],
+    #     ],
+    #     dtype=float,
+    # )
+    VERTICES = np.array(
+        [
+            [0, 0],
+            [SCREEN_SIZE[0], 0],
+            [SCREEN_SIZE[0], SCREEN_SIZE[1]],
+            [0, SCREEN_SIZE[1]],
+        ],
+        dtype=float,
+    )
+
     ITERATIONS = 2000
 elif ENV == 5:
     VERTICES = np.array(

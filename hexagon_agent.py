@@ -336,8 +336,11 @@ class Agent:
                 if np.any(distances <= 20 * EPS):
                     return False, False
                 if self.is_penalty_node:
-                    if np.any(distances <= SENSING_RANGE):  # not in a coverage range
-                        return False, False
+                    for i, dist in enumerate(distances):
+                        if dist <= SENSING_RANGE and not ray_intersects_aabb(
+                            agents[j].pos, target, OBSTACLES
+                        ):  # not in a coverage range
+                            return False, False
 
         # If behind an obstacle
         if ray_intersects_aabb(self.pos, target, OBSTACLES):
@@ -469,7 +472,6 @@ class Agent:
         start_node = (self.index, [self.index])
         queue = deque([start_node])
 
-        # print(f"Start: {start[0]}, end: {end}")
         while queue:
             current, path = queue.popleft()
             visited.add(current)
