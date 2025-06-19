@@ -376,8 +376,6 @@ class Agent:
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
-        # print(f"Agent {self.index} has route {self.route}")
-        # print(f"Agent {self.index} has goal {self.goal}")
         self.mobility_control(agents)
         if self.flag == 1:
             if self.goal is not None:
@@ -445,6 +443,13 @@ class Agent:
                 if dist <= SENSING_RANGE:
                     if not ray_intersects_aabb(agents[j].pos, agents[i].pos, OBSTACLES):
                         graph[i][j] = graph[j][i] = dist
+        for i in range(n):
+            if not agents[i].is_occupied():
+                continue
+            dist = np.linalg.norm(agents[i].pos - self.pos)
+            if dist <= SENSING_RANGE:
+                if not ray_intersects_aabb(agents[i].pos, self.pos, OBSTACLES):
+                    graph[self.index][i] = graph[i][self.index] = dist
         return graph
 
     def get_shortest_path(self, landmark_id: int, agents: list):
@@ -459,19 +464,9 @@ class Agent:
             list: shortest path found.
         """
         graph = self.build_graph(agents)
-        agents_pos = np.array(
-            [
-                agent.pos
-                for agent in agents
-                if agent.is_occupied() and agent.index != self.index
-            ]
-        )
-        distances = np.linalg.norm(self.pos - agents_pos, axis=1)
-        start = int(np.argmin(distances))
-
         # bfs shortest path
         visited = set()
-        start_node = (start, [start])
+        start_node = (self.index, [self.index])
         queue = deque([start_node])
 
         # print(f"Start: {start[0]}, end: {end}")
