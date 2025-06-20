@@ -1,8 +1,9 @@
 import numpy as np
+import pygame
 from environment import Environment
 from shapely.geometry import Polygon, Point, LineString
 from configs import *
-from utils import perpendicular
+from utils import perpendicular, ray_intersects_aabb
 from scipy.spatial import Voronoi
 
 
@@ -19,7 +20,13 @@ def density_func(q: np.ndarray):
     return 1
 
 
-def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int = 20):
+def centroid_region(
+    agent_pos: np.ndarray,
+    vertices: np.ndarray,
+    env: Environment,
+    screen=None,
+    resolution: int = 20,
+):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -56,7 +63,25 @@ def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int
     distances = np.linalg.norm(grid_points - agent_pos, axis=1).reshape(xx.shape)
     mask_range = distances <= VALID_RANGE
 
-    mask = mask_polygon & mask_range
+    if len(env.obstacles) > 0:
+        mask_obstacles = np.ones(xx.shape, dtype=bool)
+        for x, y, w, h in env.obstacles:
+            in_x = (xx >= x) & (xx <= x + w)
+            in_y = (yy >= y) & (yy <= y + h)
+            mask_obstacles &= ~(in_x & in_y)
+
+        visibility_mask = np.array(
+            [
+                not ray_intersects_aabb(agent_pos, point, env.obstacles)
+                for point in grid_points
+            ]
+        ).reshape(xx.shape)
+        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
+
+    else:
+        mask = mask_polygon & mask_range
+
+    valid_points = grid_points[mask.ravel()]
 
     # Vectorized weight calculation
     wx = np.ones(n + 1)
@@ -88,7 +113,7 @@ def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
 
-    return centroid
+    return centroid, valid_points
 
 
 def lloyd(agent, agents: list, env: Environment):
@@ -106,8 +131,8 @@ def lloyd(agent, agents: list, env: Environment):
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
         if other.index != agent.index and distance <= VALID_RANGE - EPS:
-            # if other.index != agent.index and distance <= SENSING_RANGE and SENSING_RANGE - distance > EPS:
-            generators.append(other.index)
+            if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
+                generators.append(other.index)
 
     # Step 1: compute voronoi diagrams
     generators_positions = np.array([agents[index].pos for index in generators])
@@ -120,7 +145,9 @@ def lloyd(agent, agents: list, env: Environment):
             current_vertices = vor.vertices[region + [region[0]], :]
             current_polygon = Polygon(current_vertices)
             if current_polygon.contains(Point(generator_pos)):
-                centroids[i] = centroid_region(agent.pos, current_vertices)
+                centroids[i], valid_points = centroid_region(
+                    agent.pos, current_vertices, env
+                )
 
     # Step 3: move points to centroids
     goal = centroids[0]
@@ -128,7 +155,7 @@ def lloyd(agent, agents: list, env: Environment):
     # while not agent.terminated(goal):
     # agent.move_to_goal(goal)
     # agent.move_to_goal(goal)
-    return goal
+    return goal, valid_points
 
 
 def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
@@ -167,7 +194,7 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
     if np.linalg.norm(goal - original_goal) > EPS:
         dir = goal - agent_pos
         dist = np.linalg.norm(dir)
-        new_dir = (dist - SIZE) * dir / dist
+        new_dir = (dist - 2 * SIZE) * dir / dist
         goal = new_dir + agent_pos
 
     return goal

@@ -1,0 +1,6 @@
+numpy~=2.2.5
+shapely~=2.0.6
+scipy~=1.15.3
+pygame~=2.6.1
+matplotlib~=3.10.0
+imageio~=2.37.0
