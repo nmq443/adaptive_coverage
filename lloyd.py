@@ -19,7 +19,7 @@ def density_func(q: np.ndarray):
     return 1
 
 
-def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int = 20):
+def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, env: Environment, resolution: int = 20):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -56,7 +56,16 @@ def centroid_region(agent_pos: np.ndarray, vertices: np.ndarray, resolution: int
     distances = np.linalg.norm(grid_points - agent_pos, axis=1).reshape(xx.shape)
     mask_range = distances <= VALID_RANGE
 
-    mask = mask_polygon & mask_range
+    if len(env.obstacles) > 0:
+        mask_obstacles = np.ones(xx.shape, dtype=bool)
+        for x, y, w, h in env.obstacles:
+            in_x = (xx >= x) & (xx <= x + w)
+            in_y = (yy >= y) & (yy <= y + h)
+            mask_obstacles &= ~(in_x & in_y)
+
+        mask = mask_polygon & mask_range & mask_obstacles
+    else:
+        mask = mask_polygon & mask_range
 
     # Vectorized weight calculation
     wx = np.ones(n + 1)
@@ -120,7 +129,7 @@ def lloyd(agent, agents: list, env: Environment):
             current_vertices = vor.vertices[region + [region[0]], :]
             current_polygon = Polygon(current_vertices)
             if current_polygon.contains(Point(generator_pos)):
-                centroids[i] = centroid_region(agent.pos, current_vertices)
+                centroids[i] = centroid_region(agent.pos, current_vertices, env)
 
     # Step 3: move points to centroids
     goal = centroids[0]
@@ -167,7 +176,7 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
     if np.linalg.norm(goal - original_goal) > EPS:
         dir = goal - agent_pos
         dist = np.linalg.norm(dir)
-        new_dir = (dist - SIZE) * dir / dist
+        new_dir = (dist - 2*SIZE) * dir / dist
         goal = new_dir + agent_pos
 
     return goal
