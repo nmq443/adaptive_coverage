@@ -24,7 +24,7 @@ def centroid_region(
     agent_pos: np.ndarray,
     vertices: np.ndarray,
     env: Environment,
-    resolution: int = 20,
+    resolution: int = 50,
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
@@ -80,8 +80,6 @@ def centroid_region(
     else:
         mask = mask_polygon & mask_range
 
-    valid_points = grid_points[mask.ravel()]
-
     # Vectorized weight calculation
     wx = np.ones(n + 1)
     wx[1:-1] = 2
@@ -112,7 +110,7 @@ def centroid_region(
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
 
-    return centroid, valid_points
+    return centroid
 
 
 def lloyd(agent, agents: list, env: Environment):
@@ -133,6 +131,9 @@ def lloyd(agent, agents: list, env: Environment):
             if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
                 generators.append(other.index)
 
+    if len(generators) < 2:
+        return agent.pos
+
     # Step 1: compute voronoi diagrams
     generators_positions = np.array([agents[index].pos for index in generators])
     vor = compute_voronoi_diagrams(generators_positions, env)
@@ -144,17 +145,12 @@ def lloyd(agent, agents: list, env: Environment):
             current_vertices = vor.vertices[region + [region[0]], :]
             current_polygon = Polygon(current_vertices)
             if current_polygon.contains(Point(generator_pos)):
-                centroids[i], valid_points = centroid_region(
-                    agent.pos, current_vertices, env
-                )
+                centroids[i] = centroid_region(agent.pos, current_vertices, env)
 
     # Step 3: move points to centroids
     goal = centroids[0]
     goal = handle_goal(goal, agent.pos, env)
-    # while not agent.terminated(goal):
-    # agent.move_to_goal(goal)
-    # agent.move_to_goal(goal)
-    return goal, valid_points
+    return goal
 
 
 def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):

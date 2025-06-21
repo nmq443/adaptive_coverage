@@ -17,7 +17,6 @@ class Agent:
         self.vel: np.ndarray = np.zeros(2)
         self.goal: np.ndarray = None
         self.traj: list = [init_pos.copy()]
-        self.valid_points = None
 
     def get_travel_distance(self):
         """Get total travel distance."""
@@ -88,8 +87,7 @@ class Agent:
         if self.goal is not None and not self.terminated(self.goal):
             self.move_to_goal(self.goal)
         else:
-            self.goal, self.valid_points = lloyd(self, agents, env)
-        # lloyd(self, agents, env)
+            self.goal = lloyd(self, agents, env)
 
     def render(
         self,
@@ -98,9 +96,6 @@ class Agent:
         agents: list,
         timestep: int,
     ):
-        # if self.valid_points is not None:
-        #     for pt in self.valid_points:
-        #         pygame.draw.circle(surface, "purple", pt, 1)
         pygame.draw.circle(surface, COLOR, self.pos, SIZE)
         if self.goal is not None:
             pygame.draw.circle(surface, GOAL_COLOR, self.goal, int(SIZE / 5))
