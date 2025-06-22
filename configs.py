@@ -16,23 +16,23 @@ SAVE_VIDEO = True
 FPS = 30
 ITERATIONS = 50
 FONT_SIZE = 13
-SHOW_SENSING_RANGE = False
+SHOW_SENSING_RANGE = True
 SHOW_CONNECTIONS = True
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
-NUM_AGENTS = 20
+# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+NUM_AGENTS = 10
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(1.0, SCALE)
 
 # Agent's settings
 COLOR = "red"
 GOAL_COLOR = "green"
-SENSING_COLOR = COLOR
+SENSING_COLOR = "blue"
 SIZE = meters2pixels(0.2, SCALE)
-SENSING_RANGE = meters2pixels(6.0, SCALE)  # rc and rs
+SENSING_RANGE = meters2pixels(7.0, SCALE)  # rc and rs
 AVOIDANCE_RANGE = SIZE * 2 + meters2pixels(0.1, SCALE)  # ra
 VMAX = meters2pixels(0.1, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.8, SCALE)
@@ -45,8 +45,8 @@ KR = 0.0
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 7, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
 )
-NUM_ROWS = 5
-NUM_COLS = 4
+NUM_ROWS = 2
+NUM_COLS = 5
 INIT_POS = []
 for i in range(NUM_ROWS):
     pos = []
@@ -58,17 +58,20 @@ for i in range(NUM_ROWS):
 INIT_POS = np.array(INIT_POS)
 
 if CONTROLLER == "hexagon":
-    HEXAGON_RANGE = 0.8 * SENSING_RANGE  # rh
+    HEXAGON_RANGE = 0.9 * SENSING_RANGE  # rh
     ASSIGNED_AGENT_COLOR = "blue"
     OCCUPIED_AGENT_COLOR = COLOR
     UNASSIGNED_AGENT_COLOR = "black"
     PENALTY_AGENT_COLOR = "green"
     USE_PENALTY_NODE = True
     ORIGINAL_METHOD = False
+    SHOW_HIDDEN_VERTICES = True
+    SWEEP_ANGLE_OFFSET = 15
+    HIDDEN_VERTEX_COLOR = "orange"
     RHO = 1.0
     NV = 6
     # PSO
-    PSO_ITERATIONS = 50
+    PSO_ITERATIONS = 100
     PSO_PARTICLES = 20
     PSO_VMAX = meters2pixels(0.25, SCALE)
     PSO_SPREAD = meters2pixels(0.05, SCALE)

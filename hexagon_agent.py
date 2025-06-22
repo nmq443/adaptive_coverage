@@ -62,6 +62,25 @@ class Agent:
             pygame.draw.circle(
                 screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
             )
+        if SHOW_HIDDEN_VERTICES:
+            for i in range(len(self.hidden_vertices) - 1):
+                x = self.hidden_vertices[i][0][0]
+                y = self.hidden_vertices[i][0][1]
+                pygame.draw.lines(
+                    screen,
+                    HIDDEN_VERTEX_COLOR,
+                    True,
+                    [(x - SIZE, y - SIZE), (x + SIZE, y + SIZE)],
+                    3,
+                )
+                pygame.draw.lines(
+                    screen,
+                    HIDDEN_VERTEX_COLOR,
+                    True,
+                    [(x - SIZE, y + SIZE), (x + SIZE, y - SIZE)],
+                    3,
+                )
+
         color = COLOR
         if self.is_penalty_node:
             color = PENALTY_AGENT_COLOR

@@ -225,12 +225,36 @@ class PSO:
         self,
         position: np.ndarray,
     ) -> bool:
+        # if self.v1_idx > self.v2_idx:
+        #     v1_idx, v2_idx = v2_idx, v1_idx
+        # else:
+        #     v1_idx, v2_idx = self.v1_idx, self.v2_idx
+        v1_idx, v2_idx = self.v1_idx, self.v2_idx
+        phi_v1 = 2 * np.pi * v1_idx / 6
+        phi_v2 = 2 * np.pi * v2_idx / 6
+        v1x = self.agent_pos[0] + HEXAGON_RANGE * np.cos(
+            phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET)
+        )
+        v1y = self.agent_pos[1] + HEXAGON_RANGE * np.sin(
+            phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET)
+        )
+        v2x = self.agent_pos[0] + HEXAGON_RANGE * np.cos(
+            phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET)
+        )
+        v2y = self.agent_pos[1] + HEXAGON_RANGE * np.sin(
+            phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET)
+        )
+        new_v1 = np.array([v1x, v1y])
+        new_v2 = np.array([v2x, v2y])
+
         def cross_product(v1: np.ndarray, v2: np.ndarray):
             return v1[0] * v2[1] - v1[1] * v2[0]
 
         # Compute cross products
-        v1 = self.v1 - self.agent_pos
-        v2 = self.v2 - self.agent_pos
+        # v1 = self.v1 - self.agent_pos
+        # v2 = self.v2 - self.agent_pos
+        v1 = new_v1 - self.agent_pos
+        v2 = new_v2 - self.agent_pos
         cross1 = cross_product(v1, position)
         cross2 = cross_product(v2, position)
         cross12 = cross_product(v1, v2)
