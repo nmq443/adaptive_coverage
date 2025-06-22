@@ -21,9 +21,9 @@ SHOW_CONNECTIONS = True
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
-NUM_AGENTS = 10
+CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+NUM_AGENTS = 30
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(1.0, SCALE)
 
@@ -45,7 +45,7 @@ KR = 0.0
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 7, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
 )
-NUM_ROWS = 2
+NUM_ROWS = 6
 NUM_COLS = 5
 INIT_POS = []
 for i in range(NUM_ROWS):

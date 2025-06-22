@@ -24,7 +24,7 @@ def centroid_region(
     agent_pos: np.ndarray,
     vertices: np.ndarray,
     env: Environment,
-    resolution: int = 50,
+    resolution: int = 20,
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
