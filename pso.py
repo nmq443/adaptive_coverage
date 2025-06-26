@@ -225,11 +225,14 @@ class PSO:
         self,
         position: np.ndarray,
     ) -> bool:
-        # if self.v1_idx > self.v2_idx:
-        #     v1_idx, v2_idx = v2_idx, v1_idx
-        # else:
-        #     v1_idx, v2_idx = self.v1_idx, self.v2_idx
-        v1_idx, v2_idx = self.v1_idx, self.v2_idx
+        if abs(self.v1_idx - self.v2_idx) == 5:
+            if self.v1_idx > self.v2_idx:
+                self.v1_idx, self.v2_idx = self.v2_idx, self.v1_idx
+        else:
+            if self.v1_idx < self.v2_idx:
+                v1_idx, v2_idx = self.v2_idx, self.v1_idx
+            else:
+                v1_idx, v2_idx = self.v1_idx, self.v2_idx
         phi_v1 = 2 * np.pi * v1_idx / 6
         phi_v2 = 2 * np.pi * v2_idx / 6
         v1x = self.agent_pos[0] + HEXAGON_RANGE * np.cos(

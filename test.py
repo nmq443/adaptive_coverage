@@ -4,6 +4,8 @@ from configs import *
 from utils import ray_intersects_aabb
 from shapely.geometry import Polygon, Point
 
+HEXAGON_RANGE = meters2pixels(0.5, SCALE)
+
 
 def density_func(q: np.ndarray):
     """
@@ -73,7 +75,6 @@ def centroid_region(
                 for point in grid_points
             ]
         ).reshape(xx.shape)
-        print(visibility_mask)
         mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
 
     else:
@@ -142,50 +143,50 @@ screen = pygame.display.set_mode((1600, 900))
 running = True
 
 agent_pos = np.array([1600 / 2, 900 / 2])
-# vertices = VERTICES
-# obstacles = np.array(
-#     [
-#         [1600 / 2 + SIZE * 2, 900 / 2 + SIZE * 2, 1 * SCALE, 1 * SCALE],
-#         [1600 / 3 + 200, 900 / 3 - SIZE * 2, 1 * SCALE, 1 * SCALE],
-#     ]
-# )
-# centroid, valid_points = centroid_region(agent_pos, vertices, obstacles)
-virtual_points = []
-for i in range(6):
-    phi = 2 * np.pi * i / 6
-    x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi)
-    y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi)
-    virtual_points.append([x, y])
+vertices = VERTICES
+obstacles = np.array(
+    [
+        [1600 / 2 + SIZE * 2, 900 / 2 + SIZE * 2, 1 * SCALE, 1 * SCALE],
+        [1600 / 3 + 200, 900 / 3 - SIZE * 2, 1 * SCALE, 1 * SCALE],
+    ]
+)
+centroid, valid_points = centroid_region(agent_pos, vertices, obstacles)
+# virtual_points = []
+# for i in range(6):
+#     phi = 2 * np.pi * i / 6
+#     x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi)
+#     y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi)
+#     virtual_points.append([x, y])
 
-v1_idx = np.random.randint(0, 5)
-space = [-1, 1]
-v2_idx = v1_idx + space[np.random.randint(0, 1)] if v1_idx < 5 else 0
-v1 = [virtual_points[v1_idx], v1_idx]
-v2 = [virtual_points[v2_idx], v2_idx]
-print(f"V1's idx: {v1_idx}, V2's idx: {v2_idx}")
+# v1_idx = np.random.randint(0, 5)
+# space = [-1, 1]
+# v2_idx = v1_idx + space[np.random.randint(0, 1)] if v1_idx < 5 else 0
+# v1 = [virtual_points[v1_idx], v1_idx]
+# v2 = [virtual_points[v2_idx], v2_idx]
+# print(f"V1's idx: {v1_idx}, V2's idx: {v2_idx}")
 
-phi_v1 = 2 * np.pi * v1[1] / 6
-phi_v2 = 2 * np.pi * v2[1] / 6
-if v1[1] > v2[1]:
-    v1, v2 = v2, v1
-v1x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
-v1y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
-v2x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
-v2y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
+# phi_v1 = 2 * np.pi * v1[1] / 6
+# phi_v2 = 2 * np.pi * v2[1] / 6
+# if v1[1] > v2[1]:
+#     v1, v2 = v2, v1
+# v1x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
+# v1y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
+# v2x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
+# v2y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     screen.fill("white")
-    # for pt in virtual_points:
-    #     pygame.draw.circle(screen, COLOR, pt, 5)
-    pygame.draw.circle(screen, "blue", v1[0], 5)
-    pygame.draw.circle(screen, "blue", v2[0], 5)
-    pygame.draw.circle(screen, "green", (v1x, v1y), 5)
-    pygame.draw.circle(screen, "green", (v2x, v2y), 5)
-    # for obs in obstacles:
-    #     pygame.draw.rect(screen, "black", obs)
+    for pt in valid_points:
+        pygame.draw.circle(screen, "blue", pt, 5)
+    # pygame.draw.circle(screen, "blue", v1[0], 5)
+    # pygame.draw.circle(screen, "blue", v2[0], 5)
+    # pygame.draw.circle(screen, "green", (v1x, v1y), 5)
+    # pygame.draw.circle(screen, "green", (v2x, v2y), 5)
+    for obs in obstacles:
+        pygame.draw.rect(screen, "black", obs)
     pygame.draw.circle(screen, COLOR, agent_pos, 10)
     pygame.draw.circle(screen, SENSING_COLOR, agent_pos, SENSING_RANGE, width=1)
 

@@ -24,7 +24,6 @@ def centroid_region(
     agent_pos: np.ndarray,
     vertices: np.ndarray,
     env: Environment,
-    resolution: int = 20,
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
@@ -42,8 +41,8 @@ def centroid_region(
     xmin = np.min(vertices[:, 0])
     ymax = np.max(vertices[:, 1])
     ymin = np.min(vertices[:, 1])
-    n = resolution
-    m = resolution
+    n = INTEGRATION_RESOLUTION
+    m = INTEGRATION_RESOLUTION
     hx = (xmax - xmin) / n
     hy = (ymax - ymin) / m
 
@@ -165,8 +164,20 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
     Returns:
         numpy.ndarray: projected goal onto the simulation environment.
     """
-    original_goal = goal
-
+    in_obs = False
+    for obs in env.obstacles:
+        x, y, w, h = obs
+        if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
+            in_obs = True
+        if x <= goal[0] - 2 * EPS <= x + w and y <= goal[1] - 2 * EPS <= y + h:
+            in_obs = True
+        if x <= goal[0] + 2 * EPS <= x + w and y <= goal[1] + 2 * EPS <= y + h:
+            in_obs = True
+        # if x <= goal[0] - EPS <= x + w and y <= goal[1] - EPS <= y + h:
+        #     in_obs = True
+        # if x <= goal[0] + EPS <= x + w and y <= goal[1] + EPS <= y + h:
+    if not in_obs:
+        return goal
     for obs in env.obstacles:
         x, y, w, h = obs
         edges = np.array(
@@ -186,7 +197,8 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
         if intersect is not None:
             goal = np.array([intersect.x, intersect.y])
 
-    if np.linalg.norm(goal - original_goal) > EPS:
+    if intersect is not None and np.linalg.norm(intersect - goal) <= 2 * EPS:
+        # if np.linalg.norm(goal - original_goal) > 2 * EPS:
         dir = goal - agent_pos
         dist = np.linalg.norm(dir)
         new_dir = (dist - 2 * SIZE) * dir / dist
