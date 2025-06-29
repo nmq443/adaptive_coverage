@@ -16,14 +16,14 @@ SAVE_VIDEO = True
 FPS = 30
 ITERATIONS = 50
 FONT_SIZE = 13
-SHOW_SENSING_RANGE = False
-SHOW_CONNECTIONS = True
+SHOW_SENSING_RANGE = True
+SHOW_CONNECTIONS = False
 SHOW_TRAJECTORY = False
 
 # Swarm settings
-# CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
-CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
-NUM_AGENTS = 10
+CONTROLLER = "voronoi"  # 'hexagon' or 'voronoi'
+# CONTROLLER = "hexagon"  # 'hexagon' or 'voronoi'
+NUM_AGENTS = 15
 if RANDOM_INIT:
     AGENT_SPREAD = meters2pixels(1.0, SCALE)
 
@@ -34,7 +34,7 @@ SENSING_COLOR = "blue"
 SIZE = meters2pixels(0.2, SCALE)
 SENSING_RANGE = meters2pixels(7.5, SCALE)  # rc and rs
 AVOIDANCE_RANGE = SIZE * 2 + meters2pixels(0.1, SCALE)  # ra
-VMAX = meters2pixels(0.05, SCALE)
+VMAX = meters2pixels(2.0, SCALE)
 DIST_BTW_AGENTS = meters2pixels(0.8, SCALE)
 KG = 0.1
 KA = 0.0
@@ -45,7 +45,7 @@ KR = 0.0
 AGENT_ANCHOR_POS = np.array(
     [SCREEN_SIZE[0] / 7, SCREEN_SIZE[1] / 3 + SCREEN_SIZE[1] / 10]
 )
-NUM_ROWS = 2
+NUM_ROWS = 3
 NUM_COLS = 5
 INIT_POS = []
 for i in range(NUM_ROWS):
@@ -66,18 +66,18 @@ if CONTROLLER == "hexagon":
     USE_PENALTY_NODE = True
     ORIGINAL_METHOD = False
     SHOW_HIDDEN_VERTICES = True
-    SWEEP_ANGLE_OFFSET = 15
+    SWEEP_ANGLE_OFFSET = 70
     HIDDEN_VERTEX_COLOR = "orange"
     RHO = 1.0
     NV = 6
     # PSO
-    PSO_ITERATIONS = 100
-    PSO_PARTICLES = 20
+    PSO_ITERATIONS = 200
+    PSO_PARTICLES = 100
     PSO_VMAX = meters2pixels(0.25, SCALE)
     PSO_SPREAD = meters2pixels(0.05, SCALE)
 else:
-    VALID_RANGE = 0.8 * SENSING_RANGE
-    INTEGRATION_RESOLUTION = 30
+    VALID_RANGE = 0.85 * SENSING_RANGE
+    INTEGRATION_RESOLUTION = 10
 
 # Area
 # Area 1 is a simple rectangle without obstacles
