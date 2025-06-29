@@ -169,13 +169,14 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
         x, y, w, h = obs
         if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
             in_obs = True
-        if x <= goal[0] - 2 * EPS <= x + w and y <= goal[1] - 2 * EPS <= y + h:
+        if x <= goal[0] - SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
             in_obs = True
-        if x <= goal[0] + 2 * EPS <= x + w and y <= goal[1] + 2 * EPS <= y + h:
+        if x <= goal[0] + SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
             in_obs = True
-        # if x <= goal[0] - EPS <= x + w and y <= goal[1] - EPS <= y + h:
-        #     in_obs = True
-        # if x <= goal[0] + EPS <= x + w and y <= goal[1] + EPS <= y + h:
+        if x <= goal[0] - SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+            in_obs = True
+        if x <= goal[0] + SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+            in_obs = True
     if not in_obs:
         return goal
     for obs in env.obstacles:
@@ -197,11 +198,26 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
         if intersect is not None:
             goal = np.array([intersect.x, intersect.y])
 
-    if intersect is not None and np.linalg.norm(intersect - goal) <= 2 * EPS:
+    in_obs = False
+    for obs in env.obstacles:
+        x, y, w, h = obs
+        if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
+            in_obs = True
+        if x <= goal[0] - SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+            in_obs = True
+        if x <= goal[0] + SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+            in_obs = True
+        if x <= goal[0] - SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+            in_obs = True
+        if x <= goal[0] + SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+            in_obs = True
+    if not in_obs:
+        return goal
+    if in_obs:
         # if np.linalg.norm(goal - original_goal) > 2 * EPS:
         dir = goal - agent_pos
         dist = np.linalg.norm(dir)
-        new_dir = (dist - 2 * SIZE) * dir / dist
+        new_dir = (dist - SIZE) * dir / dist
         goal = new_dir + agent_pos
 
     return goal

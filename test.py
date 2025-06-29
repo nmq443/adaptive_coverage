@@ -5,6 +5,7 @@ from utils import ray_intersects_aabb
 from shapely.geometry import Polygon, Point
 
 HEXAGON_RANGE = meters2pixels(0.5, SCALE)
+VALID_RANGE = 0.75 * SENSING_RANGE
 
 
 def density_func(q: np.ndarray):
@@ -151,40 +152,70 @@ obstacles = np.array(
     ]
 )
 centroid, valid_points = centroid_region(agent_pos, vertices, obstacles)
-# virtual_points = []
-# for i in range(6):
-#     phi = 2 * np.pi * i / 6
-#     x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi)
-#     y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi)
-#     virtual_points.append([x, y])
 
-# v1_idx = np.random.randint(0, 5)
-# space = [-1, 1]
-# v2_idx = v1_idx + space[np.random.randint(0, 1)] if v1_idx < 5 else 0
-# v1 = [virtual_points[v1_idx], v1_idx]
-# v2 = [virtual_points[v2_idx], v2_idx]
-# print(f"V1's idx: {v1_idx}, V2's idx: {v2_idx}")
 
-# phi_v1 = 2 * np.pi * v1[1] / 6
-# phi_v2 = 2 * np.pi * v2[1] / 6
-# if v1[1] > v2[1]:
-#     v1, v2 = v2, v1
-# v1x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
-# v1y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
-# v2x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
-# v2y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
+def is_valid_particle(position: np.ndarray, v1_idx, v2_idx, agent_pos) -> bool:
+    if abs(v1_idx - v2_idx) == 5:
+        if v1_idx > v2_idx:
+            v1_idx, v2_idx = v2_idx, v1_idx
+    else:
+        if v1_idx < v2_idx:
+            v1_idx, v2_idx = v2_idx, v1_idx
+        else:
+            v1_idx, v2_idx = v1_idx, v2_idx
+    phi_v1 = 2 * np.pi * v1_idx / 6
+    phi_v2 = 2 * np.pi * v2_idx / 6
+    v1x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
+    v1y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET))
+    v2x = agent_pos[0] + HEXAGON_RANGE * np.cos(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
+    v2y = agent_pos[1] + HEXAGON_RANGE * np.sin(phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET))
+    new_v1 = np.array([v1x, v1y])
+    new_v2 = np.array([v2x, v2y])
+
+    def cross_product(v1: np.ndarray, v2: np.ndarray):
+        return v1[0] * v2[1] - v1[1] * v2[0]
+
+    # Compute cross products
+    v1 = new_v1 - agent_pos
+    v2 = new_v2 - agent_pos
+    cross1 = cross_product(v1, position)
+    cross2 = cross_product(v2, position)
+    cross12 = cross_product(v1, v2)
+
+    # Check if P is inside the angle
+    if cross12 > 0:
+        return cross1 >= 0 and cross2 <= 0  # Counterclockwise
+    else:
+        return cross1 <= 0 and cross2 >= 0  # Clockwise
+
+
+v1_idx = 0
+v2_idx = 5
+v1 = agent_pos + np.array(
+    [
+        HEXAGON_RANGE * np.cos(2 * v1_idx * np.pi / 6),
+        HEXAGON_RANGE * np.sin(2 * v1_idx * np.pi / 6),
+    ]
+)
+v2 = agent_pos + np.array(
+    [
+        HEXAGON_RANGE * np.cos(2 * v2_idx * np.pi / 6),
+        HEXAGON_RANGE * np.sin(2 * v2_idx * np.pi / 6),
+    ]
+)
+pt = agent_pos + np.array([100, 100])
+is_valid = is_valid_particle(
+    position=pt, v1_idx=v1_idx, v2_idx=v2_idx, agent_pos=agent_pos
+)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
     screen.fill("white")
-    for pt in valid_points:
-        pygame.draw.circle(screen, "blue", pt, 5)
-    # pygame.draw.circle(screen, "blue", v1[0], 5)
-    # pygame.draw.circle(screen, "blue", v2[0], 5)
-    # pygame.draw.circle(screen, "green", (v1x, v1y), 5)
-    # pygame.draw.circle(screen, "green", (v2x, v2y), 5)
+    # for pt in valid_points:
+    #     pygame.draw.circle(screen, "blue", pt, 5)
+
     for obs in obstacles:
         pygame.draw.rect(screen, "black", obs)
     pygame.draw.circle(screen, COLOR, agent_pos, 10)

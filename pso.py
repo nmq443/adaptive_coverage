@@ -225,6 +225,7 @@ class PSO:
         self,
         position: np.ndarray,
     ) -> bool:
+        return True
         if abs(self.v1_idx - self.v2_idx) == 5:
             if self.v1_idx > self.v2_idx:
                 self.v1_idx, self.v2_idx = self.v2_idx, self.v1_idx
@@ -283,7 +284,7 @@ class PSO:
                 self.velocities[too_fast] / speeds[too_fast]
             ) * self.max_speed
             self.positions += self.velocities
-            self.validate_positions()
+            # self.validate_positions()
 
             # Evaluate
             fitness = np.array([self.fitness_func(p) for p in self.positions])
