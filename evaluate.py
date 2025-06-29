@@ -3,6 +3,7 @@ import numpy as np
 from configs import *
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
+from utils import pixels2meters
 
 
 def compute_coverage_percentage(positions):
@@ -113,7 +114,7 @@ def evaluate(controller="voronoi", approach="original"):
 
     area = compute_coverage_percentage(final_poses)
     plot_ld2(ld2s, save_dir)
-    plot_travel_distances(distances, save_dir="")
+    plot_travel_distances(distances, save_dir=save_dir)
 
     if controller == "voronoi":
         print(f"Percent coverage for {controller} method: {area: .2f}")
@@ -193,6 +194,7 @@ def plot_travel_distances(distances, agent_labels=None, save_dir=""):
         return
 
     num_agents = len(distances)
+    distances = pixels2meters(distances, SCALE)
     x_pos = np.arange(num_agents)
 
     # Create the figure and axes

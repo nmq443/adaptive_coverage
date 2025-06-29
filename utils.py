@@ -17,6 +17,20 @@ def meters2pixels(x, scale):
     return x * scale
 
 
+def pixels2meters(x, scale):
+    """
+    Convert from pixel to meter.
+
+    Args:
+        x (float): value in pixel.
+        scale (float): how much to scale.
+
+    Returns:
+        float: value in meters.
+    """
+    return x / scale
+
+
 def perpendicular(x: np.array, a: np.array, b: np.array):
     """
     Finds projection of x on ab.
