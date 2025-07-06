@@ -58,10 +58,15 @@ class Agent:
         agents: list,
         timestep: int,
     ):
-        for i in range(len(self.virtual_targets)):
-            pygame.draw.circle(
-                screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
-            )
+        yaw = np.arctan2(self.vel[1], self.vel[0])
+        length = 2 * SIZE
+        end = self.pos + length * np.array([np.cos(yaw), np.sin(yaw)])
+        pygame.draw.line(screen, "green", self.pos, end, 2)
+
+        # for i in range(len(self.virtual_targets)):
+        #     pygame.draw.circle(
+        #         screen, OCCUPIED_AGENT_COLOR, self.virtual_targets[i], int(SIZE / 2)
+        #     )
         if SHOW_HIDDEN_VERTICES:
             for i in range(len(self.hidden_vertices) - 1):
                 x = self.hidden_vertices[i][0][0]

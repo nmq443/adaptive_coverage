@@ -35,21 +35,27 @@ class Simulator:
                 dir = "original"
             else:
                 dir = "pso"
-            self.res_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR, dir)
+            self.res_dir = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, f"{NUM_AGENTS}_agents", dir
+            )
             if os.path.exists(self.res_dir):
                 shutil.rmtree(self.res_dir)
             os.makedirs(self.res_dir, exist_ok=True)
-            log_dir = os.path.join(LOG_DIR, METHOD_DIR, ENV_DIR, dir)
+            log_dir = os.path.join(
+                LOG_DIR, METHOD_DIR, ENV_DIR, f"{NUM_AGENTS}_agents", dir
+            )
             if os.path.exists(log_dir):
                 shutil.rmtree(log_dir)
             os.makedirs(log_dir, exist_ok=True)
             log_file = os.path.join(log_dir, LOG_FILE)
         else:
-            self.res_dir = os.path.join(RES_DIR, METHOD_DIR, ENV_DIR)
+            self.res_dir = os.path.join(
+                RES_DIR, METHOD_DIR, ENV_DIR, f"{NUM_AGENTS}_agents"
+            )
             if os.path.exists(self.res_dir):
                 shutil.rmtree(self.res_dir)
             os.makedirs(self.res_dir, exist_ok=True)
-            log_dir = os.path.join(LOG_DIR, METHOD_DIR, ENV_DIR)
+            log_dir = os.path.join(LOG_DIR, METHOD_DIR, ENV_DIR, f"{NUM_AGENTS}_agents")
             if os.path.exists(log_dir):
                 shutil.rmtree(log_dir)
             os.makedirs(log_dir, exist_ok=True)

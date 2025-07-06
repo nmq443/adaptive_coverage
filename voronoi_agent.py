@@ -97,7 +97,11 @@ class Agent:
         timestep: int,
     ):
         pygame.draw.circle(surface, COLOR, self.pos, SIZE)
-        if self.goal is not None:
+        yaw = np.arctan2(self.vel[1], self.vel[0])
+        length = 2 * SIZE
+        end = self.pos + length * np.array([np.cos(yaw), np.sin(yaw)])
+        pygame.draw.line(surface, "green", self.pos, end, 2)
+        if self.goal is not None and SHOW_GOAL:
             pygame.draw.circle(surface, GOAL_COLOR, self.goal, int(SIZE / 5))
         if SHOW_SENSING_RANGE:
             pygame.draw.circle(
