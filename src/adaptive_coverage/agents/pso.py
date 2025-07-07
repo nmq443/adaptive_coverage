@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-from environment import Environment
+from src.adaptive_coverage.environment.environment import Environment
 from configs import *
 
 

@@ -1,6 +1,5 @@
 import numpy as np
 import pygame
-from configs import *
 
 
 def meters2pixels(x, scale):

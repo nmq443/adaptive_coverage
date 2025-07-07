@@ -1,13 +1,11 @@
 import numpy as np
 import pygame
-from environment import Environment
-from shapely.geometry import Polygon, Point, LineString
-from configs import *
-from utils import perpendicular, ray_intersects_aabb
 from scipy.spatial import Voronoi
+from shapely.geometry import Polygon, Point, LineString
+from adaptive_coverage.utils.utils import perpendicular, ray_intersects_aabb
 
 
-def density_func(q: np.ndarray):
+def density_func(q):
     """
     Distribution density function. Right now I'm using uniform distribution.
 
@@ -21,9 +19,9 @@ def density_func(q: np.ndarray):
 
 
 def centroid_region(
-    agent_pos: np.ndarray,
-    vertices: np.ndarray,
-    env: Environment,
+        agent_pos,
+        vertices,
+        env,
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
@@ -112,7 +110,7 @@ def centroid_region(
     return centroid
 
 
-def lloyd(agent, agents: list, env: Environment):
+def lloyd(agent, agents, env):
     """
     Continuous lloyd algorithm to find centroidal voronoi diagrams.
 
@@ -152,7 +150,7 @@ def lloyd(agent, agents: list, env: Environment):
     return goal
 
 
-def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
+def handle_goal(goal, agent_pos, env):
     """
     Project virtual goal to simulation environment.
 
@@ -223,7 +221,7 @@ def handle_goal(goal: np.ndarray, agent_pos: np.ndarray, env: Environment):
     return goal
 
 
-def compute_voronoi_diagrams(generators: np.ndarray, env: Environment):
+def compute_voronoi_diagrams(generators, env):
     """
     Compute bounded voronoi diagrams inside a polygon.
 

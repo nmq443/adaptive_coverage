@@ -1,18 +1,18 @@
 import pygame
+import numpy as np
 from shapely.geometry import Polygon, Point
-from configs import *
 
 
 class Environment:
-    def __init__(self):
-        self.vertices = VERTICES
+    def __init__(self, vertices, obstacles):
+        self.vertices = vertices
         self.x_min = np.min(self.vertices[:, 0])
         self.x_max = np.max(self.vertices[:, 0])
         self.y_min = np.min(self.vertices[:, 1])
         self.y_max = np.max(self.vertices[:, 1])
         self.polygon = Polygon(self.vertices)
         self.edges = []
-        self.obstacles = OBSTACLES
+        self.obstacles = obstacles
         self.obstacles_rects = []
         self.init()
 
@@ -40,13 +40,13 @@ class Environment:
             surface (pygame.Surface): surface to render on.
         """
         for i, edge in enumerate(self.edges):
-            if ENV == 4 and i == len(self.edges) - 1:
-                continue
+            # if ENV == 4 and i == len(self.edges) - 1:
+            #     continue
             pygame.draw.line(surface, "black", edge[0], edge[1], 5)
         for obs_rect in self.obstacles_rects:
             pygame.draw.rect(surface, "black", obs_rect)
 
-    def point_is_in_environment(self, point: np.ndarray):
+    def point_is_in_environment(self, point, agent_size):
         """
         Check if a circle (agent) with given radius is inside or near the polygon.
 
@@ -56,7 +56,7 @@ class Environment:
         Returns:
             bool: True if the entire circle is within or touches the polygon.
         """
-        circle = Point(point).buffer(SIZE)
+        circle = Point(point).buffer(agent_size)
 
         # Check if circle is entirely within polygon
         if self.polygon.contains(circle):
@@ -85,7 +85,7 @@ class Environment:
             return True
         return False
 
-    def point_is_in_obstacle(self, point: np.ndarray):
+    def point_is_in_obstacle(self, point, agent_size):
         """
         Check if point is in any obstacle. Obstacle is a rectangle with (x, y, width, height) values.
 
@@ -116,7 +116,7 @@ class Environment:
         distance_squared = dx**2 + dy**2
 
         # Check if the closest point is within the circle's radius
-        intersects = distance_squared <= SIZE**2
+        intersects = distance_squared <= agent_size**2
         # print(f"Distances squared: {distance_squared}, intersects: {intersects}")
 
         # Return True if the circle intersects with any obstacle

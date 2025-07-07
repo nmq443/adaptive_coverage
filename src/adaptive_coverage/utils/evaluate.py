@@ -1,9 +1,8 @@
 import os
 import numpy as np
-from configs import *
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
-from utils import pixels2meters
+from adaptive_coverage.utils.utils import pixels2meters
 
 
 def compute_coverage_percentage(positions):

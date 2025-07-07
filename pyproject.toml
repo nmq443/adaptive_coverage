@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adaptive_coverage"
+version = "0.1.0"
+description = ""
+authors = [
+    { name = "Nguyen Minh Quang", email = "quangnm0564@gmail.com" }
+]
+readme = ""
+requires-python = ">=3.10"
