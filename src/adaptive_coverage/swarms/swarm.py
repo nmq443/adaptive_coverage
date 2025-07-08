@@ -6,7 +6,19 @@ from adaptive_coverage.utils.utils import draw_voronoi
 
 
 class Swarm:
-    def __init__(self, num_agents, agent_size, path_planner, sensing_range, first_agent_pos, random_init=False, dist_btw_agents=0.7, agent_spread=0.05):
+    def __init__(
+            self,
+            num_agents,
+            agent_size,
+            path_planner,
+            sensing_range,
+            first_agent_pos,
+            result_manager,
+            log_manager,
+            random_init=False,
+            dist_btw_agents=0.7,
+            agent_spread=0.05
+    ):
         self.num_agents = num_agents
         self.agent_size = agent_size
         self.first_agent_pos = first_agent_pos
@@ -17,6 +29,8 @@ class Swarm:
         self.agents = []
         self.ld2s = []
         self.random_init = random_init
+        self.result_manager = result_manager
+        self.log_manager = log_manager
         assert num_agents % 5 == 0  # for now we hardcode
         self.num_rows = int(num_agents / 5)
         self.num_cols = int(num_agents / self.num_rows)
@@ -41,7 +55,7 @@ class Swarm:
             distances.append(distance)
         return np.array(distances)
 
-    def save_data(self, res_dir: str):
+    def save_data(self):
         # save poses
         datas = []
         for agent in self.agents:
@@ -50,18 +64,15 @@ class Swarm:
             data.append(agent.pos)  # last pose
             datas.append(data)
         datas = np.array(datas)
-        save_file = os.path.join(res_dir, "swarm_data.npy")
-        with open(save_file, "wb") as f:
+        with open(self.result_manager.swarm_data_filepath, "wb") as f:
             np.save(f, datas)
 
         # save travel distances
         distances = self.get_travel_distance()
-        save_file = os.path.join(res_dir, "travel_distances.npy")
-        with open(save_file, "wb") as f:
+        with open(self.result_manager.travel_distances_filepath, "wb") as f:
             np.save(f, distances)
 
         # save ld2s
         ld2s = np.array(self.ld2s)
-        save_file = os.path.join(res_dir, "ld2s.npy")
-        with open(save_file, "wb") as f:
+        with open(self.result_manager.ld2s_filepath, "wb") as f:
             np.save(f, ld2s)

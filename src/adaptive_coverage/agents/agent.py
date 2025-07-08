@@ -1,5 +1,7 @@
 import numpy as np
 import pygame
+from adaptive_coverage.utils.utils import meters2pixels
+
 
 class Agent:
     def __init__(
@@ -9,12 +11,13 @@ class Agent:
             size,
             path_planner,
             sensing_range,
+            result_manager,
             sensing_color='blue',
             color='red',
-            show_goal=True,
-            show_connections=True,
-            show_sensing_range=True,
-            show_trajectory=True,
+            show_goal=False,
+            show_connections=False,
+            show_sensing_range=False,
+            show_trajectory=False,
             v_max=0.05,
             avoidance_range=0.05,
             tolerance=0.05
@@ -43,6 +46,9 @@ class Agent:
         self.goal = None
         self.traj = [init_pos.copy()]
 
+        # Result manager
+        self.result_manager = result_manager
+
     def get_travel_distance(self):
         """Get total travel distance."""
         traj = np.array(self.traj)
@@ -58,14 +64,14 @@ class Agent:
             self.stop()
         else:
             self.traj.append(self.pos.copy())
-            self.vel = self.path_planner.total_force(self.pos, agents, obstacles)
+            self.vel = self.path_planner.total_force(self.pos, self.goal, self.index, agents, obstacles)
             self.limit_speed()
             self.pos += self.vel
 
-    def terminated(self, goal: np.ndarray):
+    def terminated(self, goal):
         return np.linalg.norm(self.pos - goal) <= self.tolerance
 
-    def update(self, vel: np.ndarray):
+    def update(self, vel):
         self.vel = vel
         self.limit_speed()
         self.pos += self.vel
@@ -87,42 +93,56 @@ class Agent:
             font: pygame.font.Font,
             agents: list,
             timestep: int,
+            scale
     ):
-        pygame.draw.circle(surface, self.color, self.pos, self.size)
+        agent_pos = meters2pixels(self.pos, scale)
+        agent_size = meters2pixels(self.size, scale)
+        sensing_range = meters2pixels(self.sensing_range, scale)
+
+        pygame.draw.circle(surface, self.color, agent_pos, agent_size)
         yaw = np.arctan2(self.vel[1], self.vel[0])
         length = 2 * self.size
         end = self.pos + length * np.array([np.cos(yaw), np.sin(yaw)])
-        pygame.draw.line(surface, "green", self.pos, end, 2)
+
+        start_pos = meters2pixels(self.pos, scale)
+        end_pos = meters2pixels(end, scale)
+        pygame.draw.line(surface, "green", start_pos, end_pos, 2)
+
         if self.goal is not None and self.show_goal:
-            pygame.draw.circle(surface, self.show_goal, self.goal, int(self.size / 5))
+            goal = meters2pixels(self.goal, scale)
+            goal_size = meters2pixels(self.size / 2, scale)
+            pygame.draw.circle(surface, self.show_goal, goal, goal_size)
+
         if self.show_sensing_range:
             pygame.draw.circle(
                 surface=surface,
-                center=self.pos,
+                center=agent_pos,
                 color=self.sensing_color,
-                radius=self.sensing_range,
+                radius=sensing_range,
                 width=2,
             )
+
         if self.show_trajectory:
             for pt in self.traj:
+                traj_pt = meters2pixels(pt, scale)
                 pygame.draw.circle(
                     surface=surface,
-                    center=pt,
+                    center=traj_pt,
                     color=self.color,
                     radius=1,
                 )
-        if (
-                self.show_connections and timestep >= 10
-        ):  # only render connection links from frame 10th
+        if (self.show_connections and timestep >= 10):  # only render connection links from frame 10th
             for other in agents:
                 if (
                         other.index != self.index
                         and np.linalg.norm(self.pos - other.pos) < self.sensing_range
                 ):
-                    pygame.draw.line(surface, self.sensing_color, self.pos, other.pos)
+                    start_pos = meters2pixels(other.pos, scale)
+                    end_pos = meters2pixels(self.pos, scale)
+                    pygame.draw.line(surface, self.sensing_color, start_pos, end_pos)
 
         text_surface = font.render(str(self.index), True, "black")
         text_rect = text_surface.get_rect(
-            center=(self.pos[0] + self.size, self.pos[1] - self.size)
+            center=(agent_pos[0] + agent_size, agent_pos[1] - agent_size)
         )
         surface.blit(text_surface, text_rect)

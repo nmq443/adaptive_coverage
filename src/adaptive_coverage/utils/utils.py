@@ -7,7 +7,7 @@ def meters2pixels(x, scale):
     Convert from meter to pixel.
 
     Args:
-        x (float): value in meters.
+        x: value in meters.
         scale (float): how much to scale.
 
     Returns:
@@ -130,7 +130,7 @@ def nearest_points_on_obstacles(agent_pos: np.ndarray, obstacles: np.ndarray):
     return np.stack([px, py], axis=1)
 
 
-def draw_voronoi(vor, surface):
+def draw_voronoi(vor, surface, scale):
     """
     Draw voronoi on screen.
 
@@ -142,8 +142,12 @@ def draw_voronoi(vor, surface):
     for region in vor.filtered_regions:
         vertices = vor.vertices[region + [region[0]], :]
         for i in range(len(vertices) - 1):
-            pygame.draw.line(surface, "black", vertices[i], vertices[i + 1], 5)
-        pygame.draw.line(surface, "black", vertices[0], vertices[-1], 5)
+            start_pos = meters2pixels(vertices[i], scale)
+            end_pos = meters2pixels(vertices[i + 1], scale)
+            pygame.draw.line(surface, "black", start_pos, end_pos, 5)
+        start_pos = meters2pixels(vertices[-1], scale)
+        end_pos = meters2pixels(vertices[0], scale)
+        pygame.draw.line(surface, "black", start_pos, end_pos, 5)
 
 
 def normalize_angle(angle: float):

@@ -3,10 +3,11 @@ from adaptive_coverage.utils.utils import nearest_points_on_obstacles
 
 
 class ArtificialPotentialField:
-    def __init__(self, kg, ko, kc, sensing_range, avoidance_range, agent_size):
+    def __init__(self, kg, ko, kc, beta_c, sensing_range, avoidance_range, agent_size):
         self.kg = kg
         self.ko = ko
         self.kc = kc
+        self.beta_c = beta_c
         self.agent_size = agent_size
         self.sensing_range = sensing_range
         self.avoidance_range = avoidance_range
@@ -41,7 +42,7 @@ class ArtificialPotentialField:
 
     def collision_force(self, pos, agent_index, agents):
         positions = np.array(
-            [agent.pos for agent in agents if agent.index != index]
+            [agent.pos for agent in agents if agent.index != agent_index]
         )
         if positions.size == 0:
             return np.zeros(2)
@@ -69,8 +70,8 @@ class ArtificialPotentialField:
         )
         return fc
 
-    def total_force(self, pos, agents, obstacles):
-        fg = self.goal_force(pos, agents)
+    def total_force(self, pos, goal, agent_index, agents, obstacles):
+        fg = self.goal_force(pos, goal)
         fo = self.obstacle_force(pos, obstacles)
-        fc = self.collision_force(pos, agents)
+        fc = self.collision_force(pos, agent_index, agents)
         return fg + fc + fo

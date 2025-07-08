@@ -2,10 +2,12 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
+
+from adaptive_coverage.simulator.data_manager import ResultManager
 from adaptive_coverage.utils.utils import pixels2meters
 
 
-def compute_coverage_percentage(positions):
+def compute_coverage_percentage(positions, env, sensing_range):
     """
     Compute coverage percentage over a polygonal region using mesh grid.
 
@@ -17,7 +19,7 @@ def compute_coverage_percentage(positions):
         float: coverage percentage (0.0 to 1.0)
     """
     resolution = 100
-    polygon = Polygon(VERTICES)
+    polygon = Polygon(env.vertices)
 
     # Get bounds of polygon to limit the grid
     minx, miny, maxx, maxy = polygon.bounds
@@ -34,19 +36,19 @@ def compute_coverage_percentage(positions):
     in_coverage = np.zeros(inside_polygon_points.shape[0], dtype=bool)
     for pos in positions:
         distances = np.linalg.norm(inside_polygon_points - pos, axis=1)
-        in_coverage |= distances <= SENSING_RANGE
+        in_coverage |= distances <= sensing_range
 
     # Step 3: Obstacle mask
     in_obs = np.zeros(inside_polygon_points.shape[0], dtype=bool)
-    if len(OBSTACLES) > 0:
-        for obs in OBSTACLES:
+    if len(env.obstacles) > 0:
+        for obs in env.obstacles:
             x_min, y_min, w, h = obs
             x_max, y_max = x_min + w, y_min + h
             inside = (
-                (inside_polygon_points[:, 0] >= x_min)
-                & (inside_polygon_points[:, 0] <= x_max)
-                & (inside_polygon_points[:, 1] >= y_min)
-                & (inside_polygon_points[:, 1] <= y_max)
+                    (inside_polygon_points[:, 0] >= x_min)
+                    & (inside_polygon_points[:, 0] <= x_max)
+                    & (inside_polygon_points[:, 1] >= y_min)
+                    & (inside_polygon_points[:, 1] <= y_max)
             )
             in_obs |= inside
 
@@ -61,7 +63,7 @@ def compute_coverage_percentage(positions):
     )
 
 
-def evaluate(controller="voronoi", approach="original"):
+def evaluate(result_manager=None):
     """
     Compare different methods.
 
@@ -69,51 +71,19 @@ def evaluate(controller="voronoi", approach="original"):
         controller (str): name of the methods.
         approach (str): if using hexagonal lattices method, modify approach to use original or PSO based approach.
     """
-    if controller == "voronoi":
-        swarm_data_filename = os.path.join(
-            RES_DIR, controller, ENV_DIR, "swarm_data.npy"
-        )
-        ld2s_filename = os.path.join(RES_DIR, controller, ENV_DIR, "ld2s.npy")
-        travel_distances_filename = os.path.join(
-            RES_DIR, controller, ENV_DIR, "travel_distances.npy"
-        )
-        save_dir = os.path.join(RES_DIR, controller, ENV_DIR)
-    else:
-        if approach == "original":
-            swarm_data_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "swarm_data.npy"
-            )
-            ld2s_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "ld2s.npy"
-            )
-            travel_distances_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "travel_distances.npy"
-            )
-            save_dir = os.path.join(RES_DIR, controller, ENV_DIR, approach)
-        else:
-            swarm_data_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "swarm_data.npy"
-            )
-            ld2s_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "ld2s.npy"
-            )
-            travel_distances_filename = os.path.join(
-                RES_DIR, controller, ENV_DIR, approach, "travel_distances.npy"
-            )
-            save_dir = os.path.join(RES_DIR, controller, ENV_DIR, approach)
 
-    with open(swarm_data_filename, "rb") as f:
+    with open(result_manager.swarm_data_filepath, "rb") as f:
         swarm_data = np.load(f)
-    with open(ld2s_filename, "rb") as f:
+    with open(result_manager.ld2s_filepath, "rb") as f:
         ld2s = np.load(f)
-    with open(travel_distances_filename, "rb") as f:
+    with open(result_manager.travel_distances_filepath, "rb") as f:
         distances = np.load(f)
 
     final_poses = swarm_data[:, 1]
 
     area = compute_coverage_percentage(final_poses)
-    plot_ld2(ld2s, save_dir)
-    plot_travel_distances(distances, save_dir=save_dir)
+    plot_ld2(ld2s, result_manager.res_dir)
+    plot_travel_distances(distances, save_dir=result_manager.res_dir)
 
     if controller == "voronoi":
         print(f"Percent coverage for {controller} method: {area: .2f}")
@@ -145,7 +115,7 @@ def laplacian_mat(agents):
             if i == j:
                 continue
             dist = np.linalg.norm(agents[i].pos - agents[j].pos)
-            if dist <= SENSING_RANGE:
+            if dist <= agents[0].sensing_range:
                 adj_mat[i][j] = adj_mat[j][i] = 1
     deg_mat = np.zeros_like(adj_mat)  # degree matrix
     for i in range(len(agents)):
@@ -193,7 +163,6 @@ def plot_travel_distances(distances, agent_labels=None, save_dir=""):
         return
 
     num_agents = len(distances)
-    distances = pixels2meters(distances, SCALE)
     x_pos = np.arange(num_agents)
 
     # Create the figure and axes
@@ -318,34 +287,6 @@ def plot_ld2(lambda2_values, save_dir=""):
         plt.show()
 
 
-'''
-def plot_ld2(ld2s, save_dir=""):
-    """
-    Plot lambda2 value of the swarm over time.
-
-    Args:
-        ld2s (list): ld2 value over time.
-    """
-    fig = plt.figure()
-    ax = plt.gca()
-
-    ax.plot(np.arange(len(ld2s)), ld2s)
-    ax.set_xlabel("Timestep")
-    ax.set_ylabel("Lambda2")
-
-    if save_dir != "":
-        plt.savefig(os.path.join(save_dir, "ld2.png"))
-    else:
-        plt.show()
-'''
-
 if __name__ == "__main__":
-    controllers = ["voronoi", "hexagon"]
-    approaches = ["pso", "original"]
-    results = set()
-    for controller in controllers:
-        if controller == "hexagon":
-            for approach in approaches:
-                evaluate(controller, approach)
-        else:
-            evaluate(controller, approach=None)
+    result_manager = ResultManager()
+    evaluate(result_manager)

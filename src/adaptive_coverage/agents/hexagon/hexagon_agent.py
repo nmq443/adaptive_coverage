@@ -1,12 +1,16 @@
 import numpy as np
+from collections import deque
+from adaptive_coverage.agents.hexagon.penalty_node_solver import OriginalSolver, PSOSolver
 from adaptive_coverage.utils.utils import ray_intersects_aabb, nearest_points_on_obstacles, normalize_angle
 from adaptive_coverage.agents.agent import Agent
 
 
 class HexagonAgent(Agent):
-    def __init__(self, index, init_pos, size, path_planner, sensing_range):
-        super().__init__(index, init_pos, size, path_planner, sensing_range)
+    def __init__(self, *args, rho, pso_weights, original_method=True, **kwargs):
+        super().__init__(*args, **kwargs)
         # Hexagon agent parameters
+        self.original_method = original_method
+        self.hexagon_range = 0.9 * self.sensing_range
         self.source = -1
         self.virtual_targets = []
         self.occupied_virtual_targets = []
@@ -21,6 +25,8 @@ class HexagonAgent(Agent):
         self.tc = 0
         self.is_penalty_node = False
         self.invalid_targets = []
+        self.rho = rho
+        self.pso_weights = pso_weights
 
     def is_occupied(self):
         return self.state == "occupied"
@@ -37,14 +43,14 @@ class HexagonAgent(Agent):
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def render(
-            self,
-            screen,
-            font,
-            agents,
-            timestep,
-    ):
-        super().render(screen, font, agents, timestep)
+    # def render(
+    #         self,
+    #         screen,
+    #         font,
+    #         agents,
+    #         timestep,
+    # ):
+    #     super().render(screen, font, agents, timestep)
 
     def mobility_control(self, agents, env):
         if self.route_id == len(self.route) - 2:
@@ -61,78 +67,6 @@ class HexagonAgent(Agent):
                 if np.linalg.norm(self.pos - dest1) <= self.size * 4:
                     self.route_id += 1
 
-    def get_travel_distance(self):
-        """Get total travel distance."""
-        traj = np.array(self.traj)
-        if len(traj) < 2:
-            return 0.0
-        displacements = traj[1:] - traj[:-1]
-        distances = np.linalg.norm(displacements, axis=1)
-        return np.sum(distances)
-
-    def alignment_behaviour(self, dest: np.ndarray):
-        return KG * (dest - self.pos)
-
-    def obstacle_behaviour(self):
-        if len(OBSTACLES) == 0:
-            return np.zeros(2)
-
-        obs_pts = nearest_points_on_obstacles(self.pos, OBSTACLES)
-        diff = self.pos - obs_pts
-        dist = np.linalg.norm(diff, axis=1) - SIZE
-        dist = np.clip(dist, 1e-4, None)  # avoid division by zero
-
-        mask = dist < AVOIDANCE_RANGE
-        if not np.any(mask):
-            return np.zeros(2)
-
-        diff_valid = diff[mask]
-        dist_valid = dist[mask][:, np.newaxis]
-
-        force = (
-                KO
-                * (1.0 / dist_valid - 1.0 / AVOIDANCE_RANGE)
-                * diff_valid
-                / (dist_valid ** 2)
-        )
-        vo = np.sum(force, axis=0)
-        return vo
-
-    def separation_behaviour(self, agents: list):
-        positions = np.array(
-            [agent.pos for agent in agents if agent.index != self.index]
-        )
-        if positions.size == 0:
-            return np.zeros(2)
-
-        directions = positions - self.pos  # Vector from self to others
-        # Compute all distances at once
-        distances = np.linalg.norm(directions, axis=1)
-        mask = distances <= SENSING_RANGE  # Only consider nearby agents
-
-        if not np.any(mask):
-            return np.zeros(2)
-
-        # Compute avoidance vector only for close agents
-        directions = directions[mask]
-        distances = distances[mask][:, np.newaxis]  # Reshape for broadcasting
-
-        va = np.sum(
-            (
-                    KA
-                    * np.exp(-BETA_C * (distances - AVOIDANCE_RANGE))
-                    * (directions / distances)
-                    / (distances - AVOIDANCE_RANGE)
-            ),
-            axis=0,
-        )
-        return va
-
-    def reached_target(self, goal: np.ndarray):
-        distance = np.linalg.norm(goal - self.pos)
-        distance = np.round(distance, 3)
-        return distance <= EPS
-
     def generate_virtual_targets(self, agents, env):
         if self.source != -1:
             direction = agents[self.source].pos - self.pos
@@ -147,9 +81,9 @@ class HexagonAgent(Agent):
             phi = phi_0 + 2 * np.pi * i / 6
             phi = normalize_angle(phi)
             virtual_target = self.pos + np.array(
-                [HEXAGON_RANGE * np.cos(phi), HEXAGON_RANGE * np.sin(phi)]
+                [self.hexagon_range * np.cos(phi), self.hexagon_range * np.sin(phi)]
             )
-            virtual_target = np.round(virtual_target, 3)
+            # virtual_target = np.round(virtual_target, 3)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
                 virtual_target, agents, env
             )
@@ -164,23 +98,22 @@ class HexagonAgent(Agent):
             self.occupied_virtual_targets.extend(occupied_virtual_targets)
         if len(hidden_vertices) > 0:
             self.hidden_vertices.extend(hidden_vertices)
-        if USE_PENALTY_NODE:
-            if len(self.hidden_vertices) > 0:
-                for i in range(len(self.hidden_vertices) - 1):
-                    self.compute_penalty_node(
-                        phi_0=phi_0,
-                        v1=hidden_vertices[i],
-                        v2=hidden_vertices[i + 1],
-                        agents=agents,
-                        env=env,
-                    )
+        if len(self.hidden_vertices) > 0:
+            for i in range(len(self.hidden_vertices) - 1):
                 self.compute_penalty_node(
                     phi_0=phi_0,
-                    v1=hidden_vertices[0],
-                    v2=hidden_vertices[-1],
+                    v1=hidden_vertices[i],
+                    v2=hidden_vertices[i + 1],
                     agents=agents,
                     env=env,
                 )
+            self.compute_penalty_node(
+                phi_0=phi_0,
+                v1=hidden_vertices[0],
+                v2=hidden_vertices[-1],
+                agents=agents,
+                env=env,
+            )
 
     def compute_penalty_node(self, v1, v2, phi_0, env, agents):
         """
@@ -193,24 +126,38 @@ class HexagonAgent(Agent):
             env (Environment): simulation environment.
             agents (list): list of all agents.
         """
-        if ORIGINAL_METHOD:
-            phi1 = 2 * np.pi * v1[1] / 6
-            phi2 = 2 * np.pi * v2[1] / 6
-            phi = phi_0 + RHO * (phi1 + phi2) / 2
-            x = HEXAGON_RANGE * np.cos(phi)
-            y = HEXAGON_RANGE * np.sin(phi)
-            pos = self.pos + np.array([x, y])
-        else:
-            index_i, index_j = v1[1], v2[1]
-            if abs(index_i - index_j) != 1:
-                return
-            pos = find_penalty_node(
+        index_i, index_j = v1[1], v2[1]
+        if abs(index_i - index_j) != 1 or abs(index_j - index_i) != 5:
+            return
+        if self.original_method:
+            solver = OriginalSolver(
                 index=self.index,
+                pos=self.pos,
+                sensing_range=self.sensing_range,
+                hexagon_range=self.hexagon_range,
+                avoidance_range=self.avoidance_range,
+                phi_0=phi_0,
+                rho=self.rho,
+                v1=v1,
+                v2=v2
+            )
+        else:
+            solver = PSOSolver(
+                index=self.index,
+                pos=self.pos,
+                sensing_range=self.sensing_range,
+                hexagon_range=self.hexagon_range,
+                avoidance_range=self.avoidance_range,
+                phi_0=phi_0,
                 v1=v1,
                 v2=v2,
                 env=env,
                 agents=agents,
+                result_manager=self.result_manager,
+                pso_weights=self.pso_weights
             )
+
+        pos = solver.solve()
 
         # Then check if the penalty node is valid
         is_valid, _ = self.is_valid_virtual_target(target=pos, agents=agents, env=env)
@@ -232,9 +179,9 @@ class HexagonAgent(Agent):
             tuple (bool, bool): check if is a valid vertex and if not, is it a hidden vertex.
         """
         # not a hidden vertex
-        if not env.point_is_in_environment(target):
+        if not env.point_is_in_environment(target, self.size):
             return False, True
-        is_in_obs = env.point_is_in_obstacle(target)
+        is_in_obs = env.point_is_in_obstacle(target, self.size)
         if is_in_obs:
             self.invalid_targets.append(target)
             return False, True
@@ -247,10 +194,10 @@ class HexagonAgent(Agent):
         )
         if len(other_agent_positions) > 0:
             distances = np.linalg.norm(target - other_agent_positions, axis=1)
-            if np.any(distances <= 20 * EPS):  # not occupied by another agent
+            if np.any(distances <= 20 * self.tolerance):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= SENSING_RANGE):  # not in a coverage range
+                if np.any(distances <= self.tolerance):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets
@@ -259,17 +206,17 @@ class HexagonAgent(Agent):
             if len(virtual_targets) > 0:
                 distances = np.linalg.norm(virtual_targets - target, axis=1)
                 distances = np.round(distances, 5)
-                if np.any(distances <= 20 * EPS):
+                if np.any(distances <= 20 * self.tolerance):
                     return False, False
                 if self.is_penalty_node:
                     for i, dist in enumerate(distances):
-                        if dist <= SENSING_RANGE and not ray_intersects_aabb(
-                                agents[j].pos, target, OBSTACLES
+                        if dist <= self.sensing_range and not ray_intersects_aabb(
+                                agents[i].pos, target, env.obstacles
                         ):  # not in a coverage range
                             return False, False
 
         # If behind an obstacle
-        if ray_intersects_aabb(self.pos, target, OBSTACLES):
+        if ray_intersects_aabb(self.pos, target, env.obstacles):
             return False, True
 
         return True, False
@@ -297,7 +244,7 @@ class HexagonAgent(Agent):
             if self.tc >= len(self.virtual_targets):
                 landmarks.popleft()
 
-    def on_assigned(self, agents, landmarks, env):
+    def on_assigned(self, agents, env):
         """
         Assignment phase.
 
@@ -309,13 +256,13 @@ class HexagonAgent(Agent):
         if self.flag == 1:
             if self.goal is not None:
                 self.set_goal(self.assigned_target)
-                if self.reached_target(self.goal):
+                if self.terminated(self.goal):
                     self.stop()
                     self.set_state("occupied")
                 else:
                     self.move_to_goal(self.goal, agents, env.obstacles)
 
-    def on_unassigned(self, landmarks, agents):
+    def on_unassigned(self, landmarks, agents, env):
         """
         Unassignment phase.
 
@@ -344,13 +291,13 @@ class HexagonAgent(Agent):
                 self.is_penalty_node = is_penalty_node
                 landmark.occupied_virtual_targets[tc] = True
                 landmark.tc += 1
-                route = self.get_shortest_path(lc, agents)
+                route = self.get_shortest_path(lc, agents, env)
                 route.append(self.assigned_target)
                 if len(route) > 0:
                     self.route = route
                     self.set_state("assigned")
 
-    def build_graph(self, agents):
+    def build_graph(self, agents, env):
         """
         Build a graph for current agent. Nodes are occupied agents' ids.
 
@@ -370,18 +317,18 @@ class HexagonAgent(Agent):
                     continue
                 dist = np.linalg.norm(agents[i].pos - agents[j].pos)
                 if dist <= self.sensing_range:
-                    if not ray_intersects_aabb(agents[j].pos, agents[i].pos, OBSTACLES):
+                    if not ray_intersects_aabb(agents[j].pos, agents[i].pos, env.obstacles):
                         graph[i][j] = graph[j][i] = dist
         for i in range(n):
             if not agents[i].is_occupied():
                 continue
             dist = np.linalg.norm(agents[i].pos - self.pos)
             if dist <= self.sensing_range:
-                if not ray_intersects_aabb(agents[i].pos, self.pos, OBSTACLES):
+                if not ray_intersects_aabb(agents[i].pos, self.pos, env.obstacles):
                     graph[self.index][i] = graph[i][self.index] = dist
         return graph
 
-    def get_shortest_path(self, landmark_id: int, agents: list):
+    def get_shortest_path(self, landmark_id, agents, env):
         """
         Get shortest path from current agent to current activated landmark.
 
@@ -392,7 +339,7 @@ class HexagonAgent(Agent):
         Returns:
             list: shortest path found.
         """
-        graph = self.build_graph(agents)
+        graph = self.build_graph(agents, env)
         # bfs shortest path
         visited = set()
         start_node = (self.index, [self.index])
@@ -424,8 +371,8 @@ class HexagonAgent(Agent):
             landmarks (deque): queue of landmarks.
         """
         if self.is_occupied():
-            self.on_occupied(landmarks=landmarks, agents=agents, env=env)
+            self.on_occupied(landmarks, agents, env)
         elif self.is_assigned():
-            self.on_assigned(agents=agents, landmarks=landmarks, env=env)
+            self.on_assigned(agents, env)
         elif self.is_unassigned():
-            self.on_unassigned(agents=agents, landmarks=landmarks)
+            self.on_unassigned(landmarks, agents, env)

@@ -6,18 +6,17 @@ from adaptive_coverage.utils.evaluate import lamda2
 
 
 class HexagonSwarm(Swarm):
-    # def __init__(self, num_agents, agent_size, path_planner, sensing_range, first_agent_pos, random_init,
-    #              dist_btw_agents, agent_spread):
-    #     super().__init__(self, num_agents, agent_size, path_planner, sensing_range, first_agent_pos, random_init,
-    #                      dist_btw_agents, agent_spread)
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, rho, pso_weights, original_method=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.landmarks = deque([])
+        self.original_method = original_method
+        self.rho = rho
+        self.pso_weights = pso_weights
 
     def init_agents(self):
         if self.random_init:
             random_positions = (
-                    np.random.rand(self.num_agents, 2) * self.agent_spread + ref_pos
+                    np.random.rand(self.num_agents, 2) * self.agent_spread + self.first_agent_pos
             )
             for index in range(self.num_agents):
                 self.agents.append(
@@ -27,6 +26,10 @@ class HexagonSwarm(Swarm):
                         size=self.agent_size,
                         path_planner=self.path_planner,
                         sensing_range=self.sensing_range,
+                        original_method=self.original_method,
+                        rho=self.rho,
+                        pso_weights=self.pso_weights,
+                        result_manager=self.result_manager,
                     )
                 )
         else:
@@ -41,16 +44,19 @@ class HexagonSwarm(Swarm):
                         size=self.agent_size,
                         sensing_range=self.sensing_range,
                         path_planner=self.path_planner,
+                        rho=self.rho,
+                        pso_weights=self.pso_weights,
+                        result_manager=self.result_manager,
                     ))
         self.determine_root(-1, self.agents[-1].pos)
 
     def determine_root(self, agent_id, agent_goal):
         self.agents[agent_id].set_state("occupied")
 
-    def render(self, surface, font, timestep):
+    def render(self, surface, font, timestep, scale):
         if len(self.agents) > 0:
             for agent in self.agents:
-                agent.render(surface, font, self.agents, timestep)
+                agent.render(surface, font, self.agents, timestep, scale)
 
     def step(self, env):
         if len(self.agents) > 0:

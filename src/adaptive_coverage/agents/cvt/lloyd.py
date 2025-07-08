@@ -19,9 +19,10 @@ def density_func(q):
 
 
 def centroid_region(
-        agent_pos,
+        agent,
         vertices,
         env,
+        resolution=10
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
@@ -39,8 +40,8 @@ def centroid_region(
     xmin = np.min(vertices[:, 0])
     ymax = np.max(vertices[:, 1])
     ymin = np.min(vertices[:, 1])
-    n = INTEGRATION_RESOLUTION
-    m = INTEGRATION_RESOLUTION
+    n = resolution
+    m = resolution
     hx = (xmax - xmin) / n
     hy = (ymax - ymin) / m
 
@@ -56,8 +57,8 @@ def centroid_region(
     )
 
     # Vectorized sensing range check
-    distances = np.linalg.norm(grid_points - agent_pos, axis=1).reshape(xx.shape)
-    mask_range = distances <= VALID_RANGE
+    distances = np.linalg.norm(grid_points - agent.pos, axis=1).reshape(xx.shape)
+    mask_range = distances <= agent.valid_range
 
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
@@ -68,7 +69,7 @@ def centroid_region(
 
         visibility_mask = np.array(
             [
-                not ray_intersects_aabb(agent_pos, point, env.obstacles)
+                not ray_intersects_aabb(agent.pos, point, env.obstacles)
                 for point in grid_points
             ]
         ).reshape(xx.shape)
@@ -100,12 +101,12 @@ def centroid_region(
     weighted_x = np.sum(masked_weights * masked_func_values * xx) * (hx * hy) / 4
     weighted_y = np.sum(masked_weights * masked_func_values * yy) * (hx * hy) / 4
 
-    centroid = CENTER
-
     if total_mass > 1e-8:
         centroid_x = weighted_x / total_mass
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
+    else:
+        centroid = agent.pos
 
     return centroid
 
@@ -124,7 +125,7 @@ def lloyd(agent, agents, env):
     generators = [agent.index]
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
-        if other.index != agent.index and distance <= VALID_RANGE - EPS:
+        if other.index != agent.index and distance <= agent.valid_range - agent.tolerance:
             if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
                 generators.append(other.index)
 
@@ -142,7 +143,7 @@ def lloyd(agent, agents, env):
             current_vertices = vor.vertices[region + [region[0]], :]
             current_polygon = Polygon(current_vertices)
             if current_polygon.contains(Point(generator_pos)):
-                centroids[i] = centroid_region(agent.pos, current_vertices, env)
+                centroids[i] = centroid_region(agent, current_vertices, env)
 
     # Step 3: move points to centroids
     goal = centroids[0]

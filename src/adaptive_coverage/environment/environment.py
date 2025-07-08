@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
 from shapely.geometry import Polygon, Point
+from adaptive_coverage.utils.utils import meters2pixels
 
 
 class Environment:
@@ -32,7 +33,7 @@ class Environment:
         edge_end = self.vertices[0]
         self.edges.append([edge_start, edge_end])
 
-    def render(self, surface: pygame.Surface):
+    def render(self, surface, scale):
         """
         Render the obstacles to the screen.
 
@@ -42,9 +43,13 @@ class Environment:
         for i, edge in enumerate(self.edges):
             # if ENV == 4 and i == len(self.edges) - 1:
             #     continue
-            pygame.draw.line(surface, "black", edge[0], edge[1], 5)
+            start_pos = meters2pixels(edge[0], scale)
+            end_pos = meters2pixels(edge[1], scale)
+            pygame.draw.line(surface, "black", start_pos, end_pos, 5)
         for obs_rect in self.obstacles_rects:
-            pygame.draw.rect(surface, "black", obs_rect)
+            rect = np.array([obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3]])
+            rect = meters2pixels(rect, scale)
+            pygame.draw.rect(surface, "black", pygame.rect.Rect(rect))
 
     def point_is_in_environment(self, point, agent_size):
         """
@@ -81,7 +86,7 @@ class Environment:
         shapely_point = Point(point)
         if self.polygon.contains(shapely_point):
             return True
-        if self.polygon.boundary.distance(shapely_point) < meters2pixels(1e-2, SCALE):
+        if self.polygon.boundary.distance(shapely_point) < 1e-2:
             return True
         return False
 
