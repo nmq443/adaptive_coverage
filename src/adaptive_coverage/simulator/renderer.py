@@ -83,7 +83,7 @@ class Renderer:
             # Render goals
             if agent.goal is not None and self.show_goal:
                 goal_pos = meters2pixels(agent.goal, self.scale)
-                pygame.draw.circle(surface, self.goal_color, goal_pos, int(agent_size / 4))
+                pygame.draw.circle(surface, self.goal_color, goal_pos, int(agent_size / 2))
 
             # Render sensing range
             if self.show_sensing_range:

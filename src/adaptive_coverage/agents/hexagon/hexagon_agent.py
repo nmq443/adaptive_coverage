@@ -6,7 +6,7 @@ from adaptive_coverage.agents.agent import Agent
 
 
 class HexagonAgent(Agent):
-    def __init__(self, *args, rho, pso_weights, original_method=True, **kwargs):
+    def __init__(self, *args, rho, pso_weights, original_method=False, **kwargs):
         super().__init__(*args, **kwargs)
         # Hexagon agent parameters
         self.original_method = original_method
@@ -42,15 +42,6 @@ class HexagonAgent(Agent):
 
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
-
-    # def render(
-    #         self,
-    #         screen,
-    #         font,
-    #         agents,
-    #         timestep,
-    # ):
-    #     super().render(screen, font, agents, timestep)
 
     def mobility_control(self, agents, env):
         if self.route_id == len(self.route) - 2:
@@ -127,44 +118,44 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
         """
         index_i, index_j = v1[1], v2[1]
-        if abs(index_i - index_j) != 1 or abs(index_j - index_i) != 5:
-            return
-        if self.original_method:
-            solver = OriginalSolver(
-                index=self.index,
-                pos=self.pos,
-                sensing_range=self.sensing_range,
-                hexagon_range=self.hexagon_range,
-                avoidance_range=self.avoidance_range,
-                phi_0=phi_0,
-                rho=self.rho,
-                v1=v1,
-                v2=v2
-            )
-        else:
-            solver = PSOSolver(
-                index=self.index,
-                pos=self.pos,
-                sensing_range=self.sensing_range,
-                hexagon_range=self.hexagon_range,
-                avoidance_range=self.avoidance_range,
-                phi_0=phi_0,
-                v1=v1,
-                v2=v2,
-                env=env,
-                agents=agents,
-                result_manager=self.result_manager,
-                pso_weights=self.pso_weights
-            )
+        if abs(index_i - index_j) == 1 or abs(index_j - index_i) == 5:
+            if self.original_method:
+                solver = OriginalSolver(
+                    index=self.index,
+                    pos=self.pos,
+                    sensing_range=self.sensing_range,
+                    hexagon_range=self.hexagon_range,
+                    avoidance_range=self.avoidance_range,
+                    phi_0=phi_0,
+                    rho=self.rho,
+                    v1=v1,
+                    v2=v2
+                )
+            else:
+                solver = PSOSolver(
+                    index=self.index,
+                    pos=self.pos,
+                    sensing_range=self.sensing_range,
+                    hexagon_range=self.hexagon_range,
+                    avoidance_range=self.avoidance_range,
+                    phi_0=phi_0,
+                    v1=v1,
+                    v2=v2,
+                    env=env,
+                    agents=agents,
+                    result_manager=self.result_manager,
+                    pso_weights=self.pso_weights
+                )
 
-        pos = solver.solve()
+            pos = solver.solve()
+            print(f"Agent {self.index}")
 
-        # Then check if the penalty node is valid
-        is_valid, _ = self.is_valid_virtual_target(target=pos, agents=agents, env=env)
-        if is_valid:
-            self.virtual_targets.append(pos)
-            self.occupied_virtual_targets.append(False)
-            self.penalty_nodes.append(pos)
+            # Then check if the penalty node is valid
+            is_valid, _ = self.is_valid_virtual_target(target=pos, agents=agents, env=env)
+            if is_valid:
+                self.virtual_targets.append(pos)
+                self.occupied_virtual_targets.append(False)
+                self.penalty_nodes.append(pos)
 
     def is_valid_virtual_target(self, target, agents, env):
         """

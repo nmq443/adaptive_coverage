@@ -10,8 +10,10 @@ class PenaltyNodeSolver:
         self.sensing_range = sensing_range
         self.hexagon_range = hexagon_range
         self.avoidance_range = avoidance_range
-        self.v1 = v1
-        self.v2 = v2
+        self.v1 = v1[0]
+        self.v2 = v2[0]
+        self.v1_idx = v1[1]
+        self.v2_idx = v2[1]
         self.result_manager = result_manager
 
     def solve(self):
@@ -24,8 +26,8 @@ class OriginalSolver(PenaltyNodeSolver):
         self.rho = rho
 
     def solve(self):
-        phi1 = 2 * np.pi * self.v1[1] / 6
-        phi2 = 2 * np.pi * self.v2[1] / 6
+        phi1 = 2 * np.pi * self.v1_idx / 6
+        phi2 = 2 * np.pi * self.v2_idx / 6
         phi = self.phi_0 + self.rho * (phi1 + phi2) / 2
         x = self.hexagon_range * np.cos(phi)
         y = self.hexagon_range * np.sin(phi)
@@ -35,10 +37,9 @@ class OriginalSolver(PenaltyNodeSolver):
 
 class PSOSolver(PenaltyNodeSolver):
     def __init__(
-            self, *args, env, agents, pso_weights, res_dir, dim=2, w=0.5, c1=1.0, c2=1.0, num_particles=20, num_iterations=100, v_max=0.05, spread=0.05, **kwargs
+            self, *args, env, agents, pso_weights, dim=2, w=0.5, c1=1.0, c2=1.0, num_particles=20, num_iterations=100, v_max=0.05, spread=0.05, **kwargs
     ):
         super().__init__(*args, **kwargs)
-        self.res_dir = res_dir
         self.num_particles = num_particles
         self.dim = dim
         self.max_speed = v_max
