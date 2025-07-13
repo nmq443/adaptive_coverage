@@ -7,7 +7,7 @@ import imageio
 
 
 class Simulator:
-    def __init__(self, swarm, env, result_manager, log_manager, timesteps=100, font_size=11, controller='hexagon',
+    def __init__(self, swarm, env, result_manager, log_manager, renderer, timesteps=100, font_size=11, controller='hexagon',
                  original_method=True, screen_size=(1600, 900), fps=144, scale=20):
         # Simulation
         self.swarm = swarm
@@ -29,6 +29,9 @@ class Simulator:
         self.log_manager = log_manager
         self.result_manager = result_manager
 
+        # Visualization
+        self.renderer = renderer
+
     def init(self):
         pygame.init()
         pygame.display.set_caption("Distributed Coverage Control")
@@ -41,11 +44,11 @@ class Simulator:
         self.start = True
 
     def loop(self):
-        self.env.render(self.screen, self.scale)
-        if self.controller == "voronoi":
-            self.swarm.render(self.screen, self.env, self.font, self.timestep, self.scale)
-        else:
-            self.swarm.render(self.screen, self.env, self.font, self.timestep, self.scale)
+        self.renderer.render(
+            surface=self.screen,
+            font=self.font,
+            timestep=self.timestep
+        )
         data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
         frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
         if len(self.swarm.agents) > 0:

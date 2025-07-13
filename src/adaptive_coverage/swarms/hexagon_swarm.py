@@ -27,6 +27,9 @@ class HexagonSwarm(Swarm):
                         path_planner=self.path_planner,
                         sensing_range=self.sensing_range,
                         original_method=self.original_method,
+                        v_max=self.v_max,
+                        avoidance_range=self.avoidance_range,
+                        tolerance=self.tolerance,
                         rho=self.rho,
                         pso_weights=self.pso_weights,
                         result_manager=self.result_manager,
@@ -42,6 +45,9 @@ class HexagonSwarm(Swarm):
                         index=i * self.num_cols + j,
                         init_pos=init_pos,
                         size=self.agent_size,
+                        v_max=self.v_max,
+                        avoidance_range=self.avoidance_range,
+                        tolerance=self.tolerance,
                         sensing_range=self.sensing_range,
                         path_planner=self.path_planner,
                         rho=self.rho,
@@ -52,11 +58,6 @@ class HexagonSwarm(Swarm):
 
     def determine_root(self, agent_id, agent_goal):
         self.agents[agent_id].set_state("occupied")
-
-    def render(self, surface, font, timestep, scale):
-        if len(self.agents) > 0:
-            for agent in self.agents:
-                agent.render(surface, font, self.agents, timestep, scale)
 
     def step(self, env):
         if len(self.agents) > 0:

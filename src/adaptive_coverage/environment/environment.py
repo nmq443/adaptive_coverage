@@ -33,24 +33,6 @@ class Environment:
         edge_end = self.vertices[0]
         self.edges.append([edge_start, edge_end])
 
-    def render(self, surface, scale):
-        """
-        Render the obstacles to the screen.
-
-        Args:
-            surface (pygame.Surface): surface to render on.
-        """
-        for i, edge in enumerate(self.edges):
-            # if ENV == 4 and i == len(self.edges) - 1:
-            #     continue
-            start_pos = meters2pixels(edge[0], scale)
-            end_pos = meters2pixels(edge[1], scale)
-            pygame.draw.line(surface, "black", start_pos, end_pos, 5)
-        for obs_rect in self.obstacles_rects:
-            rect = np.array([obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3]])
-            rect = meters2pixels(rect, scale)
-            pygame.draw.rect(surface, "black", pygame.rect.Rect(rect))
-
     def point_is_in_environment(self, point, agent_size):
         """
         Check if a circle (agent) with given radius is inside or near the polygon.
@@ -122,7 +104,6 @@ class Environment:
 
         # Check if the closest point is within the circle's radius
         intersects = distance_squared <= agent_size**2
-        # print(f"Distances squared: {distance_squared}, intersects: {intersects}")
 
         # Return True if the circle intersects with any obstacle
         return np.any(intersects)

@@ -43,10 +43,3 @@ class VoronoiSwarm(Swarm):
         self.generators = [agent.pos for agent in self.agents]
         self.generators = np.array(self.generators)
 
-    def render(self, surface, env, font, timestep, scale):
-        if len(self.agents) > 0:
-            for agent in self.agents:
-                agent.render(surface, font, self.agents, timestep, scale)
-                self.generators[agent.index] = agent.pos
-            vor = compute_voronoi_diagrams(self.generators, env)
-            draw_voronoi(vor, surface, scale)

@@ -15,6 +15,9 @@ class Swarm:
             first_agent_pos,
             result_manager,
             log_manager,
+            v_max,
+            avoidance_range,
+            tolerance,
             random_init=False,
             dist_btw_agents=0.7,
             agent_spread=0.05
@@ -26,6 +29,9 @@ class Swarm:
         self.path_planner = path_planner
         self.agent_spread = agent_spread
         self.sensing_range = sensing_range
+        self.v_max = v_max
+        self.avoidance_range = avoidance_range
+        self.tolerance = tolerance
         self.agents = []
         self.ld2s = []
         self.random_init = random_init

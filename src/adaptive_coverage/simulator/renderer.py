@@ -1,6 +1,7 @@
 import pygame
 import numpy as np
-from adaptive_coverage.utils.utils import meters2pixels
+from adaptive_coverage.utils.utils import meters2pixels, draw_voronoi
+from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 
 
 class Renderer:
@@ -9,6 +10,7 @@ class Renderer:
             swarm,
             env,
             scale,
+            controller='voronoi',
             agent_color='red',
             agent_sensing_color='blue',
             goal_color='green',
@@ -24,6 +26,7 @@ class Renderer:
         self.swarm = swarm
         self.env = env
         self.scale = scale
+        self.controller = controller
         self.linewidth = linewidth
         self.show_sensing_range = show_sensing_range
         self.show_goal = show_goal
@@ -99,3 +102,8 @@ class Renderer:
             rect = np.array([obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3]])
             rect = meters2pixels(rect, self.scale)
             pygame.draw.rect(surface, self.obs_color, pygame.rect.Rect(rect))
+
+        # Render voronoi partitions (for voronoi agent)
+        generators = np.array([agent.pos for agent in self.swarm.agents])
+        vor = compute_voronoi_diagrams(generators, self.env)
+        draw_voronoi(vor, surface, self.scale)
