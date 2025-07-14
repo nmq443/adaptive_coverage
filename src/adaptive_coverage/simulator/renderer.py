@@ -17,6 +17,10 @@ class Renderer:
             heading_color='green',
             index_color='black',
             obs_color='black',
+            occupied_color='red',
+            assigned_color='red',
+            unassigned_color='red',
+            penalty_color='green',
             linewidth=1,
             show_sensing_range=False,
             show_goal=False,
@@ -38,6 +42,11 @@ class Renderer:
         self.obs_color = obs_color
         self.heading_color = heading_color
         self.index_color = index_color
+        if self.controller == 'hexagon':
+            self.occupied_color = occupied_color
+            self.assigned_color = assigned_color
+            self.unassigned_color = unassigned_color
+            self.penalty_color = penalty_color
 
     def render(self, surface, font, timestep):
         # Render the swarm
@@ -47,7 +56,17 @@ class Renderer:
             agent_sensing_range = meters2pixels(agent.sensing_range, self.scale)
 
             # Render agent
-            pygame.draw.circle(surface, self.agent_color, agent_pos, agent_size)
+            if self.controller == 'voronoi':
+                pygame.draw.circle(surface, self.agent_color, agent_pos, agent_size)
+            else:
+                if agent.is_occupied():
+                    color = self.occupied_color
+                elif agent.is_assigned():
+                    color = self.assigned_color
+                elif agent.is_unassigned():
+                    color = self.unassigned_color
+                pygame.draw.circle(surface, color, agent_pos, agent_size)
+
 
             # Render heading
             yaw = np.arctan2(agent.vel[1], agent.vel[0])

@@ -1,0 +1,112 @@
+environment:
+  env0:
+    area_width: 40
+    area_height: 20
+    first_agent_pos: [ 3, 2 ]
+    obstacles: [ ]
+  env1:
+    area_width: 40
+    area_height: 20
+    first_agent_pos: [ 3, 2 ]
+    obstacles: [ [ 20, 5, 10, 10 ] ]
+  env2:
+    area_width: 40
+    area_height: 22.5
+    first_agent_pos: [ 2, 10 ]
+    obstacles: [
+      # upper half
+      [
+        8,
+        7,
+        7.5,
+        2,
+      ],
+      [
+        8,
+        0,
+        2,
+        7
+      ],
+      [
+        18,
+        7,
+        9,
+        2,
+      ],
+      [
+        22,
+        0,
+        2,
+        7
+      ],
+      [
+        30,
+        7,
+        10,
+        2
+      ],
+      # lower half
+      [
+        8,
+        11,
+        5,
+        2,
+      ],
+      [
+        8,
+        11,
+        2,
+        16,
+      ],
+      [
+        16,
+        11,
+        15,
+        2,
+      ],
+      [
+        25,
+        11,
+        2,
+        16,
+      ],
+      [
+        35,
+        11,
+        8,
+        2,
+      ],
+    ]
+
+simulation:
+  scale: 40
+  screen_size: [ 1600, 900 ]
+  linewidth: 2
+  timesteps: 1000
+  show_sensing_range: false
+  show_goal: false
+  show_connections: false
+  show_trajectories: false
+
+experiments:
+  res_dir: "results"
+  log_dir: "logs"
+
+agents:
+  controller: "hexagon"
+  original_method: false
+  num_agents: 20
+  agent_size: 0.2
+  v_max: 0.1
+  tolerance: 0.05
+  sensing_range: 5.0
+  avoidance_range: 0.05
+  rho: 1.0
+  pso_iterations: 50
+  pso_num_particles: 10
+  pso_weights: [ 0.45, 0.3, 0.15, 0.1 ]
+  path_planner:
+    kg: 1.0
+    ko: 2.0
+    kc: 0.0
+    beta_c: 1

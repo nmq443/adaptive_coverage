@@ -147,11 +147,11 @@ def lloyd(agent, agents, env):
 
     # Step 3: move points to centroids
     goal = centroids[0]
-    goal = handle_goal(goal, agent.pos, env)
+    goal = handle_goal(goal, agent, env)
     return goal
 
 
-def handle_goal(goal, agent_pos, env):
+def handle_goal(goal, agent, env):
     """
     Project virtual goal to simulation environment.
 
@@ -168,13 +168,13 @@ def handle_goal(goal, agent_pos, env):
         x, y, w, h = obs
         if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
             in_obs = True
-        if x <= goal[0] - SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+        if x <= goal[0] - agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] + SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+        if x <= goal[0] + agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] - SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+        if x <= goal[0] - agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] + SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+        if x <= goal[0] + agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
             in_obs = True
     if not in_obs:
         return goal
@@ -188,7 +188,7 @@ def handle_goal(goal, agent_pos, env):
                 [[x, y + h], [x, y]],
             ]
         )
-        agent_to_goal = LineString(np.array([agent_pos, goal]))
+        agent_to_goal = LineString(np.array([agent.pos, goal]))
         intersect = None
         for edge in edges:
             obs_edge = LineString(edge)
@@ -202,22 +202,22 @@ def handle_goal(goal, agent_pos, env):
         x, y, w, h = obs
         if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
             in_obs = True
-        if x <= goal[0] - SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+        if x <= goal[0] - agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] + SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+        if x <= goal[0] + agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] - SIZE <= x + w and y <= goal[1] + SIZE <= y + h:
+        if x <= goal[0] - agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
             in_obs = True
-        if x <= goal[0] + SIZE <= x + w and y <= goal[1] - SIZE <= y + h:
+        if x <= goal[0] + agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
             in_obs = True
     if not in_obs:
         return goal
     if in_obs:
         # if np.linalg.norm(goal - original_goal) > 2 * EPS:
-        dir = goal - agent_pos
-        dist = np.linalg.norm(dir)
-        new_dir = (dist - SIZE) * dir / dist
-        goal = new_dir + agent_pos
+        direction = goal - agent.pos
+        dist = np.linalg.norm(direction)
+        new_dir = (dist - agent.size) * direction / dist
+        goal = new_dir + agent.pos
 
     return goal
 
@@ -242,6 +242,7 @@ def compute_voronoi_diagrams(generators, env):
             mirroreds.append(mirrored)
     mirroreds = np.array(mirroreds)
     new_generators = np.vstack((generators, mirroreds))
+    new_generators = np.where(np.isfinite(new_generators), new_generators, 0)
     vor = Voronoi(new_generators)
 
     # Filter regions

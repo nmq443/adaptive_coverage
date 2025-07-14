@@ -5,8 +5,19 @@ from adaptive_coverage.utils.utils import meters2pixels
 
 
 class Environment:
-    def __init__(self, vertices, obstacles):
-        self.vertices = vertices
+    def __init__(self, area_width, area_height, obstacles, offset=0.1):
+        self.area_width = area_width
+        self.area_height = area_height
+        self.offset = offset
+        self.vertices = np.array(
+            [
+                [0 + self.offset, 0 + self.offset],
+                [self.area_width - self.offset, 0 + self.offset],
+                [self.area_width - self.offset, area_height - offset],
+                [0 + self.offset, self.area_height - self.offset],
+            ],
+            dtype=float,
+        )
         self.x_min = np.min(self.vertices[:, 0])
         self.x_max = np.max(self.vertices[:, 0])
         self.y_min = np.min(self.vertices[:, 1])
@@ -100,10 +111,10 @@ class Environment:
         # Calculate distance from the closest points to the circle center
         dx = closest_x - point[0]
         dy = closest_y - point[1]
-        distance_squared = dx**2 + dy**2
+        distance_squared = dx ** 2 + dy ** 2
 
         # Check if the closest point is within the circle's radius
-        intersects = distance_squared <= agent_size**2
+        intersects = distance_squared <= agent_size ** 2
 
         # Return True if the circle intersects with any obstacle
         return np.any(intersects)
