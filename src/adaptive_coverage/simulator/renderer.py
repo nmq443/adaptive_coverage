@@ -104,6 +104,7 @@ class Renderer:
             pygame.draw.rect(surface, self.obs_color, pygame.rect.Rect(rect))
 
         # Render voronoi partitions (for voronoi agent)
-        generators = np.array([agent.pos for agent in self.swarm.agents])
-        vor = compute_voronoi_diagrams(generators, self.env)
-        draw_voronoi(vor, surface, self.scale)
+        if self.controller == 'voronoi':
+            generators = np.array([agent.pos for agent in self.swarm.agents])
+            vor = compute_voronoi_diagrams(generators, self.env)
+            draw_voronoi(vor, surface, self.scale)

@@ -221,7 +221,7 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
             env (Environment): simulation environment.
         """
-        self.stop()
+        # self.stop()
         if self.first_time:
             self.generate_virtual_targets(agents, env)
             if len(self.virtual_targets) > 0:
@@ -248,7 +248,7 @@ class HexagonAgent(Agent):
             if self.goal is not None:
                 self.set_goal(self.assigned_target)
                 if self.terminated(self.goal):
-                    self.stop()
+                    # self.stop()
                     self.set_state("occupied")
                 else:
                     self.move_to_goal(self.goal, agents, env.obstacles)
@@ -261,7 +261,7 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
-        self.stop()
+        # self.stop()
         if len(landmarks) > 0:
             lc = landmarks[0]
             landmark = agents[lc]
