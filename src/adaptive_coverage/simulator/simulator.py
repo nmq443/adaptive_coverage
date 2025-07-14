@@ -79,6 +79,7 @@ class Simulator:
         self.result_manager.update_frames(frame)
 
         self.result_manager.save_video()
+        self.result_manager.save_images()
         self.swarm.save_data()
         self.log_manager.log(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 

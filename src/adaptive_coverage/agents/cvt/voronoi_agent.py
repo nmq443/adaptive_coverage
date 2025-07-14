@@ -3,7 +3,7 @@ from adaptive_coverage.agents.cvt.lloyd import lloyd
 
 
 class VoronoiAgent(Agent):
-    def __init__(self, *args, valid_ratio=0.8, **kwargs):
+    def __init__(self, *args, valid_ratio=0.9, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_range = self.sensing_range * valid_ratio
 

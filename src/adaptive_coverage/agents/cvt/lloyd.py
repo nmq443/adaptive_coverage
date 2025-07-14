@@ -22,7 +22,7 @@ def centroid_region(
         agent,
         vertices,
         env,
-        resolution=10
+        resolution=30
 ):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.

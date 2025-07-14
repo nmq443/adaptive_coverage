@@ -148,7 +148,6 @@ class HexagonAgent(Agent):
                 )
 
             pos = solver.solve()
-            print(f"Agent {self.index}")
 
             # Then check if the penalty node is valid
             is_valid, _ = self.is_valid_virtual_target(target=pos, agents=agents, env=env)

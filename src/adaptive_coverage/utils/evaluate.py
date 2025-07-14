@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 
 from adaptive_coverage.simulator.data_manager import ResultManager
-from adaptive_coverage.utils.utils import pixels2meters
 
 
 def compute_coverage_percentage(positions, env, sensing_range):
@@ -68,8 +67,7 @@ def evaluate(result_manager=None):
     Compare different methods.
 
     Args:
-        controller (str): name of the methods.
-        approach (str): if using hexagonal lattices method, modify approach to use original or PSO based approach.
+        result_manager (ResultManager): result manager instance
     """
 
     with open(result_manager.swarm_data_filepath, "rb") as f:
@@ -85,16 +83,16 @@ def evaluate(result_manager=None):
     plot_ld2(ld2s, result_manager.res_dir)
     plot_travel_distances(distances, save_dir=result_manager.res_dir)
 
-    if controller == "voronoi":
-        print(f"Percent coverage for {controller} method: {area: .2f}")
+    if result_manager.controller == "voronoi":
+        print(f"Percent coverage for {result_manager.controller} method: {area: .2f}")
     else:
-        if approach == "original":
+        if result_manager.original_method:
             print(
-                f"Percent coverage for {controller} method with original approach: {area: .2f}"
+                f"Percent coverage for {result_manager.controller} method with original approach: {area: .2f}"
             )
         else:
             print(
-                f"Percent coverage for {controller} method with PSO approach: {area: .2f}"
+                f"Percent coverage for {result_manager.controller} method with PSO approach: {area: .2f}"
             )
     print("----------")
 
@@ -285,8 +283,3 @@ def plot_ld2(lambda2_values, save_dir=""):
         print(f"Plot saved to: {save_path}")
     else:
         plt.show()
-
-
-if __name__ == "__main__":
-    result_manager = ResultManager()
-    evaluate(result_manager)

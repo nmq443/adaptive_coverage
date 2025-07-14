@@ -1,57 +1,49 @@
-import argparse
 import numpy as np
 
+from adaptive_coverage.utils.arg_parse import get_args
 from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
 from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm
+from adaptive_coverage.swarms.voronoi_swarm import VoronoiSwarm
 from adaptive_coverage.path_planner.apf import ArtificialPotentialField
 from adaptive_coverage.environment.environment import Environment
 from adaptive_coverage.simulator.simulator import Simulator
 from adaptive_coverage.simulator.renderer import Renderer
-from adaptive_coverage.swarms.voronoi_swarm import VoronoiSwarm
 
 
-def run_hexagon():
-    num_agents = 20
-    agent_size = 0.2
-    v_max = 0.05
-    tolerance = 0.001
-    avoidance_range = 0.05
-    sensing_range = 2.0
-    first_agent_pos = np.array([5, 5])
-    kg = 1.
-    ko = 0.
-    kc = 0.
-    beta_c = 1.
-    scale = 40
-    rho = 0.5
-    pso_weights = np.array([0.45, 0.3, 0.15, 0.1])
-    controller = 'hexagon'
-    original_method = True
+def run():
+    args = get_args("../configs/default_args.yaml")
+    num_agents = args.num_agents
+    agent_size = args.agent_size
+    v_max = args.v_max
+    tolerance = args.tolerance
+    avoidance_range = args.avoidance_range
+    sensing_range = args.sensing_range
+
+    first_agent_pos = args.first_agent_pos
+
+    kg = args.goal_factor
+    ko = args.obstacle_factor
+    kc = args.collision_factor
+    beta_c = args.beta_c
+    scale = args.scale
+    rho = args.rho
+    pso_weights = np.array(args.pso_weights)
+    controller = args.controller
+    original_method = args.original_method
 
     path_planner = ArtificialPotentialField(kg, ko, kc, beta_c, sensing_range, avoidance_range, agent_size)
 
-    screen_size = (1600, 900)
+    screen_size = args.screen_size
 
-    area_width = 20
-    area_height = 10
-    offset = 0.1
-    vertices = np.array(
-        [
-            [0 + offset, 0 + offset],
-            [area_width - offset, 0 + offset],
-            [area_width - offset, area_height - offset],
-            [0 + offset, area_height - offset],
-        ],
-        dtype=float,
-    )
+    area_width = args.area_width
+    area_height = args.area_height
+    obstacles = np.array(args.obstacles)
 
-    obstacles = np.array([])
+    timesteps = args.timesteps
 
-    timesteps = 2000
-
-    res_dir = "results"
-    log_dir = "log"
-    env_dir = "env0"
+    res_dir = args.res_dir
+    log_dir = args.log_dir
+    env_dir = args.env
     log_manager = LogManager(
         num_agents=num_agents,
         log_dir=log_dir,
@@ -67,29 +59,51 @@ def run_hexagon():
         original_method=original_method
     )
 
-    parser = argparse.ArgumentParser()
-    parser.parse_args()
-    swarm = HexagonSwarm(
-        num_agents=num_agents,
-        original_method=original_method,
-        v_max=v_max,
-        avoidance_range=avoidance_range,
-        tolerance=tolerance,
-        agent_size=agent_size,
-        path_planner=path_planner,
-        sensing_range=sensing_range,
-        first_agent_pos=first_agent_pos,
-        rho=rho,
-        pso_weights=pso_weights,
-        result_manager=result_manager,
-        log_manager=log_manager,
-    )
-    env = Environment(vertices, obstacles)
+    if controller == 'hexagon':
+        swarm = HexagonSwarm(
+            num_agents=num_agents,
+            original_method=original_method,
+            v_max=v_max,
+            avoidance_range=avoidance_range,
+            tolerance=tolerance,
+            agent_size=agent_size,
+            path_planner=path_planner,
+            sensing_range=sensing_range,
+            first_agent_pos=first_agent_pos,
+            rho=rho,
+            pso_weights=pso_weights,
+            result_manager=result_manager,
+            log_manager=log_manager,
+        )
+    else:
+        swarm = VoronoiSwarm(
+            num_agents=num_agents,
+            v_max=v_max,
+            avoidance_range=avoidance_range,
+            tolerance=tolerance,
+            agent_size=agent_size,
+            path_planner=path_planner,
+            sensing_range=sensing_range,
+            first_agent_pos=first_agent_pos,
+            result_manager=result_manager,
+            log_manager=log_manager,
+        )
+
+    env = Environment(area_width, area_height, obstacles, offset=0)
+
+    show_connections = args.show_connections
+    show_goal = args.show_goal
+    show_trajectories = args.show_trajectories
+    show_sensing_range = args.show_sensing_range
     renderer = Renderer(
+        controller=controller,
         swarm=swarm,
         env=env,
         scale=scale,
-        show_goal=True
+        show_connections=show_connections,
+        show_goal=show_goal,
+        show_sensing_range=show_sensing_range,
+        show_trajectories=show_trajectories,
     )
     sim = Simulator(
         screen_size=screen_size,
@@ -103,85 +117,5 @@ def run_hexagon():
     )
     sim.execute()
 
-def run_voronoi():
-    screen_size = (1600, 900)
-    area_width = 30
-    area_height = 20
-    offset = 0.1
-    vertices = np.array(
-        [
-            [0 + offset, 0 + offset],
-            [area_width - offset, 0 + offset],
-            [area_width - offset, area_height - offset],
-            [0 + offset, area_height - offset],
-        ],
-        dtype=float,
-    )
-    obstacles = np.array([])
-    scale = 50
-
-    timesteps = 1000
-    num_agents = 20
-    agent_size = 0.2
-    v_max = 0.05
-    tolerance = 0.001
-    avoidance_range = 0.05
-    sensing_range = 2.5
-    first_agent_pos = np.array([5, 2.5])
-    kg = 1.
-    ko = 0.
-    kc = 0.
-    beta_c = 1.
-    controller = 'voronoi'
-    original_method = True
-
-    path_planner = ArtificialPotentialField(kg, ko, kc, beta_c, sensing_range, avoidance_range, agent_size)
-
-    res_dir = "results"
-    log_dir = "log"
-    env_dir = "env0"
-    log_manager = LogManager(
-        num_agents=num_agents,
-        log_dir=log_dir,
-        env_dir=env_dir,
-        controller=controller,
-        original_method=original_method
-    )
-    result_manager = ResultManager(
-        num_agents=num_agents,
-        res_dir=res_dir,
-        env_dir=env_dir,
-        controller=controller,
-        original_method=original_method
-    )
-
-    parser = argparse.ArgumentParser()
-    parser.parse_args()
-    swarm = VoronoiSwarm(
-        num_agents=num_agents,
-        agent_size=agent_size,
-        path_planner=path_planner,
-        sensing_range=sensing_range,
-        v_max=v_max,
-        avoidance_range=avoidance_range,
-        tolerance=tolerance,
-        first_agent_pos=first_agent_pos,
-        result_manager=result_manager,
-        log_manager=log_manager
-    )
-    env = Environment(vertices, obstacles)
-    renderer = Renderer(swarm, env, scale, controller=controller)
-    sim = Simulator(
-        screen_size=screen_size,
-        swarm=swarm,
-        env=env,
-        result_manager=result_manager,
-        log_manager=log_manager,
-        renderer=renderer,
-        scale=scale,
-        timesteps=timesteps,
-    )
-    sim.execute()
-
-# run_hexagon()
-run_voronoi()
+if __name__ == '__main__':
+    run()

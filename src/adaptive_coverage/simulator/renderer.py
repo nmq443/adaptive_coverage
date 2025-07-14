@@ -1,6 +1,6 @@
 import pygame
 import numpy as np
-from adaptive_coverage.utils.utils import meters2pixels, draw_voronoi
+from adaptive_coverage.utils.utils import meters2pixels
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 
 
@@ -126,4 +126,23 @@ class Renderer:
         if self.controller == 'voronoi':
             generators = np.array([agent.pos for agent in self.swarm.agents])
             vor = compute_voronoi_diagrams(generators, self.env)
-            draw_voronoi(vor, surface, self.scale)
+            self.draw_voronoi(vor, surface)
+
+    def draw_voronoi(self, vor, surface):
+        """
+            Draw voronoi on screen.
+
+            Args:
+                vor (scipy.spatial.Voronoi): voronoi partition.
+                surface (pygame.Surface): surface to render on.
+            """
+        # Plot ridges
+        for region in vor.filtered_regions:
+            vertices = vor.vertices[region + [region[0]], :]
+            for i in range(len(vertices) - 1):
+                start_pos = meters2pixels(vertices[i], self.scale)
+                end_pos = meters2pixels(vertices[i + 1], self.scale)
+                pygame.draw.line(surface, "black", start_pos, end_pos, self.linewidth)
+            start_pos = meters2pixels(vertices[-1], self.scale)
+            end_pos = meters2pixels(vertices[0], self.scale)
+            pygame.draw.line(surface, "black", start_pos, end_pos, self.linewidth)
