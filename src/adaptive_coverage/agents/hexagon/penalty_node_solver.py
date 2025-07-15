@@ -3,7 +3,18 @@ import numpy as np
 
 
 class PenaltyNodeSolver:
-    def __init__(self, index, pos, sensing_range, hexagon_range, avoidance_range, phi_0, v1, v2, result_manager):
+    def __init__(
+        self,
+        index,
+        pos,
+        sensing_range,
+        hexagon_range,
+        avoidance_range,
+        phi_0,
+        v1,
+        v2,
+        result_manager,
+    ):
         self.index = index
         self.phi_0 = phi_0
         self.pos = pos
@@ -37,26 +48,38 @@ class OriginalSolver(PenaltyNodeSolver):
 
 class PSOSolver(PenaltyNodeSolver):
     def __init__(
-            self, *args, env, agents, pso_weights, dim=2, w=0.5, c1=1.0, c2=1.0, num_particles=20, num_iterations=100, v_max=0.05, spread=0.05, **kwargs
+        self,
+        *args,
+        env,
+        agents,
+        pso_weights,
+        dim=2,
+        w=0.5,
+        c1=1.0,
+        c2=1.0,
+        num_particles=20,
+        num_iterations=100,
+        v_max=0.05,
+        spread=0.05,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.num_particles = num_particles
         self.dim = dim
         self.max_speed = v_max
         self.spread = spread
-        self.num_iterations: int = num_iterations
+        self.num_iterations = num_iterations
 
-        self.agents: list = agents
+        self.agentst = agents
         self.env = env
         self.agent = self.agents[self.index]
-        self.agent_pos: np.ndarray = self.agent.pos
 
         self.positions = None
         self.velocities = None
-        self.w: float = w
-        self.c1: float = c1
-        self.c2: float = c2
-        self.pso_weights: np.ndarray = pso_weights
+        self.w = w
+        self.c1 = c1
+        self.c2 = c2
+        self.pso_weights = pso_weights
 
         self.init_particles()
         self.initial_particles = self.positions.copy()
@@ -65,7 +88,7 @@ class PSOSolver(PenaltyNodeSolver):
         self.gbest = self.pbest[np.argmax(self.pbest_val)]
         self.gbest_val = np.max(self.pbest_val)  # minimize fitness function
 
-        self.fitness_func_hist: list = []
+        self.fitness_func_hist = []
 
     def init_particles(self):
         direction = self.v2 - self.v1
@@ -103,10 +126,10 @@ class PSOSolver(PenaltyNodeSolver):
 
         if len(self.env.obstacles) > 0:
             x_in = (self.env.obstacles[:, 0] <= position[0]) & (
-                    position[0] <= self.env.obstacles[:, 0] + self.env.obstacles[:, 2]
+                position[0] <= self.env.obstacles[:, 0] + self.env.obstacles[:, 2]
             )
             y_in = (self.env.obstacles[:, 1] <= position[1]) & (
-                    position[1] <= self.env.obstacles[:, 1] + self.env.obstacles[:, 3]
+                position[1] <= self.env.obstacles[:, 1] + self.env.obstacles[:, 3]
             )
             in_obs = x_in & y_in
         else:
@@ -128,7 +151,7 @@ class PSOSolver(PenaltyNodeSolver):
             base_score = 1.0
         else:
             # Penalty for insufficient connectivity
-            base_score = 0.5 * connected_nodes / 2
+            base_score = 0.0
 
         # Bonus for connecting to more boundary nodes (up to a point)
         # This promotes robust connectivity but doesn't overly reward excessive connections
@@ -146,7 +169,6 @@ class PSOSolver(PenaltyNodeSolver):
             obs_pos = np.array([cx, cy]).T
             distances = np.linalg.norm(position - obs_pos, axis=1)
             min_distance = distances[np.argmin(distances)]
-            # min_clearance += np.sqrt(2) * 0.5 * self.env.tile_size
             min_clearance += self.avoidance_range
             if min_distance <= min_clearance:
                 penalty = np.exp(min_clearance - min_distance) - 1
@@ -182,12 +204,14 @@ class PSOSolver(PenaltyNodeSolver):
             return 1.0
 
         avg_distance = total_distance / count
-        efficiency = max(0, 1 - abs(avg_distance - self.sensing_range) / self.sensing_range)
+        efficiency = max(
+            0, 1 - abs(avg_distance - self.sensing_range) / self.sensing_range
+        )
         return efficiency
 
     def fitness_func(
-            self,
-            position: np.ndarray,
+        self,
+        position: np.ndarray,
     ):
         """
         Fitness function of PSO algorithm.
@@ -217,7 +241,7 @@ class PSOSolver(PenaltyNodeSolver):
         )
         in_range = np.array(
             [
-                np.linalg.norm(p - self.agent_pos) <= self.sensing_range
+                np.linalg.norm(p - self.agent.pos) <= self.sensing_range
                 for p in self.positions
             ]
         )
@@ -238,8 +262,8 @@ class PSOSolver(PenaltyNodeSolver):
             self.positions[invalid_mask] = mean_position
 
     def is_valid_particle(
-            self,
-            position: np.ndarray,
+        self,
+        position: np.ndarray,
     ) -> bool:
         return True
         if abs(self.v1_idx - self.v2_idx) == 5:
@@ -297,8 +321,8 @@ class PSOSolver(PenaltyNodeSolver):
             too_fast = speeds > self.max_speed
             too_fast = too_fast.flatten()
             self.velocities[too_fast] = (
-                                                self.velocities[too_fast] / speeds[too_fast]
-                                        ) * self.max_speed
+                self.velocities[too_fast] / speeds[too_fast]
+            ) * self.max_speed
             self.positions += self.velocities
             # self.validate_positions()
 
@@ -321,6 +345,8 @@ class PSOSolver(PenaltyNodeSolver):
     def save_figures(self):
         # Save data
         fitness_func_hist = np.array(self.fitness_func_hist)
-        data_filename = os.path.join(self.result_manager.res_dir, f"agent_no_{self.index}.npy")
+        data_filename = os.path.join(
+            self.result_manager.res_dir, f"agent_no_{self.index}.npy"
+        )
         with open(data_filename, "wb") as f:
             np.save(f, fitness_func_hist)
