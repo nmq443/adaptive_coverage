@@ -1,9 +1,6 @@
 import os
 import numpy as np
 import pygame
-import shutil
-import logging
-import imageio
 
 
 class Simulator:

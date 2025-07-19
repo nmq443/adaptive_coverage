@@ -5,22 +5,18 @@ from adaptive_coverage.utils.utils import meters2pixels
 
 class Agent:
     def __init__(
-            self,
-            index,
-            init_pos,
-            size,
-            path_planner,
-            sensing_range,
-            result_manager,
-            sensing_color='blue',
-            color='red',
-            show_goal=False,
-            show_connections=False,
-            show_sensing_range=False,
-            show_trajectory=False,
-            v_max=0.05,
-            avoidance_range=0.05,
-            tolerance=0.05
+        self,
+        index,
+        init_pos,
+        size,
+        path_planner,
+        sensing_range,
+        result_manager,
+        sensing_color="blue",
+        color="red",
+        v_max=0.05,
+        avoidance_range=0.05,
+        tolerance=0.05,
     ):
         # Basic parameters
         self.index = index
@@ -39,10 +35,6 @@ class Agent:
         # Visualization parameters
         self.sensing_color = sensing_color
         self.color = color
-        self.show_goal = show_goal
-        self.show_connections = show_connections
-        self.show_sensing_range = show_sensing_range
-        self.show_trajectory = show_trajectory
         self.goal = None
         self.traj = [init_pos.copy()]
 
@@ -64,7 +56,9 @@ class Agent:
             self.stop()
         else:
             self.traj.append(self.pos.copy())
-            self.vel = self.path_planner.total_force(self.pos, self.goal, self.index, agents, obstacles)
+            self.vel = self.path_planner.total_force(
+                self.pos, self.goal, self.index, agents, obstacles
+            )
             self.limit_speed()
             self.pos += self.vel
 
