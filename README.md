@@ -6,6 +6,7 @@ This repo contains the code for my final year thesis.
 
 * Separate compute_voronoi, draw_voronoi into 1 module
 * Only scale variables (meters -> pixels) when rendering, not when computing
+* Finding new node on the traveling way
 
 ## Requirements
 

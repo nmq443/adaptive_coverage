@@ -1,5 +1,10 @@
 import os
 import numpy as np
+from adaptive_coverage.utils.utils import (
+    nearest_points_on_obstacles,
+    ray_intersects_aabb,
+)
+from adaptive_coverage.utils.lambda2 import lambda2
 
 
 class PenaltyNodeSolver:
@@ -70,7 +75,7 @@ class PSOSolver(PenaltyNodeSolver):
         self.spread = spread
         self.num_iterations = num_iterations
 
-        self.agentst = agents
+        self.agents = agents
         self.env = env
         self.agent = self.agents[self.index]
 
@@ -137,77 +142,44 @@ class PSOSolver(PenaltyNodeSolver):
         return 1 - (in_obs.sum() / in_coverage.sum())
 
     def connectivity_metric(self, position):
-        # Count connected boundary nodes
-        connected_nodes = 0
-        agent_positions = np.array(
-            [agent.pos for agent in self.agents if agent.is_occupied()]
-        )
-        distances = np.linalg.norm(agent_positions - position, axis=1)
-        connected_nodes = (distances <= self.sensing_range).sum()
-
-        # Ensure connection to at least 2 boundary nodes for network integrity
-        if connected_nodes >= 2:
-            # Additional score for maintaining the minimum required connectivity
-            base_score = 1.0
-        else:
-            # Penalty for insufficient connectivity
-            base_score = 0.0
-
-        # Bonus for connecting to more boundary nodes (up to a point)
-        # This promotes robust connectivity but doesn't overly reward excessive connections
-        if connected_nodes > 2:
-            additional_score = min(0.5, (connected_nodes - 2) * 0.1)
-        else:
-            additional_score = 0
-
-        return base_score + additional_score
-
-    def obstacle_avoidance(self, position: np.ndarray, min_clearance: float = 0.1):
-        if len(self.env.obstacles) > 0:
-            cx = self.env.obstacles[:, 0] + self.env.obstacles[:, 2] / 2
-            cy = self.env.obstacles[:, 1] + self.env.obstacles[:, 3] / 2
-            obs_pos = np.array([cx, cy]).T
-            distances = np.linalg.norm(position - obs_pos, axis=1)
-            min_distance = distances[np.argmin(distances)]
-            min_clearance += self.avoidance_range
-            if min_distance <= min_clearance:
-                penalty = np.exp(min_clearance - min_distance) - 1
-            else:
-                penalty = 0
-            return penalty
+        has_free_agent = False
+        free_agent_index = -1
+        for agent in self.agents:
+            if agent.is_unassigned():
+                # agent.pos = position
+                has_free_agent = True
+                free_agent_index = agent.index
+                break
+        if has_free_agent:
+            adj_mat = np.zeros((len(self.agents), len(self.agents)))
+            agent_positions = []
+            for agent in self.agents:
+                if agent.index == free_agent_index:
+                    agent_positions.append(position)
+                else:
+                    agent_positions.append(agent.pos.copy())
+            for i in range(len(self.agents)):
+                for j in range(i + 1, len(self.agents)):
+                    if i == j:
+                        continue
+                    d = np.linalg.norm(agent_positions[i] - agent_positions[j])
+                    if d <= self.agent.sensing_range:
+                        adj_mat[i][j] = adj_mat[j][i] = d
+            return lambda2(adj_mat)
         else:
             return 0
 
-    def calculate_network_efficiency(self, position: np.ndarray):
-        total_distance = 0
-        count = 0
-        agent_positions = np.array(
-            [agent.pos for agent in self.agents if agent.is_occupied()]
-        )
-        distances = np.linalg.norm(position - agent_positions, axis=1)
-        total_distance += np.sum(distances)
-        count += len(distances)
-
-        agent_positions = np.array(
-            [
-                agent.pos
-                for agent in self.agents
-                if (agent.is_occupied() and agent.is_penalty_node)
-            ]
-        )
-        if len(agent_positions) > 0:
-            distances = np.linalg.norm(position - agent_positions, axis=1)
-            total_distance += np.sum(distances)
-            count += len(distances)
-
-        if count == 0:
-            return 1.0
-
-        avg_distance = total_distance / count
-        efficiency = max(
-            0, 1 - abs(avg_distance - self.sensing_range) / self.sensing_range
-        )
-        return efficiency
+    def obstacle_avoidance(self, position: np.ndarray):
+        if len(self.env.obstacles) > 0:
+            obs_pts = nearest_points_on_obstacles(self.agent.pos, self.env.obstacles)
+            dist_to_obs = np.linalg.norm(self.agent.pos - obs_pts)
+            if dist_to_obs <= self.agent.sensing_range:
+                diff = position - obs_pts
+                return np.linalg.norm(diff)
+            else:
+                return 0
+        else:
+            return 0
 
     def fitness_func(
         self,
@@ -226,11 +198,8 @@ class PSOSolver(PenaltyNodeSolver):
         f_coverage_area = self.calculate_coverage(position)
         f_connectivity = self.connectivity_metric(position)
         f_avoidance = self.obstacle_avoidance(position)
-        f_network_efficiency = self.calculate_network_efficiency(position)
 
-        f = np.array(
-            [f_coverage_area, f_connectivity, f_avoidance, f_network_efficiency]
-        )
+        f = np.array([f_coverage_area, f_connectivity, f_avoidance])
         return self.pso_weights @ f.T
 
     def validate_positions(self):
@@ -245,9 +214,15 @@ class PSOSolver(PenaltyNodeSolver):
                 for p in self.positions
             ]
         )
+        in_fov = np.array(
+            [
+                not ray_intersects_aabb(self.agent.pos, p, self.env.obstacles)
+                for p in self.positions
+            ]
+        )
 
         # Identify invalid particles (either outside valid sector, in obstacle, or out of range)
-        invalid_mask = (~valid_positions) | in_obstacle | (~in_range)
+        invalid_mask = (~valid_positions) | in_obstacle | (~in_range) | (~in_fov)
 
         if np.any(invalid_mask):
             # Calculate mean position of valid particles for projection
@@ -261,44 +236,17 @@ class PSOSolver(PenaltyNodeSolver):
             # Project invalid particles to mean position
             self.positions[invalid_mask] = mean_position
 
-    def is_valid_particle(
-        self,
-        position: np.ndarray,
-    ) -> bool:
+    def is_valid_particle(self, position):
         return True
-        if abs(self.v1_idx - self.v2_idx) == 5:
-            if self.v1_idx > self.v2_idx:
-                self.v1_idx, self.v2_idx = self.v2_idx, self.v1_idx
-        else:
-            if self.v1_idx < self.v2_idx:
-                v1_idx, v2_idx = self.v2_idx, self.v1_idx
-            else:
-                v1_idx, v2_idx = self.v1_idx, self.v2_idx
-        phi_v1 = 2 * np.pi * v1_idx / 6
-        phi_v2 = 2 * np.pi * v2_idx / 6
-        v1x = self.agent_pos[0] + HEXAGON_RANGE * np.cos(
-            phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET)
-        )
-        v1y = self.agent_pos[1] + HEXAGON_RANGE * np.sin(
-            phi_v1 + np.deg2rad(SWEEP_ANGLE_OFFSET)
-        )
-        v2x = self.agent_pos[0] + HEXAGON_RANGE * np.cos(
-            phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET)
-        )
-        v2y = self.agent_pos[1] + HEXAGON_RANGE * np.sin(
-            phi_v2 - np.deg2rad(SWEEP_ANGLE_OFFSET)
-        )
-        new_v1 = np.array([v1x, v1y])
-        new_v2 = np.array([v2x, v2y])
 
         def cross_product(v1: np.ndarray, v2: np.ndarray):
             return v1[0] * v2[1] - v1[1] * v2[0]
 
         # Compute cross products
-        # v1 = self.v1 - self.agent_pos
-        # v2 = self.v2 - self.agent_pos
-        v1 = new_v1 - self.agent_pos
-        v2 = new_v2 - self.agent_pos
+        v1 = self.v1 - self.agent_pos
+        v2 = self.v2 - self.agent_pos
+        # v1 = new_v1 - self.agent_pos
+        # v2 = new_v2 - self.agent_pos
         cross1 = cross_product(v1, position)
         cross2 = cross_product(v2, position)
         cross12 = cross_product(v1, v2)

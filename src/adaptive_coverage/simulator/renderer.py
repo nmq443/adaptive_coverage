@@ -6,26 +6,26 @@ from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 
 class Renderer:
     def __init__(
-            self,
-            swarm,
-            env,
-            scale,
-            controller='voronoi',
-            agent_color='red',
-            agent_sensing_color='blue',
-            goal_color='green',
-            heading_color='green',
-            index_color='black',
-            obs_color='black',
-            occupied_color='red',
-            assigned_color='red',
-            unassigned_color='red',
-            penalty_color='green',
-            linewidth=1,
-            show_sensing_range=False,
-            show_goal=False,
-            show_connections=False,
-            show_trajectories=False
+        self,
+        swarm,
+        env,
+        scale,
+        controller="voronoi",
+        agent_color="red",
+        agent_sensing_color="blue",
+        goal_color="green",
+        heading_color="green",
+        index_color="black",
+        obs_color="black",
+        occupied_color="red",
+        assigned_color="blue",
+        unassigned_color="black",
+        penalty_color="green",
+        linewidth=1,
+        show_sensing_range=False,
+        show_goal=False,
+        show_connections=False,
+        show_trajectories=False,
     ):
         self.swarm = swarm
         self.env = env
@@ -42,7 +42,7 @@ class Renderer:
         self.obs_color = obs_color
         self.heading_color = heading_color
         self.index_color = index_color
-        if self.controller == 'hexagon':
+        if self.controller == "hexagon":
             self.occupied_color = occupied_color
             self.assigned_color = assigned_color
             self.unassigned_color = unassigned_color
@@ -56,7 +56,7 @@ class Renderer:
             agent_sensing_range = meters2pixels(agent.sensing_range, self.scale)
 
             # Render agent
-            if self.controller == 'voronoi':
+            if self.controller == "voronoi":
                 pygame.draw.circle(surface, self.agent_color, agent_pos, agent_size)
             else:
                 if agent.is_occupied():
@@ -65,15 +65,18 @@ class Renderer:
                     color = self.assigned_color
                 elif agent.is_unassigned():
                     color = self.unassigned_color
+                if agent.is_penalty_node:
+                    color = self.penalty_color
                 pygame.draw.circle(surface, color, agent_pos, agent_size)
-
 
             # Render heading
             yaw = np.arctan2(agent.vel[1], agent.vel[0])
             length = 2 * agent_size
             start_pos = agent_pos
             end_pos = agent_pos + length * np.array([np.cos(yaw), np.sin(yaw)])
-            pygame.draw.line(surface, self.heading_color, start_pos, end_pos, self.linewidth)
+            pygame.draw.line(
+                surface, self.heading_color, start_pos, end_pos, self.linewidth
+            )
 
             # Render agent's index
             text_surface = font.render(str(agent.index), True, self.index_color)
@@ -89,7 +92,13 @@ class Renderer:
                     if other.index != agent.index and dist <= agent.sensing_range:
                         start_pos = agent_pos
                         end_pos = meters2pixels(other.pos, self.scale)
-                        pygame.draw.line(surface, agent.sensing_color, start_pos, end_pos, self.linewidth)
+                        pygame.draw.line(
+                            surface,
+                            agent.sensing_color,
+                            start_pos,
+                            end_pos,
+                            self.linewidth,
+                        )
 
             # Render trajectories
             if self.show_trajectories:
@@ -105,17 +114,27 @@ class Renderer:
             # Render goals
             if agent.goal is not None and self.show_goal:
                 goal_pos = meters2pixels(agent.goal, self.scale)
-                pygame.draw.circle(surface, self.goal_color, goal_pos, int(agent_size / 2))
+                pygame.draw.circle(
+                    surface, self.goal_color, goal_pos, int(agent_size / 2)
+                )
 
             # Render sensing range
             if self.show_sensing_range:
-                pygame.draw.circle(surface, self.agent_sensing_color, agent_pos, agent_sensing_range, self.linewidth)
+                pygame.draw.circle(
+                    surface,
+                    self.agent_sensing_color,
+                    agent_pos,
+                    agent_sensing_range,
+                    self.linewidth,
+                )
 
         # Render the environment
         for i, edge in enumerate(self.env.edges):
             start_pos = meters2pixels(edge[0], self.scale)
             end_pos = meters2pixels(edge[1], self.scale)
-            pygame.draw.line(surface, self.obs_color, start_pos, end_pos, self.linewidth)
+            pygame.draw.line(
+                surface, self.obs_color, start_pos, end_pos, self.linewidth
+            )
 
         for obs_rect in self.env.obstacles_rects:
             rect = np.array([obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3]])
@@ -123,19 +142,19 @@ class Renderer:
             pygame.draw.rect(surface, self.obs_color, pygame.rect.Rect(rect))
 
         # Render voronoi partitions (for voronoi agent)
-        if self.controller == 'voronoi':
+        if self.controller == "voronoi":
             generators = np.array([agent.pos for agent in self.swarm.agents])
             vor = compute_voronoi_diagrams(generators, self.env)
             self.draw_voronoi(vor, surface)
 
     def draw_voronoi(self, vor, surface):
         """
-            Draw voronoi on screen.
+        Draw voronoi on screen.
 
-            Args:
-                vor (scipy.spatial.Voronoi): voronoi partition.
-                surface (pygame.Surface): surface to render on.
-            """
+        Args:
+            vor (scipy.spatial.Voronoi): voronoi partition.
+            surface (pygame.Surface): surface to render on.
+        """
         # Plot ridges
         for region in vor.filtered_regions:
             vertices = vor.vertices[region + [region[0]], :]

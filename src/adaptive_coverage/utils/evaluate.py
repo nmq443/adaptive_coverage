@@ -3,8 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point
 
-from adaptive_coverage.simulator.data_manager import ResultManager
-
 
 def compute_coverage_percentage(positions, env, sensing_range):
     """
@@ -44,10 +42,10 @@ def compute_coverage_percentage(positions, env, sensing_range):
             x_min, y_min, w, h = obs
             x_max, y_max = x_min + w, y_min + h
             inside = (
-                    (inside_polygon_points[:, 0] >= x_min)
-                    & (inside_polygon_points[:, 0] <= x_max)
-                    & (inside_polygon_points[:, 1] >= y_min)
-                    & (inside_polygon_points[:, 1] <= y_max)
+                (inside_polygon_points[:, 0] >= x_min)
+                & (inside_polygon_points[:, 0] <= x_max)
+                & (inside_polygon_points[:, 1] >= y_min)
+                & (inside_polygon_points[:, 1] <= y_max)
             )
             in_obs |= inside
 
@@ -95,50 +93,6 @@ def evaluate(result_manager=None):
                 f"Percent coverage for {result_manager.controller} method with PSO approach: {area: .2f}"
             )
     print("----------")
-
-
-def laplacian_mat(agents):
-    """
-    Get Laplacian matrix of a networked multi-agent system.
-
-    Args:
-        agents (list): List of all agents.
-
-    Returns:
-        numpy.ndarray: A numpy.ndarray with shape (N, N) with N is the number of agents.
-    """
-    adj_mat = np.zeros((len(agents), len(agents)))  # adjacency matrix
-    for i in range(len(agents)):
-        for j in range(len(agents)):
-            if i == j:
-                continue
-            dist = np.linalg.norm(agents[i].pos - agents[j].pos)
-            if dist <= agents[0].sensing_range:
-                adj_mat[i][j] = adj_mat[j][i] = 1
-    deg_mat = np.zeros_like(adj_mat)  # degree matrix
-    for i in range(len(agents)):
-        deg_mat[i][i] = np.sum(adj_mat[i])
-
-    laplacian_mat = deg_mat - adj_mat
-
-    return laplacian_mat
-
-
-def lamda2(agents):
-    """
-    Get second smallest eigen value of laplacian matrix.
-
-    Args:
-        agents (list): List of all agents in networked multi-robot system.
-
-    Returns:
-        float: Second largest eigen value of laplacian matrix.
-    """
-    l_mat = laplacian_mat(agents)
-    eigen_vals = np.linalg.eigvalsh(l_mat)
-
-    # 1 because np.linalg.eigvalsh() return an array of eigen values in ascending order
-    return eigen_vals[1]
 
 
 def plot_travel_distances(distances, agent_labels=None, save_dir=""):

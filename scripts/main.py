@@ -31,7 +31,9 @@ def run():
     controller = args.controller
     original_method = args.original_method
 
-    path_planner = ArtificialPotentialField(kg, ko, kc, beta_c, sensing_range, avoidance_range, agent_size)
+    path_planner = ArtificialPotentialField(
+        kg, ko, kc, beta_c, sensing_range, avoidance_range, agent_size
+    )
 
     screen_size = args.screen_size
 
@@ -49,17 +51,17 @@ def run():
         log_dir=log_dir,
         env_dir=env_dir,
         controller=controller,
-        original_method=original_method
+        original_method=original_method,
     )
     result_manager = ResultManager(
         num_agents=num_agents,
         res_dir=res_dir,
         env_dir=env_dir,
         controller=controller,
-        original_method=original_method
+        original_method=original_method,
     )
 
-    if controller == 'hexagon':
+    if controller == "hexagon":
         swarm = HexagonSwarm(
             num_agents=num_agents,
             original_method=original_method,
@@ -89,7 +91,7 @@ def run():
             log_manager=log_manager,
         )
 
-    env = Environment(area_width, area_height, obstacles, offset=0)
+    env = Environment(area_width, area_height, obstacles, offset=1)
 
     show_connections = args.show_connections
     show_goal = args.show_goal
@@ -100,6 +102,7 @@ def run():
         swarm=swarm,
         env=env,
         scale=scale,
+        linewidth=args.linewidth,
         show_connections=show_connections,
         show_goal=show_goal,
         show_sensing_range=show_sensing_range,
@@ -117,5 +120,6 @@ def run():
     )
     sim.execute()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     run()

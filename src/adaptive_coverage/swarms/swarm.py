@@ -1,26 +1,22 @@
-import os
 import numpy as np
-from adaptive_coverage.utils.evaluate import lamda2
-from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
-from adaptive_coverage.utils.utils import draw_voronoi
 
 
 class Swarm:
     def __init__(
-            self,
-            num_agents,
-            agent_size,
-            path_planner,
-            sensing_range,
-            first_agent_pos,
-            result_manager,
-            log_manager,
-            v_max,
-            avoidance_range,
-            tolerance,
-            random_init=False,
-            dist_btw_agents=0.7,
-            agent_spread=0.05
+        self,
+        num_agents,
+        agent_size,
+        path_planner,
+        sensing_range,
+        first_agent_pos,
+        result_manager,
+        log_manager,
+        v_max,
+        avoidance_range,
+        tolerance,
+        random_init=False,
+        dist_btw_agents=0.7,
+        agent_spread=0.05,
     ):
         self.num_agents = num_agents
         self.agent_size = agent_size
@@ -34,6 +30,7 @@ class Swarm:
         self.tolerance = tolerance
         self.agents = []
         self.ld2s = []
+        self.adjacency_matrix = np.zeros((self.num_agents, self.num_agents))
         self.random_init = random_init
         self.result_manager = result_manager
         self.log_manager = log_manager
@@ -44,14 +41,22 @@ class Swarm:
     def init_agents(self, ref_pos=None):
         pass
 
-    def step(self, env):
+    def update_adj_mat(self):
+        self.adjacency_matrix.fill(0)
+        sr2 = self.agents[0].sensing_range ** 2
+        for i in range(self.num_agents):
+            for j in range(i + 1, self.num_agents):
+                if i == j:
+                    continue
+                diff = self.agents[i].pos - self.agents[j].pos
+                dist2 = np.dot(diff, diff)
+                if dist2 <= sr2:
+                    self.adjacency_matrix[i][j] = self.adjacency_matrix[j][i] = np.sqrt(
+                        dist2
+                    )
+
+    def step(self):
         pass
-        if len(self.agents) > 0:
-            order = np.random.permutation(len(self.agents))
-            for i in order:
-                self.agents[i].step(self.agents, env)
-            ld2 = lamda2(self.agents)
-            self.ld2s.append(ld2)
 
     def get_travel_distance(self):
         """Save travel distance of all agents."""
@@ -62,6 +67,7 @@ class Swarm:
         return np.array(distances)
 
     def save_data(self):
+        """Save both poses and travel distances in .npy format."""
         # save poses
         datas = []
         for agent in self.agents:

@@ -1,10 +1,13 @@
 #!/bin/bash
 
-# First command (runs in background)
-python3 main.py --env env2 --show_sensing_range True --controller hexagon --original_method False &
+# Original method
+python3 main.py --env env2 --show_sensing_range True --controller hexagon --original_method True &
 
-# Second command (runs in background)
+# PSO method
+python3 main.py --env env2 --show_sensing_range True --controller hexagon &
+
+# Voronoi method
 python3 main.py --env env2 --show_sensing_range True --controller voronoi &
 
-# Wait for both to finish (optional)
+# Wait to finish (optional)
 wait

@@ -18,12 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(
-        agent,
-        vertices,
-        env,
-        resolution=30
-):
+def centroid_region(agent, vertices, env, resolution=50):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -125,7 +120,10 @@ def lloyd(agent, agents, env):
     generators = [agent.index]
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
-        if other.index != agent.index and distance <= agent.valid_range - agent.tolerance:
+        if (
+            other.index != agent.index
+            and distance <= agent.valid_range - agent.tolerance
+        ):
             if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
                 generators.append(other.index)
 

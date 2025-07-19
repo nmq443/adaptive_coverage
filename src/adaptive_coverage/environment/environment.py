@@ -111,10 +111,10 @@ class Environment:
         # Calculate distance from the closest points to the circle center
         dx = closest_x - point[0]
         dy = closest_y - point[1]
-        distance_squared = dx ** 2 + dy ** 2
+        distance_squared = dx**2 + dy**2
 
         # Check if the closest point is within the circle's radius
-        intersects = distance_squared <= agent_size ** 2
+        intersects = distance_squared <= agent_size**2
 
         # Return True if the circle intersects with any obstacle
         return np.any(intersects)

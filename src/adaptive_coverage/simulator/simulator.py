@@ -7,8 +7,21 @@ import imageio
 
 
 class Simulator:
-    def __init__(self, swarm, env, result_manager, log_manager, renderer, timesteps=100, font_size=11, controller='hexagon',
-                 original_method=True, screen_size=(1600, 900), fps=144, scale=20):
+    def __init__(
+        self,
+        swarm,
+        env,
+        result_manager,
+        log_manager,
+        renderer,
+        timesteps=100,
+        font_size=11,
+        controller="hexagon",
+        original_method=True,
+        screen_size=(1600, 900),
+        fps=144,
+        scale=20,
+    ):
         # Simulation
         self.swarm = swarm
         self.font_size = font_size
@@ -45,15 +58,13 @@ class Simulator:
 
     def loop(self):
         self.renderer.render(
-            surface=self.screen,
-            font=self.font,
-            timestep=self.timestep
+            surface=self.screen, font=self.font, timestep=self.timestep
         )
         data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
         frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
         if len(self.swarm.agents) > 0:
             self.result_manager.update_video(frame)
-        if len(self.swarm.agents) > 0 and self.timestep == 0:
+        if len(self.swarm.agents) > 0 and self.timestep == 1:
             self.result_manager.update_frames(frame)
 
         self.swarm.step(self.env)
@@ -88,7 +99,9 @@ class Simulator:
         while self.running:
             if self.start:
                 if (self.timestep + 1) % 10 == 0:
-                    self.log_manager.log(f"Time step {self.timestep + 1}/{self.timesteps}")
+                    self.log_manager.log(
+                        f"Time step {self.timestep + 1}/{self.timesteps}"
+                    )
                 if self.timestep >= self.timesteps:
                     self.running = False
                 self.timestep += 1
