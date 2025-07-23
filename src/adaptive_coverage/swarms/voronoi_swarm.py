@@ -10,40 +10,23 @@ class VoronoiSwarm(Swarm):
         self.generators: list = []
 
     def init_agents(self, ref_pos=None):
-        if self.random_init and ref_pos is not None:
-            random_positions = (
-                np.random.rand(self.num_agents, 2) * self.agent_spread + ref_pos
-            )
-            for index in range(self.num_agents):
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                x = self.first_agent_pos[0] + j * self.dist_btw_agents
+                y = (
+                    self.first_agent_pos[1]
+                    + (self.num_rows - i - 1) * self.dist_btw_agents
+                )
+                init_pos = np.array([x, y])
                 self.agents.append(
                     VoronoiAgent(
-                        index=index,
-                        init_pos=random_positions[index],
+                        index=i * self.num_cols + j,
+                        init_pos=init_pos,
                         size=self.agent_size,
-                        path_planner=self.path_planner,
                         sensing_range=self.sensing_range,
-                        result_manager=self.result_manager,
+                        path_planner=self.path_planner,
                     )
                 )
-        else:
-            for i in range(self.num_rows):
-                for j in range(self.num_cols):
-                    x = self.first_agent_pos[0] + j * self.dist_btw_agents
-                    y = (
-                        self.first_agent_pos[1]
-                        + (self.num_rows - i - 1) * self.dist_btw_agents
-                    )
-                    init_pos = np.array([x, y])
-                    self.agents.append(
-                        VoronoiAgent(
-                            index=i * self.num_cols + j,
-                            init_pos=init_pos,
-                            size=self.agent_size,
-                            sensing_range=self.sensing_range,
-                            path_planner=self.path_planner,
-                            result_manager=self.result_manager,
-                        )
-                    )
         self.generators = [agent.pos for agent in self.agents]
         self.generators = np.array(self.generators)
 

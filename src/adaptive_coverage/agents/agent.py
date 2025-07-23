@@ -9,7 +9,6 @@ class Agent:
         size,
         path_planner,
         sensing_range,
-        result_manager,
         v_max=0.05,
         avoidance_range=0.05,
         tolerance=0.05,
@@ -30,10 +29,7 @@ class Agent:
 
         # Visualization parameters
         self.goal = None
-        self.traj = [init_pos.copy()]
-
-        # Result and loggin manager
-        self.result_manager = result_manager
+        self.traj = []
 
     def get_travel_distance(self):
         """Get total travel distance."""
@@ -49,7 +45,6 @@ class Agent:
         if self.terminated(goal):
             self.stop()
         else:
-            self.traj.append(self.pos.copy())
             self.vel = self.path_planner.total_force(
                 self.pos, self.goal, self.index, agents, obstacles
             )
@@ -73,4 +68,4 @@ class Agent:
             self.vel = self.vel / v * self.v_max
 
     def step(self, *args, **kwargs):
-        pass
+        self.traj.append(self.pos.copy())

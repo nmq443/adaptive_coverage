@@ -18,7 +18,6 @@ class PenaltyNodeSolver:
         phi_0,
         v1,
         v2,
-        result_manager,
     ):
         self.index = index
         self.phi_0 = phi_0
@@ -30,7 +29,6 @@ class PenaltyNodeSolver:
         self.v2 = v2[0]
         self.v1_idx = v1[1]
         self.v2_idx = v2[1]
-        self.result_manager = result_manager
 
     def solve(self):
         raise NotImplementedError()
@@ -62,18 +60,14 @@ class PSOSolver(PenaltyNodeSolver):
         w=0.5,
         c1=1.0,
         c2=1.0,
-        num_particles=20,
-        num_iterations=100,
         v_max=0.05,
         spread=0.05,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.num_particles = num_particles
         self.dim = dim
         self.max_speed = v_max
         self.spread = spread
-        self.num_iterations = num_iterations
 
         self.agents = agents
         self.env = env
@@ -86,16 +80,15 @@ class PSOSolver(PenaltyNodeSolver):
         self.c2 = c2
         self.pso_weights = pso_weights
 
-        self.init_particles()
-        self.initial_particles = self.positions.copy()
-        self.pbest = self.positions.copy()
-        self.pbest_val = np.array([self.fitness_func(p) for p in self.positions])
-        self.gbest = self.pbest[np.argmax(self.pbest_val)]
-        self.gbest_val = np.max(self.pbest_val)  # minimize fitness function
+        self.pbest = None
+        self.pbest_val = None
+        self.gbest = None
+        self.gbest_val = None
 
         self.fitness_func_hist = []
 
-    def init_particles(self):
+    def initialize_particles(self, num_particles):
+        self.num_particles = num_particles
         direction = self.v2 - self.v1
         direction /= np.linalg.norm(direction)
         perp_direction = np.array([-direction[1], direction[0]])
@@ -115,6 +108,11 @@ class PSOSolver(PenaltyNodeSolver):
         # Final particle positions
         self.positions = base_positions + offset_vectors
         self.velocities = np.zeros_like(self.positions)
+
+        self.pbest = self.positions.copy()
+        self.pbest_val = np.array([self.fitness_func(p) for p in self.positions])
+        self.gbest = self.pbest[np.argmax(self.pbest_val)]
+        self.gbest_val = np.max(self.pbest_val)  # minimize fitness function
 
     def calculate_coverage(self, position: np.ndarray):
         xmin = position[0] - self.sensing_range
@@ -257,8 +255,9 @@ class PSOSolver(PenaltyNodeSolver):
         else:
             return cross1 <= 0 and cross2 >= 0  # Clockwise
 
-    def solve(self):
-        for i in range(self.num_iterations):
+    def solve(self, num_particles, num_iterations):
+        self.initialize_particles(num_particles)
+        for i in range(num_iterations):
             r1 = np.random.rand(self.num_particles, self.dim)
             r2 = np.random.rand(self.num_particles, self.dim)
 
@@ -286,15 +285,5 @@ class PSOSolver(PenaltyNodeSolver):
 
             self.fitness_func_hist.append(np.min(fitness))
 
-        self.save_figures()
-        # return self.gbest, self.gbest_val
+        self.fitness_func_hist = np.array(self.fitness_func_hist)
         return self.gbest
-
-    def save_figures(self):
-        # Save data
-        fitness_func_hist = np.array(self.fitness_func_hist)
-        data_filename = os.path.join(
-            self.result_manager.res_dir, f"agent_no_{self.index}.npy"
-        )
-        with open(data_filename, "wb") as f:
-            np.save(f, fitness_func_hist)

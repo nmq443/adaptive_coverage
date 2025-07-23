@@ -65,26 +65,3 @@ class Swarm:
             distance = agent.get_travel_distance()
             distances.append(distance)
         return np.array(distances)
-
-    def save_data(self):
-        """Save both poses and travel distances in .npy format."""
-        # save poses
-        datas = []
-        for agent in self.agents:
-            data = []
-            data.append(agent.traj[0])  # first pose
-            data.append(agent.pos)  # last pose
-            datas.append(data)
-        datas = np.array(datas)
-        with open(self.result_manager.swarm_data_filepath, "wb") as f:
-            np.save(f, datas)
-
-        # save travel distances
-        distances = self.get_travel_distance()
-        with open(self.result_manager.travel_distances_filepath, "wb") as f:
-            np.save(f, distances)
-
-        # save ld2s
-        ld2s = np.array(self.ld2s)
-        with open(self.result_manager.ld2s_filepath, "wb") as f:
-            np.save(f, ld2s)

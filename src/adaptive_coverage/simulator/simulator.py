@@ -11,10 +11,12 @@ class Simulator:
         result_manager,
         log_manager,
         renderer,
+        render_mode="none",
         timesteps=100,
         font_size=11,
         controller="hexagon",
         original_method=True,
+        dt=0.1,
         screen_size=(1600, 900),
         fps=144,
         scale=20,
@@ -27,11 +29,13 @@ class Simulator:
         self.original_method = original_method
         self.scale = scale
         self.env = env
-        self.running: bool = True
+        self.running = True
+        self.dt = dt
         self.fps = fps
         self.font = None
         self.timestep = 0
         self.timesteps = timesteps
+        self.screen = None
         self.clock = pygame.time.Clock()
         self.first_click = True
 
@@ -40,32 +44,32 @@ class Simulator:
         self.result_manager = result_manager
 
         # Visualization
+        self.render_mode = render_mode
         self.renderer = renderer
 
     def init(self):
-        pygame.init()
-        pygame.display.set_caption("Distributed Coverage Control")
-        self.screen = pygame.display.set_mode(self.screen_size)
-
-        self.font = pygame.font.SysFont("monospace", self.font_size, True)
+        if self.render_mode == "human":
+            pygame.init()
+            pygame.display.set_caption("Distributed Coverage Control")
+            self.screen = pygame.display.set_mode(self.screen_size)
+            self.font = pygame.font.SysFont("monospace", self.font_size, True)
 
         # init swarm
         self.swarm.init_agents()
-        self.start = True
 
     def loop(self):
-        self.renderer.render(
-            surface=self.screen, font=self.font, timestep=self.timestep
-        )
-        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        if len(self.swarm.agents) > 0:
-            self.result_manager.update_video(frame)
-        if len(self.swarm.agents) > 0 and self.timestep == 1:
-            self.result_manager.update_frames(frame)
-
+        if self.render_mode == "human":
+            self.renderer.render(
+                surface=self.screen, font=self.font, timestep=self.timestep
+            )
+            data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+            frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+            if len(self.swarm.agents) > 0:
+                self.result_manager.update_video(frame)
+            if len(self.swarm.agents) > 0 and self.timestep == 1:
+                self.result_manager.update_frames(frame)
+            self.clock.tick(self.fps)
         self.swarm.step(self.env)
-        self.clock.tick(self.fps)
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -74,38 +78,72 @@ class Simulator:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and self.swarm.random_init:
-                mouse_pos = pygame.mouse.get_pos()
-                if self.first_click:
-                    self.start = True
-                    self.swarm.init_agents(ref_pos=mouse_pos)
-                    self.first_click = False
 
     def save_results(self):
-        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        self.result_manager.update_frames(frame)
-
-        self.result_manager.save_video()
-        self.result_manager.save_images()
-        self.swarm.save_data()
+        if self.render_mode == "human":
+            data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+            frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+            self.result_manager.update_frames(frame)
+            self.result_manager.save_video()
+            self.result_manager.save_images()
+        self.save_swarm_datas()
         self.log_manager.log(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
+
+    def save_swarm_datas(self):
+        datas = []
+        for agent in self.swarm.agents:
+            datas.append(agent.traj)
+        datas = np.array(datas)
+        print(datas.shape)
+        with open(self.result_manager.swarm_data_filepath, "wb") as f:
+            np.save(f, datas)
+
+        # save travel distances
+        distances = self.swarm.get_travel_distance()
+        with open(self.result_manager.travel_distances_filepath, "wb") as f:
+            np.save(f, distances)
+
+        # save ld2s
+        ld2s = np.array(self.swarm.ld2s)
+        with open(self.result_manager.ld2s_filepath, "wb") as f:
+            np.save(f, ld2s)
+
+        # save pso fitness function history
+        if self.controller == "hexagon" and not self.original_method:
+            for agent in self.swarm.agents:
+                if agent.fitness_func_hist is not None:
+                    filepath = os.path.join(
+                        self.result_manager.res_dir, f"agent_no_{agent.index}.npy"
+                    )
+                    with open(filepath, "wb") as f:
+                        np.save(f, agent.fitness_func_hist)
 
     def execute(self):
         self.init()
         while self.running:
-            if self.start:
+            if self.render_mode == "human":
                 if (self.timestep + 1) % 10 == 0:
                     self.log_manager.log(
                         f"Time step {self.timestep + 1}/{self.timesteps}"
                     )
                 if self.timestep >= self.timesteps:
                     self.running = False
-                self.timestep += 1
-            self.handle_input()
-            self.screen.fill("white")
-            self.loop()
-            pygame.display.flip()
+                else:
+                    self.timestep += 1
+                    self.screen.fill("white")
+                    self.loop()
+                    pygame.display.flip()
+            else:
+                if (self.timestep + 1) % 10 == 0:
+                    self.log_manager.log(
+                        f"Time step {self.timestep + 1}/{self.timesteps}"
+                    )
+                if self.timestep >= self.timesteps:
+                    self.running = False
+                else:
+                    self.timestep += 1
+                    self.loop()
+
         self.save_results()
-        pygame.quit()
         self.log_manager.log("Finished")
+        pygame.quit()

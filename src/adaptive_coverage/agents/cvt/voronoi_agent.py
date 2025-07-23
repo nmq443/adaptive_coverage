@@ -8,6 +8,7 @@ class VoronoiAgent(Agent):
         self.valid_range = self.sensing_range * valid_ratio
 
     def step(self, agents, env):
+        super().step()
         if self.goal is not None and not self.terminated(self.goal):
             self.move_to_goal(self.goal, agents, env.obstacles)
         else:

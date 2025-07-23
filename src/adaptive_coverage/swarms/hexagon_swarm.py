@@ -6,61 +6,50 @@ from adaptive_coverage.utils.lambda2 import lambda2
 
 
 class HexagonSwarm(Swarm):
-    def __init__(self, *args, rho, pso_weights, original_method=True, **kwargs):
+    def __init__(
+        self,
+        *args,
+        rho,
+        pso_weights,
+        pso_num_particles=10,
+        pso_num_iterations=100,
+        original_method=True,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.landmarks = deque([])
         self.original_method = original_method
         self.rho = rho
         self.pso_weights = pso_weights
+        self.pso_num_particles = pso_num_particles
+        self.pso_num_iterations = pso_num_iterations
 
     def init_agents(self):
-        if self.random_init:
-            random_positions = (
-                np.random.rand(self.num_agents, 2) * self.agent_spread
-                + self.first_agent_pos
-            )
-            for index in range(self.num_agents):
+        for i in range(self.num_rows):
+            for j in range(self.num_cols):
+                x = self.first_agent_pos[0] + j * self.dist_btw_agents
+                y = (
+                    self.first_agent_pos[1]
+                    + (self.num_rows - i - 1) * self.dist_btw_agents
+                )
+                init_pos = np.array([x, y])
                 self.agents.append(
                     HexagonAgent(
-                        index=index,
-                        init_pos=random_positions[index],
+                        index=i * self.num_cols + j,
+                        init_pos=init_pos,
                         size=self.agent_size,
-                        path_planner=self.path_planner,
-                        sensing_range=self.sensing_range,
                         original_method=self.original_method,
                         v_max=self.v_max,
                         avoidance_range=self.avoidance_range,
                         tolerance=self.tolerance,
+                        sensing_range=self.sensing_range,
+                        path_planner=self.path_planner,
                         rho=self.rho,
                         pso_weights=self.pso_weights,
-                        result_manager=self.result_manager,
+                        pso_num_particles=self.pso_num_particles,
+                        pso_num_iterations=self.pso_num_iterations,
                     )
                 )
-        else:
-            for i in range(self.num_rows):
-                for j in range(self.num_cols):
-                    x = self.first_agent_pos[0] + j * self.dist_btw_agents
-                    y = (
-                        self.first_agent_pos[1]
-                        + (self.num_rows - i - 1) * self.dist_btw_agents
-                    )
-                    init_pos = np.array([x, y])
-                    self.agents.append(
-                        HexagonAgent(
-                            index=i * self.num_cols + j,
-                            init_pos=init_pos,
-                            size=self.agent_size,
-                            original_method=self.original_method,
-                            v_max=self.v_max,
-                            avoidance_range=self.avoidance_range,
-                            tolerance=self.tolerance,
-                            sensing_range=self.sensing_range,
-                            path_planner=self.path_planner,
-                            rho=self.rho,
-                            pso_weights=self.pso_weights,
-                            result_manager=self.result_manager,
-                        )
-                    )
         self.determine_root(-1, self.agents[-1].pos)
 
     def determine_root(self, agent_id, agent_goal):

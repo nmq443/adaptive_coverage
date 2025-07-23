@@ -6,14 +6,22 @@ from adaptive_coverage.agents.hexagon.penalty_node_solver import (
 )
 from adaptive_coverage.utils.utils import (
     ray_intersects_aabb,
-    nearest_points_on_obstacles,
     normalize_angle,
 )
 from adaptive_coverage.agents.agent import Agent
 
 
 class HexagonAgent(Agent):
-    def __init__(self, *args, rho, pso_weights, original_method=False, **kwargs):
+    def __init__(
+        self,
+        *args,
+        rho,
+        pso_weights,
+        pso_num_iterations,
+        pso_num_particles,
+        original_method=False,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         # Hexagon agent parameters
         self.original_method = original_method
@@ -34,6 +42,9 @@ class HexagonAgent(Agent):
         self.invalid_targets = []
         self.rho = rho
         self.pso_weights = pso_weights
+        self.pso_num_iteration = pso_num_iterations
+        self.pso_num_particles = pso_num_particles
+        self.fitness_func_hist = None
 
     def is_occupied(self):
         return self.state == "occupied"
@@ -136,7 +147,6 @@ class HexagonAgent(Agent):
                 solver = OriginalSolver(
                     index=self.index,
                     pos=self.pos,
-                    result_manager=self.result_manager,
                     sensing_range=self.sensing_range,
                     hexagon_range=self.hexagon_range,
                     avoidance_range=self.avoidance_range,
@@ -145,6 +155,7 @@ class HexagonAgent(Agent):
                     v1=v1,
                     v2=v2,
                 )
+                pos = solver.solve()
             else:
                 solver = PSOSolver(
                     index=self.index,
@@ -157,17 +168,21 @@ class HexagonAgent(Agent):
                     v2=v2,
                     env=env,
                     agents=agents,
-                    result_manager=self.result_manager,
                     pso_weights=self.pso_weights,
                 )
 
-            pos = solver.solve()
+                pos = solver.solve(
+                    num_iterations=self.pso_num_iteration,
+                    num_particles=self.pso_num_particles,
+                )
 
             # Then check if the penalty node is valid
             is_valid, _ = self.is_valid_virtual_target(
                 target=pos, agents=agents, env=env
             )
             if is_valid:
+                if not self.original_method:
+                    self.fitness_func_hist = solver.fitness_func_hist
                 self.virtual_targets.append(pos)
                 self.occupied_virtual_targets.append(False)
                 self.penalty_nodes.append(pos)
@@ -380,6 +395,7 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
+        super().step()
         if self.is_occupied():
             self.on_occupied(landmarks, agents, env)
         elif self.is_assigned():
