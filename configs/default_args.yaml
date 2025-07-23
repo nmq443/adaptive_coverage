@@ -32,7 +32,7 @@ simulation:
   scale: 40
   screen_size: [1600, 900]
   linewidth: 3
-  timesteps: 20000
+  timesteps: 200
   show_sensing_range: false
   show_goal: false
   show_connections: false
@@ -52,8 +52,8 @@ agents:
   sensing_range: 5.5
   avoidance_range: 0.05
   rho: 1.0
-  pso_iterations: 100
-  pso_num_particles: 50
+  pso_iterations: 1
+  pso_num_particles: 1
   pso_weights: [1, 1, 1]
   path_planner:
     kg: 1.0

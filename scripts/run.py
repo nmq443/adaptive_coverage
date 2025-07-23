@@ -11,7 +11,9 @@ from adaptive_coverage.simulator.renderer import Renderer
 
 
 def run():
-    args = get_args("../configs/default_args.yaml")
+    args = get_args("configs/default_args.yaml")
+    render_mode = args.render_mode
+
     num_agents = args.num_agents
     agent_size = args.agent_size
     v_max = args.v_max
@@ -62,6 +64,8 @@ def run():
     )
 
     if controller == "hexagon":
+        pso_num_particles = args.pso_num_particles
+        pso_num_iterations = args.pso_iterations
         swarm = HexagonSwarm(
             num_agents=num_agents,
             original_method=original_method,
@@ -74,6 +78,8 @@ def run():
             first_agent_pos=first_agent_pos,
             rho=rho,
             pso_weights=pso_weights,
+            pso_num_particles=pso_num_particles,
+            pso_num_iterations=pso_num_iterations,
             result_manager=result_manager,
             log_manager=log_manager,
         )
@@ -115,6 +121,7 @@ def run():
         result_manager=result_manager,
         log_manager=log_manager,
         renderer=renderer,
+        render_mode=render_mode,
         scale=scale,
         timesteps=timesteps,
     )
