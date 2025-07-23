@@ -137,7 +137,7 @@ class Renderer:
             )
 
         for obs_rect in self.env.obstacles_rects:
-            rect = np.array([obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3]])
+            rect = (obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3])
             rect = meters2pixels(rect, self.scale)
             pygame.draw.rect(surface, self.obs_color, pygame.rect.Rect(rect))
 
