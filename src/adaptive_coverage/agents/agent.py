@@ -1,6 +1,4 @@
 import numpy as np
-import pygame
-from adaptive_coverage.utils.utils import meters2pixels
 
 
 class Agent:
@@ -12,8 +10,6 @@ class Agent:
         path_planner,
         sensing_range,
         result_manager,
-        sensing_color="blue",
-        color="red",
         v_max=0.05,
         avoidance_range=0.05,
         tolerance=0.05,
@@ -33,8 +29,6 @@ class Agent:
         self.tolerance = tolerance
 
         # Visualization parameters
-        self.sensing_color = sensing_color
-        self.color = color
         self.goal = None
         self.traj = [init_pos.copy()]
 
