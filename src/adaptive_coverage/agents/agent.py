@@ -29,11 +29,10 @@ class Agent:
 
         # Visualization parameters
         self.goal = None
-        self.traj = []
 
-    def get_travel_distance(self):
+    def get_travel_distance(self, state):
         """Get total travel distance."""
-        traj = np.array(self.traj)
+        traj = state[self.index, :, :-1]
         if len(traj) < 2:
             return 0.0
         displacements = traj[1:] - traj[:-1]
@@ -54,11 +53,6 @@ class Agent:
     def terminated(self, goal):
         return np.linalg.norm(self.pos - goal) <= self.tolerance
 
-    def update(self, vel):
-        self.vel = vel
-        self.limit_speed()
-        self.pos += self.vel
-
     def stop(self):
         self.vel = np.zeros(2)
 
@@ -68,6 +62,5 @@ class Agent:
         if v >= self.v_max:
             self.vel = self.vel / v * s
 
-    def step(self, *args, **kwargs):
-        yaw = np.arctan2(self.vel[1], self.vel[0])
-        self.traj.append([self.pos[0], self.pos[1], yaw])
+    def step(self, timestep, *args, **kwargs):
+        self.theta = np.arctan2(self.vel[1], self.vel[0])

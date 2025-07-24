@@ -30,9 +30,10 @@ class Simulator:
         self.running = True
         self.fps = fps
         self.font = None
-        self.current_time = 0
         self.timestep = timestep
         self.total_time = total_time
+        self.current_time = 0
+        self.total_steps = int(total_time / timestep) - 1
         self.screen = None
         self.step_count = 0
 
@@ -45,7 +46,9 @@ class Simulator:
         self.swarm.init_agents()
 
     def loop(self):
-        self.swarm.step(self.env, self.timestep)
+        self.swarm.step(
+            env=self.env, timestep=self.timestep, current_step=self.step_count
+        )
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -61,12 +64,12 @@ class Simulator:
         self.log_manager.log(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 
     def save_swarm_datas(self):
-        datas = []
-        for agent in self.swarm.agents:
-            datas.append(agent.traj)
-        datas = np.array(datas)
+        # datas = []
+        # for agent in self.swarm.agents:
+        #     datas.append(agent.traj)
+        # datas = np.array(datas)
         with open(self.result_manager.swarm_data_filepath, "wb") as f:
-            np.save(f, datas)
+            np.save(f, self.swarm.state)
 
         # save travel distances
         distances = self.swarm.get_travel_distance()
@@ -95,7 +98,8 @@ class Simulator:
                 self.log_manager.log(
                     f"Current time {self.current_time: .2f}/{self.total_time}. Step: {self.step_count}"
                 )
-            if self.current_time >= self.total_time:
+            # if self.current_time >= self.total_time - self.current_time:
+            if self.step_count >= self.total_steps:
                 self.running = False
             else:
                 self.current_time += self.timestep

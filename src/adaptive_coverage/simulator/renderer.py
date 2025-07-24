@@ -175,6 +175,17 @@ class Renderer:
             self.screen, self.agent_sensing_color, pos, sensing_range, self.linewidth
         )
 
+        # If voronoi agent, draw critical range
+        if self.controller == "voronoi":
+            critical_range = meters2pixels(self.sensing_range * 0.75, self.scale)
+            pygame.draw.circle(
+                self.screen,
+                self.agent_sensing_color,
+                pos,
+                critical_range,
+                self.linewidth,
+            )
+
     def draw_trails(self, index):
         start_trail_idx = max(0, self.current_timestep - self.trail_length)
         trail_points_sim = self.trajectories_data[

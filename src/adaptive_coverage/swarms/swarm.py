@@ -15,6 +15,8 @@ class Swarm:
         v_max,
         avoidance_range,
         tolerance,
+        total_time,
+        timestep,
         random_init=False,
         dist_btw_agents=0.7,
         agent_spread=0.05,
@@ -39,6 +41,15 @@ class Swarm:
         self.num_rows = int(num_agents / 5)
         self.num_cols = int(num_agents / self.num_rows)
 
+        self.total_time = total_time
+        self.timestep = timestep
+        # (num_agents, num_timesteps, (x, y, theta))
+        self.state = np.zeros(
+            (self.num_agents, int(self.total_time / self.timestep), 3)
+        )
+
+        print(f"State's shape: {self.state.shape}")
+
     def init_agents(self, ref_pos=None):
         pass
 
@@ -56,11 +67,21 @@ class Swarm:
                         dist2
                     )
 
-    def step(self, env, timestep):
+    def update_state(self, agent_index, current_step, state):
+        # print(
+        #     f"Agent index: {agent_index}, current step: {current_step}, state: {state}"
+        # )
+        self.state[agent_index, current_step] = state
+
+    def step(self, env, timestep, current_step):
         if len(self.agents) > 0:
             order = np.random.permutation(len(self.agents))
             for i in order:
                 self.agents[i].step(self.agents, env, timestep)
+                state = np.array(
+                    [self.agents[i].pos[0], self.agents[i].pos[1], self.agents[i].theta]
+                )
+                self.update_state(agent_index=i, current_step=current_step, state=state)
             self.update_adj_mat()
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)
@@ -69,6 +90,6 @@ class Swarm:
         """Save travel distance of all agents."""
         distances = []
         for agent in self.agents:
-            distance = agent.get_travel_distance()
+            distance = agent.get_travel_distance(self.state)
             distances.append(distance)
         return np.array(distances)

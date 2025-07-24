@@ -395,7 +395,7 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
-        super().step()
+        super().step(timestep=timestep)
         if self.is_occupied():
             self.on_occupied(landmarks, agents, env)
         elif self.is_assigned():
