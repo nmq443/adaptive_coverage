@@ -28,10 +28,16 @@ def get_args(default_configs):
         default=configs["agents"]["num_agents"],
     )
     parser.add_argument(
-        "--timesteps",
-        help="Number of timesteps to simulate",
+        "--total_time",
+        help="Total simulation time",
         type=int,
-        default=configs["simulation"]["timesteps"],
+        default=configs["simulation"]["total_time"],
+    )
+    parser.add_argument(
+        "--timestep",
+        help="Timestep",
+        type=float,
+        default=configs["simulation"]["timestep"],
     )
     parser.add_argument(
         "--agent_size",
@@ -226,7 +232,8 @@ def save_configs(args, file_path):
     output_config["simulation"]["scale"] = config_dict.pop("scale")
     output_config["simulation"]["screen_size"] = config_dict.pop("screen_size")
     output_config["simulation"]["linewidth"] = config_dict.pop("linewidth")
-    output_config["simulation"]["timesteps"] = config_dict.pop("timesteps")
+    output_config["simulation"]["total_time"] = config_dict.pop("total_time")
+    output_config["simulation"]["timestep"] = config_dict.pop("timestep")
     output_config["simulation"]["show_sensing_range"] = config_dict.pop(
         "show_sensing_range"
     )

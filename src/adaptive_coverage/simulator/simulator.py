@@ -10,11 +10,11 @@ class Simulator:
         env,
         result_manager,
         log_manager,
-        timesteps=100,
+        total_time=20,
+        timestep=0.01,
         font_size=11,
         controller="hexagon",
         original_method=True,
-        dt=0.1,
         screen_size=(1600, 900),
         fps=144,
         scale=20,
@@ -28,14 +28,13 @@ class Simulator:
         self.scale = scale
         self.env = env
         self.running = True
-        self.dt = dt
         self.fps = fps
         self.font = None
-        self.timestep = 0
-        self.timesteps = timesteps
+        self.current_time = 0
+        self.timestep = timestep
+        self.total_time = total_time
         self.screen = None
-        self.clock = pygame.time.Clock()
-        self.first_click = True
+        self.step_count = 0
 
         # Results and logging managers
         self.log_manager = log_manager
@@ -106,12 +105,15 @@ class Simulator:
     def execute(self):
         self.init()
         while self.running:
-            if (self.timestep + 1) % 10 == 0:
-                self.log_manager.log(f"Time step {self.timestep + 1}/{self.timesteps}")
-            if self.timestep >= self.timesteps:
+            if self.step_count % 10 == 0:
+                self.log_manager.log(
+                    f"Current time {self.current_time}/{self.total_time}. Step: {self.step_count}"
+                )
+            if self.current_time >= self.total_time:
                 self.running = False
             else:
-                self.timestep += 1
+                self.current_time += self.timestep
+                self.step_count += 1
                 self.loop()
         self.save_results()
         self.log_manager.log("Finished")

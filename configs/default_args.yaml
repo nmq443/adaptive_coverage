@@ -31,8 +31,9 @@ environment:
 simulation:
   scale: 40
   screen_size: [1600, 900]
-  linewidth: 3
-  timesteps: 200
+  linewidth: 1
+  total_time: 200
+  timestep: 0.01
   show_sensing_range: false
   show_goal: false
   show_connections: false
