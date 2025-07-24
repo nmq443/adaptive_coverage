@@ -71,12 +71,8 @@ class Simulator:
                 self.running = False
 
     def save_results(self):
-        # data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        # frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        # self.result_manager.update_frames(frame)
-        # self.result_manager.save_video()
-        # self.result_manager.save_images()
         self.save_swarm_datas()
+        self.log_manager.log(f"Saving results to {self.result_manager.res_dir}")
         self.log_manager.log(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 
     def save_swarm_datas(self):
@@ -84,7 +80,6 @@ class Simulator:
         for agent in self.swarm.agents:
             datas.append(agent.traj)
         datas = np.array(datas)
-        print(datas.shape)
         with open(self.result_manager.swarm_data_filepath, "wb") as f:
             np.save(f, datas)
 

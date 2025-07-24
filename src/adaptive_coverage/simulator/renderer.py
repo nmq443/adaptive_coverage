@@ -8,13 +8,14 @@ from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 class Renderer:
     def __init__(
         self,
-        swarm,
         env,
         agent_size,
         sensing_range,
         scale,
         screen_size,
         trajectories_filepath,
+        result_manager,
+        log_manager,
         controller="voronoi",
         agent_color="red",
         agent_sensing_color="blue",
@@ -37,7 +38,6 @@ class Renderer:
     ):
         self.screen_size = screen_size
         self.sensing_range = sensing_range
-        self.swarm = swarm
         self.trajectories_filepath = trajectories_filepath
         self.env = env
         self.scale = scale
@@ -59,7 +59,6 @@ class Renderer:
             self.assigned_color = assigned_color
             self.unassigned_color = unassigned_color
             self.penalty_color = penalty_color
-
         self.num_agents = 0
         self.num_timesteps = 0
         self.current_timestep = 0
@@ -69,6 +68,8 @@ class Renderer:
         self.fps = fps
         self.trail_length = trail_length
         self.font_size = font_size
+        self.result_manager = result_manager
+        self.log_manager = log_manager
 
     def load_data(self):
         if not os.path.exists(self.trajectories_filepath):
@@ -126,6 +127,11 @@ class Renderer:
             vor = compute_voronoi_diagrams(generators, self.env)
             self.draw_voronoi(vor, self.screen)
 
+        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+        self.result_manager.update_video(frame)
+        if self.current_timestep == 0:
+            self.result_manager.update_frames(frame)
         pygame.display.flip()
 
     def draw_heading(self, pos, yaw):
@@ -146,8 +152,8 @@ class Renderer:
                 self.screen, self.obs_color, start_pos, end_pos, self.linewidth
             )
 
-        for obs_rect in self.env.obstacles_rects:
-            rect = (obs_rect[0], obs_rect[1], obs_rect[2], obs_rect[3])
+        for obs in self.env.obstacles:
+            rect = np.array([obs[0], obs[1], obs[2], obs[3]])
             rect = meters2pixels(rect, self.scale)
             pygame.draw.rect(self.screen, self.obs_color, pygame.rect.Rect(rect))
 
@@ -252,5 +258,13 @@ class Renderer:
 
             self.clock.tick(self.fps)
 
+        self.save()
         pygame.quit()
-        print("Playback stopped.")
+
+    def save(self):
+        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+        self.result_manager.update_frames(frame)
+
+        self.result_manager.save_video()
+        self.result_manager.save_images()

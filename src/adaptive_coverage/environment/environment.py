@@ -24,7 +24,7 @@ class Environment:
         self.y_max = np.max(self.vertices[:, 1])
         self.polygon = Polygon(self.vertices)
         self.edges = []
-        self.obstacles = obstacles
+        self.obstacles = np.array(obstacles)
         self.obstacles_rects = []
         self.init()
 
