@@ -68,4 +68,5 @@ class Agent:
             self.vel = self.vel / v * self.v_max
 
     def step(self, *args, **kwargs):
-        self.traj.append(self.pos.copy())
+        yaw = np.arctan2(self.vel[1], self.vel[0])
+        self.traj.append([self.pos[0], self.pos[1], yaw])

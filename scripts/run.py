@@ -1,5 +1,5 @@
+import os
 import numpy as np
-
 from adaptive_coverage.utils.arg_parse import get_args
 from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
 from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm
@@ -12,7 +12,6 @@ from adaptive_coverage.simulator.renderer import Renderer
 
 def run():
     args = get_args("configs/default_args.yaml")
-    render_mode = args.render_mode
 
     num_agents = args.num_agents
     agent_size = args.agent_size
@@ -103,8 +102,26 @@ def run():
     show_goal = args.show_goal
     show_trajectories = args.show_trajectories
     show_sensing_range = args.show_sensing_range
+
+    sim = Simulator(
+        screen_size=screen_size,
+        swarm=swarm,
+        env=env,
+        result_manager=result_manager,
+        log_manager=log_manager,
+        scale=scale,
+        timesteps=timesteps,
+    )
+
+    if not os.path.exists(result_manager.swarm_data_filepath):
+        sim.execute()
+
     renderer = Renderer(
+        screen_size=screen_size,
+        trajectories_filepath=result_manager.swarm_data_filepath,
         controller=controller,
+        agent_size=agent_size,
+        sensing_range=sensing_range,
         swarm=swarm,
         env=env,
         scale=scale,
@@ -114,18 +131,7 @@ def run():
         show_sensing_range=show_sensing_range,
         show_trajectories=show_trajectories,
     )
-    sim = Simulator(
-        screen_size=screen_size,
-        swarm=swarm,
-        env=env,
-        result_manager=result_manager,
-        log_manager=log_manager,
-        renderer=renderer,
-        render_mode=render_mode,
-        scale=scale,
-        timesteps=timesteps,
-    )
-    sim.execute()
+    renderer.run()
 
 
 if __name__ == "__main__":
