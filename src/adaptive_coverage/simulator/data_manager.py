@@ -5,7 +5,9 @@ import logging
 
 
 class ResultManager:
-    def __init__(self, num_agents, res_dir, env_dir, controller, original_method, fps=144):
+    def __init__(
+        self, num_agents, res_dir, env_dir, controller, original_method, fps=144
+    ):
         self.num_agents = num_agents
         self.res_dir = res_dir
         self.env_dir = env_dir
@@ -23,24 +25,37 @@ class ResultManager:
 
         self.swarm_data_filepath = os.path.join(self.res_dir, "swarm_data.npy")
         self.ld2s_filepath = os.path.join(self.res_dir, "ld2s_data.npy")
-        self.travel_distances_filepath = os.path.join(self.res_dir, "travel_distances.npy")
+        self.travel_distances_filepath = os.path.join(
+            self.res_dir, "travel_distances.npy"
+        )
 
     def init_directories(self):
+        # Determine the base directory
         if self.controller == "hexagon":
-            if self.original_method:
-                dir = "original"
-            else:
-                dir = "pso"
-            self.res_dir = os.path.join(
-                self.res_dir, self.controller, self.env_dir, f"{self.num_agents}_agents", dir
+            method_dir = "original" if self.original_method else "pso"
+            base_dir = os.path.join(
+                self.res_dir,
+                self.controller,
+                self.env_dir,
+                f"{self.num_agents}_agents",
+                method_dir,
             )
         else:
-            self.res_dir = os.path.join(
+            base_dir = os.path.join(
                 self.res_dir, self.controller, self.env_dir, f"{self.num_agents}_agents"
             )
-        if os.path.exists(self.res_dir):
-            shutil.rmtree(self.res_dir)
-        os.makedirs(self.res_dir, exist_ok=True)
+
+        # Create the base directory if it doesn't exist
+        os.makedirs(base_dir, exist_ok=True)
+
+        # Find the next available run number
+        run_number = 0
+        while os.path.exists(os.path.join(base_dir, f"run{run_number}")):
+            run_number += 1
+
+        # Set the new results directory
+        self.res_dir = os.path.join(base_dir, f"run{run_number}")
+        os.makedirs(self.res_dir)
 
     def update_video(self, frame):
         self.video_writer.append_data(frame)
@@ -95,19 +110,30 @@ class LogManager:
         self.logger.info(msg)
 
     def init_directories(self):
+        # Determine the base directory
         if self.controller == "hexagon":
-            if self.original_method:
-                dir = "original"
-            else:
-                dir = "pso"
-            self.log_dir = os.path.join(
-                self.log_dir, self.controller, self.env_dir, f"{self.num_agents}_agents", dir
+            method_dir = "original" if self.original_method else "pso"
+            base_dir = os.path.join(
+                self.log_dir,
+                self.controller,
+                self.env_dir,
+                f"{self.num_agents}_agents",
+                method_dir,
             )
         else:
-            self.log_dir = os.path.join(
+            base_dir = os.path.join(
                 self.log_dir, self.controller, self.env_dir, f"{self.num_agents}_agents"
             )
-        if os.path.exists(self.log_dir):
-            shutil.rmtree(self.log_dir)
-        os.makedirs(self.log_dir, exist_ok=True)
+
+        # Create the base directory if it doesn't exist
+        os.makedirs(base_dir, exist_ok=True)
+
+        # Find the next available run number
+        run_number = 0
+        while os.path.exists(os.path.join(base_dir, f"run{run_number}")):
+            run_number += 1
+
+        # Set the new log directory and file
+        self.log_dir = os.path.join(base_dir, f"run{run_number}")
+        os.makedirs(self.log_dir)
         self.log_file = os.path.join(self.log_dir, f"{self.controller}_log.log")
