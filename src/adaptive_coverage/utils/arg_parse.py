@@ -79,10 +79,10 @@ def get_args(default_configs):
 
     # PSO parameters
     parser.add_argument(
-        "--pso_iterations",
+        "--pso_num_iterations",
         help="Number of iterations to run PSO algorithm",
         type=int,
-        default=configs["agents"]["pso_iterations"],
+        default=configs["agents"]["pso_num_iterations"],
     )
     parser.add_argument(
         "--pso_num_particles",
@@ -264,7 +264,9 @@ def save_configs(args, file_path):
     output_config["agents"]["sensing_range"] = config_dict.pop("sensing_range")
     output_config["agents"]["avoidance_range"] = config_dict.pop("avoidance_range")
     output_config["agents"]["rho"] = config_dict.pop("rho")
-    output_config["agents"]["pso_iterations"] = config_dict.pop("pso_iterations")
+    output_config["agents"]["pso_num_iterations"] = config_dict.pop(
+        "pso_num_iterations"
+    )
     output_config["agents"]["pso_num_particles"] = config_dict.pop("pso_num_particles")
     output_config["agents"]["pso_weights"] = config_dict.pop("pso_weights")
 

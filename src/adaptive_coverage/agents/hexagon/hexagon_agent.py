@@ -61,7 +61,7 @@ class HexagonAgent(Agent):
     def set_goal(self, goal: np.ndarray):
         self.goal = goal
 
-    def mobility_control(self, agents, env):
+    def mobility_control(self, agents, env, timestep):
         if self.route_id == len(self.route) - 2:
             cur_node = agents[self.route[self.route_id]]
             if (
@@ -74,7 +74,7 @@ class HexagonAgent(Agent):
             dest2 = None
             if self.route_id + 1 < len(self.route) - 1:
                 dest2 = agents[self.route[self.route_id + 1]].pos
-            self.move_to_goal(dest1, agents, env.obstacles)
+            self.move_to_goal(dest1, agents, env.obstacles, timestep)
             if (
                 dest2 is not None
                 and np.linalg.norm(dest2 - self.pos) <= self.sensing_range
@@ -267,7 +267,7 @@ class HexagonAgent(Agent):
             if self.tc >= len(self.virtual_targets):
                 landmarks.popleft()
 
-    def on_assigned(self, agents, env):
+    def on_assigned(self, agents, env, timestep):
         """
         Assignment phase.
 
@@ -275,7 +275,7 @@ class HexagonAgent(Agent):
             agents (list): list of all agents.
             landmarks (deque): queue of landmarks.
         """
-        self.mobility_control(agents, env)
+        self.mobility_control(agents, env, timestep)
         if self.flag == 1:
             if self.goal is not None:
                 self.set_goal(self.assigned_target)
@@ -283,7 +283,7 @@ class HexagonAgent(Agent):
                     # self.stop()
                     self.set_state("occupied")
                 else:
-                    self.move_to_goal(self.goal, agents, env.obstacles)
+                    self.move_to_goal(self.goal, agents, env.obstacles, timestep)
 
     def on_unassigned(self, landmarks, agents, env):
         """
@@ -386,7 +386,7 @@ class HexagonAgent(Agent):
 
         return [start_node[0]]  # if there is only one element
 
-    def step(self, landmarks, agents, env):
+    def step(self, landmarks, agents, env, timestep):
         """
         Run the distributed control.
 
@@ -399,6 +399,6 @@ class HexagonAgent(Agent):
         if self.is_occupied():
             self.on_occupied(landmarks, agents, env)
         elif self.is_assigned():
-            self.on_assigned(agents, env)
+            self.on_assigned(agents, env, timestep)
         elif self.is_unassigned():
             self.on_unassigned(landmarks, agents, env)

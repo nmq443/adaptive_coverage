@@ -41,25 +41,11 @@ class Simulator:
         self.result_manager = result_manager
 
     def init(self):
-        # pygame.init()
-        # pygame.display.set_caption("Distributed Coverage Control")
-        # self.screen = pygame.display.set_mode(self.screen_size)
-        # self.font = pygame.font.SysFont("monospace", self.font_size, True)
-
         # init swarm
         self.swarm.init_agents()
 
     def loop(self):
-        # self.renderer.render(
-        #     surface=self.screen, font=self.font, timestep=self.timestep
-        # )
-        # data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        # frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        # if len(self.swarm.agents) > 0:
-        #     self.result_manager.update_video(frame)
-        # if len(self.swarm.agents) > 0 and self.timestep == 1:
-        #     self.result_manager.update_frames(frame)
-        self.swarm.step(self.env)
+        self.swarm.step(self.env, self.timestep)
 
     def handle_input(self):
         keys = pygame.key.get_pressed()
@@ -107,7 +93,7 @@ class Simulator:
         while self.running:
             if self.step_count % 10 == 0:
                 self.log_manager.log(
-                    f"Current time {self.current_time}/{self.total_time}. Step: {self.step_count}"
+                    f"Current time {self.current_time: .2f}/{self.total_time}. Step: {self.step_count}"
                 )
             if self.current_time >= self.total_time:
                 self.running = False

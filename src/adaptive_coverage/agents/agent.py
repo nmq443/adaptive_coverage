@@ -40,7 +40,7 @@ class Agent:
         distances = np.linalg.norm(displacements, axis=1)
         return np.sum(distances)
 
-    def move_to_goal(self, goal, agents, obstacles):
+    def move_to_goal(self, goal, agents, obstacles, timestep, desired_v=None):
         self.goal = goal
         if self.terminated(goal):
             self.stop()
@@ -48,8 +48,8 @@ class Agent:
             self.vel = self.path_planner.total_force(
                 self.pos, self.goal, self.index, agents, obstacles
             )
-            self.limit_speed()
-            self.pos += self.vel
+            self.limit_speed(desired_v=desired_v)
+            self.pos += self.vel * timestep
 
     def terminated(self, goal):
         return np.linalg.norm(self.pos - goal) <= self.tolerance
@@ -62,10 +62,11 @@ class Agent:
     def stop(self):
         self.vel = np.zeros(2)
 
-    def limit_speed(self):
+    def limit_speed(self, desired_v=None):
         v = np.linalg.norm(self.vel)
+        s = self.v_max if desired_v is None else desired_v
         if v >= self.v_max:
-            self.vel = self.vel / v * self.v_max
+            self.vel = self.vel / v * s
 
     def step(self, *args, **kwargs):
         yaw = np.arctan2(self.vel[1], self.vel[0])

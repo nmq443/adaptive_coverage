@@ -32,10 +32,10 @@ class ArtificialPotentialField:
         dist_valid = dist[mask][:, np.newaxis]
 
         force = (
-                self.ko
-                * (1.0 / dist_valid - 1.0 / self.avoidance_range)
-                * diff_valid
-                / (dist_valid ** 2)
+            self.ko
+            * (1.0 / dist_valid - 1.0 / self.avoidance_range)
+            * diff_valid
+            / (dist_valid**2)
         )
         fo = np.sum(force, axis=0)
         return fo
@@ -61,10 +61,10 @@ class ArtificialPotentialField:
 
         fc = np.sum(
             (
-                    self.kc
-                    * np.exp(-self.beta_c * (distances - self.avoidance_range))
-                    * (directions / distances)
-                    / (distances - self.avoidance_range)
+                self.kc
+                * np.exp(-self.beta_c * (distances - self.avoidance_range))
+                * (directions / distances + 1e-9)
+                / (distances - self.avoidance_range + 1e-9)
             ),
             axis=0,
         )

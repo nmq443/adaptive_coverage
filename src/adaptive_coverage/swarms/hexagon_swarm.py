@@ -55,11 +55,11 @@ class HexagonSwarm(Swarm):
     def determine_root(self, agent_id, agent_goal):
         self.agents[agent_id].set_state("occupied")
 
-    def step(self, env):
+    def step(self, env, timestep):
         if len(self.agents) > 0:
             order = np.random.permutation(len(self.agents))
             for i in order:
-                self.agents[i].step(self.landmarks, self.agents, env)
+                self.agents[i].step(self.landmarks, self.agents, env, timestep)
             self.update_adj_mat()
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)

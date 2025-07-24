@@ -30,12 +30,12 @@ class VoronoiSwarm(Swarm):
         self.generators = [agent.pos for agent in self.agents]
         self.generators = np.array(self.generators)
 
-    def step(self, env):
-        pass
-        if len(self.agents) > 0:
-            order = np.random.permutation(len(self.agents))
-            for i in order:
-                self.agents[i].step(self.agents, env)
-            self.update_adj_mat()
-            ld2 = lambda2(self.adjacency_matrix)
-            self.ld2s.append(ld2)
+    def step(self, env, timestep):
+        super().step(env, timestep)
+        # if len(self.agents) > 0:
+        #     order = np.random.permutation(len(self.agents))
+        #     for i in order:
+        #         self.agents[i].step(self.agents, env, timestep)
+        #     self.update_adj_mat()
+        #     ld2 = lambda2(self.adjacency_matrix)
+        #     self.ld2s.append(ld2)

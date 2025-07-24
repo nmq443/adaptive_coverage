@@ -1,4 +1,5 @@
 import numpy as np
+from adaptive_coverage.utils.lambda2 import lambda2
 
 
 class Swarm:
@@ -55,8 +56,14 @@ class Swarm:
                         dist2
                     )
 
-    def step(self):
-        pass
+    def step(self, env, timestep):
+        if len(self.agents) > 0:
+            order = np.random.permutation(len(self.agents))
+            for i in order:
+                self.agents[i].step(self.agents, env, timestep)
+            self.update_adj_mat()
+            ld2 = lambda2(self.adjacency_matrix)
+            self.ld2s.append(ld2)
 
     def get_travel_distance(self):
         """Save travel distance of all agents."""

@@ -46,7 +46,7 @@ def run():
             avoidance_range=args.avoidance_range,
             tolerance=args.tolerance,
             agent_size=args.agent_size,
-            path_planner=args.path_planner,
+            path_planner=path_planner,
             sensing_range=args.sensing_range,
             first_agent_pos=args.first_agent_pos,
             rho=args.rho,
