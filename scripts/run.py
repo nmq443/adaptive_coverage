@@ -1,5 +1,4 @@
 import os
-import numpy as np
 from adaptive_coverage.utils.arg_parse import get_args, save_configs
 from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
 from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm

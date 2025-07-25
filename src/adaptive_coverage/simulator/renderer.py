@@ -14,8 +14,8 @@ class Renderer:
         scale,
         screen_size,
         trajectories_filepath,
-        result_manager,
-        log_manager,
+        result_manager=None,
+        log_manager=None,
         controller="voronoi",
         agent_color="red",
         agent_sensing_color="blue",
@@ -127,11 +127,12 @@ class Renderer:
             vor = compute_voronoi_diagrams(generators, self.env)
             self.draw_voronoi(vor, self.screen)
 
-        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        self.result_manager.update_video(frame)
-        if self.current_timestep == 0:
-            self.result_manager.update_frames(frame)
+        if self.result_manager is not None and self.log_manager is not None:
+            data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+            frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+            self.result_manager.update_video(frame)
+            if self.current_timestep == 0:
+                self.result_manager.update_frames(frame)
         pygame.display.flip()
 
     def draw_heading(self, pos, yaw):
@@ -273,9 +274,10 @@ class Renderer:
         pygame.quit()
 
     def save(self):
-        data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
-        frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
-        self.result_manager.update_frames(frame)
+        if self.result_manager is not None and self.log_manager is not None:
+            data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
+            frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)
+            self.result_manager.update_frames(frame)
 
-        self.result_manager.save_video()
-        self.result_manager.save_images()
+            self.result_manager.save_video()
+            self.result_manager.save_images()
