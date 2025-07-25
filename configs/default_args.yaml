@@ -50,7 +50,7 @@ agents:
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.05
-  sensing_range: 3.0
+  sensing_range: 7.0
   avoidance_range: 0.05
   rho: 1.0
   pso_num_iterations: 1
