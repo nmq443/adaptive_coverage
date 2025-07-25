@@ -48,8 +48,6 @@ class Swarm:
             (self.num_agents, int(self.total_time / self.timestep), 3)
         )
 
-        print(f"State's shape: {self.state.shape}")
-
     def init_agents(self, ref_pos=None):
         pass
 

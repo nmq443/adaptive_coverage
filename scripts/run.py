@@ -75,8 +75,6 @@ def run():
 
     env = Environment(args.area_width, args.area_height, args.obstacles, offset=1)
 
-    print(args.timestep)
-    print(args.total_time)
     sim = Simulator(
         screen_size=args.screen_size,
         swarm=swarm,
