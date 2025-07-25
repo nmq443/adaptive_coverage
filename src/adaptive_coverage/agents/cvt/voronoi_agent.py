@@ -1,6 +1,7 @@
 import numpy as np
 from adaptive_coverage.agents.agent import Agent
 from adaptive_coverage.agents.cvt.lloyd import lloyd
+from adaptive_coverage.utils.utils import ray_intersects_aabb
 
 
 class VoronoiAgent(Agent):
@@ -25,14 +26,20 @@ class VoronoiAgent(Agent):
         # )
         return critical_agents
 
-    def is_critical_agent(self, other, agents):
+    def is_critical_agent(self, other, agents, env):
         if other.index == self.index:
             return False
         rij = np.linalg.norm(other.pos - self.pos)
         if rij < self.critical_range or rij > self.sensing_range:
             return False
+        if ray_intersects_aabb(self.pos, other.pos, env.obstacles):
+            return False
         for agent in agents:
             if agent.index != other.index and agent.index != self.index:
+                if ray_intersects_aabb(self.pos, agent.pos, env.obstacles):
+                    continue
+                if ray_intersects_aabb(other.pos, agent.pos, env.obstacles):
+                    continue
                 di = np.linalg.norm(agent.pos - self.pos)
                 dj = np.linalg.norm(agent.pos - other.pos)
                 if di <= self.critical_range and dj <= self.critical_range:

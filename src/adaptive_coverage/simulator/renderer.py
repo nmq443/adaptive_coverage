@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 import os
-from adaptive_coverage.utils.utils import meters2pixels
+from adaptive_coverage.utils.utils import meters2pixels, ray_intersects_aabb
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 
 
@@ -177,15 +177,15 @@ class Renderer:
         )
 
         # If voronoi agent, draw critical range
-        if self.controller == "voronoi":
-            critical_range = meters2pixels(self.sensing_range * 0.75, self.scale)
-            pygame.draw.circle(
-                self.screen,
-                self.agent_sensing_color,
-                pos,
-                critical_range,
-                self.linewidth,
-            )
+        # if self.controller == "voronoi":
+        #     critical_range = meters2pixels(self.sensing_range * 0.75, self.scale)
+        #     pygame.draw.circle(
+        #         self.screen,
+        #         self.agent_sensing_color,
+        #         pos,
+        #         critical_range,
+        #         self.linewidth,
+        #     )
 
     def draw_trails(self, index):
         start_trail_idx = max(0, self.current_timestep - self.trail_length)
@@ -210,6 +210,8 @@ class Renderer:
             if i == j:
                 continue
             other_pos_sim = self.trajectories_data[j, self.current_timestep, :-1]
+            if ray_intersects_aabb(pos, other_pos_sim, self.env.obstacles):
+                continue
             dist = np.linalg.norm(pos - other_pos_sim)
             if dist <= self.sensing_range:
                 start_pos = meters2pixels(pos, self.scale)
