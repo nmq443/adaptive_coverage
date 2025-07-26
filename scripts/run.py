@@ -87,8 +87,8 @@ def run():
     )
 
     sim.execute()
-    render(args, log_manager, result_manager)
     save_configs(args, os.path.join(result_manager.res_dir, "configs.yaml"))
+    render(args, log_manager, result_manager)
 
 
 def render(args, log_manager, result_manager):

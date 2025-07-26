@@ -211,7 +211,7 @@ def save_configs(args, file_path):
         file_path (str): The path to the output YAML file.
     """
     # Convert the argparse namespace to a dictionary
-    config_dict = vars(args)
+    config_dict = vars(args).copy()
 
     # Restructure the dictionary to match the YAML format
     output_config = {

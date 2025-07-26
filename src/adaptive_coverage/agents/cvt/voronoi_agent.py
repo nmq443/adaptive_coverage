@@ -11,11 +11,11 @@ class VoronoiAgent(Agent):
         self.critical_range = self.sensing_range * 0.75
         self.eps = self.sensing_range - self.critical_range
 
-    def get_critical_agents(self, agents):
+    def get_critical_agents(self, agents, env):
         critical_agents = []
         for agent in agents:
             if agent.index != self.index:
-                if self.is_critical_agent(agent, agents):
+                if self.is_critical_agent(agent, agents, env):
                     critical_agents.append(agent.index)
         # agents_positions = np.array(
         #     [agent.pos for agent in agents if agent.index != self.index]
@@ -49,7 +49,7 @@ class VoronoiAgent(Agent):
     def step(self, agents, env, timestep):
         super().step(timestep=timestep)
         if self.goal is not None and not self.terminated(self.goal):
-            critical_agents = self.get_critical_agents(agents)
+            critical_agents = self.get_critical_agents(agents, env)
             if len(critical_agents) > 0:
                 distances = []
                 for agent in critical_agents:
