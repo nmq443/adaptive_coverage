@@ -8,6 +8,17 @@ class ResultManager:
     def __init__(
         self, num_agents, res_dir, env_dir, controller, original_method, fps=144
     ):
+        """
+        This class helps with managing results.
+
+        Args:
+            num_agents: number of agents to simulate.
+            res_dir: result directory.
+            env_dir: name of environment.
+            controller: controller to use (voronoi or hexagon).
+            original_method: if using hexagon controller's original method or PSO method.
+            fps: frames per second for video playback.
+        """
         self.num_agents = num_agents
         self.res_dir = res_dir
         self.env_dir = env_dir
@@ -30,6 +41,10 @@ class ResultManager:
         )
 
     def init_directories(self):
+        """
+        Initialize the result tree.
+        """
+
         # Determine the base directory
         if self.controller == "hexagon":
             method_dir = "original" if self.original_method else "pso"
@@ -58,25 +73,45 @@ class ResultManager:
         os.makedirs(self.res_dir)
 
     def update_video(self, frame):
+        """
+        Update current frame to playback video.
+
+        Args:
+            frame: current frame.
+        """
         self.video_writer.append_data(frame)
 
     def update_frames(self, frame):
+        """
+        Add current frame to frames list.
+
+        Args:
+            frame: current frame.
+        """
         self.frames.append(frame)
 
-    def update_images(self, start_img, final_img):
-        imageio.imwrite(self.start_img_path, start_img)
-        imageio.imwrite(self.end_img_path, final_img)
-
     def save_video(self):
+        """Save playback video."""
         self.video_writer.close()
 
     def save_images(self):
-        imageio.imwrite(self.start_img_path, self.frames[0])
+        """Save first and final image."""
+        imageio.imwrite(self.start_img_path, self.frames[1])
         imageio.imwrite(self.end_img_path, self.frames[-1])
 
 
 class LogManager:
     def __init__(self, num_agents, log_dir, env_dir, controller, original_method):
+        """
+        This class helps with managing log.
+
+        Args:
+            num_agents: number of agents to simulate.
+            log_dir: logging directory.
+            env_dir: name of environment.
+            controller: controller to use (voronoi or hexagon).
+            original_method: if using hexagon controller's original method or PSO method.
+        """
         self.num_agents = num_agents
         self.log_dir = log_dir
         self.env_dir = env_dir
@@ -110,6 +145,10 @@ class LogManager:
         self.logger.info(msg)
 
     def init_directories(self):
+        """
+        Initialize the log tree.
+        """
+
         # Determine the base directory
         if self.controller == "hexagon":
             method_dir = "original" if self.original_method else "pso"

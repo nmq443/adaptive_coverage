@@ -36,6 +36,38 @@ class Renderer:
         show_connections=False,
         show_trajectories=False,
     ):
+        """
+        This class renders the result of the simulation.
+        Args:
+            env: simulation environment.
+            agent_size: size of the agent in meters, because an agent is represented as a circle, agent_size is the
+            circle's radius.
+            sensing_range: sensing range of the agent in meters.
+            scale: scaling factor from simulation plane to rendering plane.
+            screen_size: size of the rendering screen in pixels.
+            trajectories_filepath: filepath to result data.
+            result_manager: result manager object (for result tree).
+            log_manager: log manager object (for log tree).
+            controller: controller used for simulation (voronoi or hexagon).
+            agent_color: agent's color.
+            agent_sensing_color: agent's sensing range's color.
+            goal_color: agent's goal's color.
+            heading_color: agent's heading's color.
+            index_color: agent's index's color.
+            obs_color: obstacle's color.
+            occupied_color: agent's color if controller is hexagon and agent's state is occupied.
+            assigned_color: agent's color if controller is hexagon and agent's state is assigned.
+            unassigned_color: agent's color if controller is hexagon and agent's state is unassigned.
+            penalty_color: agent's color if controller is hexagon and agent is a penalty node.
+            linewidth: line width to render.
+            fps: frames per second.
+            trail_length: trail length of the agent's trajectory.
+            font_size: font size of the agent's index.
+            show_sensing_range: show agent's sensing range or not.
+            show_goal: show agent's goal or not.
+            show_connections: show agent's connections or not.
+            show_trajectories: show agent's trajectory or not.
+        """
         self.screen_size = screen_size
         self.sensing_range = sensing_range
         self.trajectories_filepath = trajectories_filepath
@@ -72,6 +104,10 @@ class Renderer:
         self.log_manager = log_manager
 
     def load_data(self):
+        """
+        Load simulation data. The data is a .npy file, which contains a (num_agents, num_timesteps, 3) numpy.ndarray
+        representing the agents' states.
+        """
         if not os.path.exists(self.trajectories_filepath):
             print(f"Error: Trajectory file not found at {self.trajectories_filepath}")
             return False
@@ -87,6 +123,9 @@ class Renderer:
             return False
 
     def init_pygame(self):
+        """
+        Initialize pygame window.
+        """
         pygame.init()
         pygame.display.set_caption("Playback")
         self.screen = pygame.display.set_mode(self.screen_size)
@@ -95,6 +134,9 @@ class Renderer:
         self.font = pygame.font.SysFont("monospace", self.font_size, True)
 
     def draw(self):
+        """
+        Rendering at each frame.
+        """
         self.screen.fill("white")
 
         for i in range(self.num_agents):
@@ -122,10 +164,10 @@ class Renderer:
         self.draw_environment()
 
         # Draw voronoi partitions (for voronoi agent)
-        if self.controller == "voronoi":
-            generators = self.trajectories_data[:, self.current_timestep, :-1]
-            vor = compute_voronoi_diagrams(generators, self.env)
-            self.draw_voronoi(vor, self.screen)
+        # if self.controller == "voronoi":
+        #     generators = self.trajectories_data[:, self.current_timestep, :-1]
+        #     vor = compute_voronoi_diagrams(generators, self.env)
+        #     self.draw_voronoi(vor, self.screen)
 
         if self.result_manager is not None and self.log_manager is not None:
             data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
@@ -136,6 +178,13 @@ class Renderer:
         pygame.display.flip()
 
     def draw_heading(self, pos, yaw):
+        """
+        Render the heading of the agent.
+
+        Args:
+            pos: agent's simulation plane's position.
+            yaw: agent's simulation plane's heading angle.
+        """
         length = 2 * self.agent_size
         start_pos = meters2pixels(pos, self.scale)
         end_pos = pos + length * np.array([np.cos(yaw), np.sin(yaw)])
@@ -145,7 +194,9 @@ class Renderer:
         )
 
     def draw_environment(self):
-        # Draw environment
+        """
+        Render the environment.
+        """
         for i, edge in enumerate(self.env.edges):
             start_pos = meters2pixels(edge[0], self.scale)
             end_pos = meters2pixels(edge[1], self.scale)
@@ -159,6 +210,13 @@ class Renderer:
             pygame.draw.rect(self.screen, self.obs_color, pygame.rect.Rect(rect))
 
     def draw_agent(self, index, pos):
+        """
+        Render the agent.
+
+        Args:
+            index: index of agent.
+            pos: agent's simulation plane's position.
+        """
         pos = meters2pixels(pos, self.scale)
         agent_size = meters2pixels(self.agent_size, self.scale)
         pygame.draw.circle(self.screen, self.agent_color, pos, agent_size)
@@ -170,6 +228,12 @@ class Renderer:
         self.screen.blit(text_surface, text_rect)
 
     def draw_sensing_range(self, pos):
+        """
+        Render agent's sensing range.
+
+        Args:
+            pos: simulation plane's position.
+        """
         pos = meters2pixels(pos, self.scale)
         sensing_range = meters2pixels(self.sensing_range, self.scale)
         pygame.draw.circle(
@@ -188,6 +252,12 @@ class Renderer:
         #     )
 
     def draw_trails(self, index):
+        """
+        Render agent's trajectory trails.
+
+        Args:
+            index: agent's index
+        """
         start_trail_idx = max(0, self.current_timestep - self.trail_length)
         trail_points_sim = self.trajectories_data[
             index, start_trail_idx : self.current_timestep + 1, :-1
@@ -206,6 +276,13 @@ class Renderer:
             )
 
     def draw_connections(self, i, pos):
+        """
+        Render agent's connections.
+
+        Args:
+            i: agent's index.
+            pos: agent's simulation plane's position.
+        """
         for j in range(self.num_agents):
             if i == j:
                 continue
@@ -229,8 +306,8 @@ class Renderer:
         Draw voronoi on screen.
 
         Args:
-            vor (scipy.spatial.Voronoi): voronoi partition.
-            surface (pygame.Surface): surface to render on.
+            vor: voronoi partition.
+            surface: surface to render on.
         """
         # Plot ridges
         for region in vor.filtered_regions:
@@ -276,6 +353,9 @@ class Renderer:
         pygame.quit()
 
     def save(self):
+        """
+        Save the playback video.
+        """
         if self.result_manager is not None and self.log_manager is not None:
             data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
             frame = np.transpose(data, (1, 0, 2))  # Convert to (height, width, 3)

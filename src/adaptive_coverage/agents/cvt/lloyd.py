@@ -18,7 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=10):
+def centroid_region(agent, vertices, env, resolution=20):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -195,26 +195,26 @@ def handle_goal(goal, agent, env):
         if intersect is not None:
             goal = np.array([intersect.x, intersect.y])
 
-    in_obs = False
-    for obs in env.obstacles:
-        x, y, w, h = obs
-        if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
-            in_obs = True
-        if x <= goal[0] - agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
-            in_obs = True
-        if x <= goal[0] + agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
-            in_obs = True
-        if x <= goal[0] - agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
-            in_obs = True
-        if x <= goal[0] + agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
-            in_obs = True
-    if not in_obs:
-        return goal
+    # in_obs = False
+    # for obs in env.obstacles:
+    #     x, y, w, h = obs
+    #     if x <= goal[0] <= x + w and y <= goal[1] <= y + h:
+    #         in_obs = True
+    #     if x <= goal[0] - agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
+    #         in_obs = True
+    #     if x <= goal[0] + agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
+    #         in_obs = True
+    #     if x <= goal[0] - agent.size <= x + w and y <= goal[1] + agent.size <= y + h:
+    #         in_obs = True
+    #     if x <= goal[0] + agent.size <= x + w and y <= goal[1] - agent.size <= y + h:
+    #         in_obs = True
+    # if not in_obs:
+    #     return goal
     if in_obs:
         # if np.linalg.norm(goal - original_goal) > 2 * EPS:
         direction = goal - agent.pos
         dist = np.linalg.norm(direction)
-        new_dir = (dist - agent.size) * direction / dist
+        new_dir = (dist - agent.size * 2) * direction / dist
         goal = new_dir + agent.pos
 
     return goal
