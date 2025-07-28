@@ -16,7 +16,7 @@ def render(configs_file):
     )
     renderer = Renderer(
         screen_size=configs["simulation"]["screen_size"],
-        trajectories_filepath="results/voronoi/env0/20_agents/run0/swarm_data.npy",
+        trajectories_filepath="results/voronoi/env0/20_agents/run2/swarm_data.npy",
         controller="voronoi",
         agent_size=0.2,
         sensing_range=3.0,
@@ -36,4 +36,4 @@ def playback(configs_file):
 
 
 if __name__ == "__main__":
-    playback("results/voronoi/env0/20_agents/run0/configs.yaml")
+    playback("results/voronoi/env0/20_agents/run2/configs.yaml")

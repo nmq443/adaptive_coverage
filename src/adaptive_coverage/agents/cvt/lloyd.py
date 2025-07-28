@@ -53,7 +53,7 @@ def centroid_region(agent, vertices, env, resolution=20):
 
     # Vectorized sensing range check
     distances = np.linalg.norm(grid_points - agent.pos, axis=1).reshape(xx.shape)
-    mask_range = distances <= agent.valid_range
+    mask_range = distances < agent.valid_range
 
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
@@ -145,7 +145,7 @@ def lloyd(agent, agents, env):
 
     # Step 3: move points to centroids
     goal = centroids[0]
-    goal = handle_goal(goal, agent, env)
+    # goal = handle_goal(goal, agent, env)
     return goal
 
 

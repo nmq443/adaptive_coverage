@@ -32,7 +32,7 @@ simulation:
   scale: 40
   screen_size: [1600, 900]
   linewidth: 1
-  total_time: 2000
+  total_time: 5000
   timestep: 1
   show_sensing_range: false
   show_goal: false
