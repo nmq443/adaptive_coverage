@@ -98,13 +98,12 @@ class Simulator:
                 self.log_manager.log(
                     f"Current time {self.current_time: .2f}/{self.total_time}. Step: {self.step_count}"
                 )
-            # if self.current_time >= self.total_time - self.current_time:
+            self.loop()
             if self.step_count >= self.total_steps:
                 self.running = False
             else:
                 self.current_time += self.timestep
                 self.step_count += 1
-                self.loop()
         self.save_results()
         self.log_manager.log("Finished")
         pygame.quit()

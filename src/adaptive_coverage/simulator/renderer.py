@@ -114,9 +114,6 @@ class Renderer:
         try:
             self.trajectories_data = np.load(self.trajectories_filepath)
             self.num_agents, self.num_timesteps, _ = self.trajectories_data.shape
-            print(
-                f"Loaded data: {self.num_agents} agents, {self.num_timesteps} timesteps."
-            )
             return True
         except Exception as e:
             print(f"Error loading trajectory data: {e}")

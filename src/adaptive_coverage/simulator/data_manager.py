@@ -96,7 +96,7 @@ class ResultManager:
 
     def save_images(self):
         """Save first and final image."""
-        imageio.imwrite(self.start_img_path, self.frames[1])
+        imageio.imwrite(self.start_img_path, self.frames[0])
         imageio.imwrite(self.end_img_path, self.frames[-1])
 
 

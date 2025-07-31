@@ -18,7 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=20):
+def centroid_region(agent, vertices, env, resolution=10):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -53,13 +53,13 @@ def centroid_region(agent, vertices, env, resolution=20):
 
     # Vectorized sensing range check
     distances = np.linalg.norm(grid_points - agent.pos, axis=1).reshape(xx.shape)
-    mask_range = distances < agent.valid_range
+    mask_range = distances < agent.critical_range
 
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
-            in_x = (xx >= x) & (xx <= x + w)
-            in_y = (yy >= y) & (yy <= y + h)
+            in_x = (xx >= x - agent.size * 2) & (xx <= x + w + agent.size * 2)
+            in_y = (yy >= y - agent.size * 2) & (yy <= y + h + agent.size * 2)
             mask_obstacles &= ~(in_x & in_y)
 
         visibility_mask = np.array(

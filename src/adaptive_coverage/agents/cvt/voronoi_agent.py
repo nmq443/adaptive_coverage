@@ -26,23 +26,23 @@ class VoronoiAgent(Agent):
         # )
         return critical_agents
 
-    def is_critical_agent(self, other, agents, env):
-        if other.index == self.index:
+    def is_critical_agent(self, agent, agents, env):
+        if agent.index == self.index:
             return False
-        rij = np.linalg.norm(other.pos - self.pos)
-        if rij < self.critical_range or rij > self.sensing_range:
+        rij = np.linalg.norm(agent.pos - self.pos)
+        if rij < self.critical_range or rij > self.sensing_range - self.size:
             return False
-        if ray_intersects_aabb(self.pos, other.pos, env.obstacles):
+        if ray_intersects_aabb(self.pos, agent.pos, env.obstacles):
             return False
-        for agent in agents:
-            if agent.index != other.index and agent.index != self.index:
+        for other_agent in agents:
+            if agent.index != other_agent.index and other_agent.index != self.index:
                 if ray_intersects_aabb(self.pos, agent.pos, env.obstacles):
                     continue
-                if ray_intersects_aabb(other.pos, agent.pos, env.obstacles):
+                if ray_intersects_aabb(other_agent.pos, agent.pos, env.obstacles):
                     continue
                 di = np.linalg.norm(agent.pos - self.pos)
-                dj = np.linalg.norm(agent.pos - other.pos)
-                if di <= self.critical_range and dj <= self.critical_range:
+                dj = np.linalg.norm(agent.pos - other_agent.pos)
+                if di < self.critical_range - self.size and dj < self.critical_range - self.size:
                     return False
         return True
 
