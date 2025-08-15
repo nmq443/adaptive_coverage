@@ -1,7 +1,10 @@
 import numpy as np
+from shapely.geometry import Point, LineString
 from adaptive_coverage.agents.agent import Agent
 from adaptive_coverage.agents.cvt.lloyd import lloyd
-from adaptive_coverage.utils.utils import ray_intersects_aabb
+from adaptive_coverage.utils.utils import (
+    ray_intersects_aabb,
+)
 
 
 class VoronoiAgent(Agent):
@@ -42,9 +45,56 @@ class VoronoiAgent(Agent):
                     continue
                 di = np.linalg.norm(agent.pos - self.pos)
                 dj = np.linalg.norm(agent.pos - other_agent.pos)
-                if di < self.critical_range - self.size and dj < self.critical_range - self.size:
+                if (
+                    di < self.critical_range - self.size
+                    and dj < self.critical_range - self.size
+                ):
                     return False
         return True
+
+    def network_maintainence(self, next_pos, timestep, env, agents):
+        if len(env.obstacles) <= 0:
+            return True
+        neighbors = []
+        for agent in agents:
+            if agent.index != self.index:
+                d = np.linalg.norm(agent.pos - self.pos)
+                if d <= self.sensing_range and not ray_intersects_aabb(
+                    agent.pos, self.pos, env.obstacles
+                ):
+                    neighbors.append(agent.index)
+        if len(neighbors) > 0:
+            can_connect = False
+            can_connects = [False for i in range(len(neighbors))]
+            for idx, neighbor in enumerate(neighbors):
+                p_i_new = next_pos
+                p_j = agents[neighbor].pos
+                d = timestep * self.v_max
+
+                # 3 dangerous points
+                #            j1
+                #   p_i  j3  pj  j0
+                #            j2
+                v_ij = p_j - p_i_new
+                u_ij = v_ij / np.linalg.norm(v_ij)
+                j0 = p_j + d * u_ij
+                j3 = p_j - d * u_ij
+                u_perp = np.array([-u_ij[1], u_ij[0]])
+                # Position of j1 and j2
+                j1 = p_j + d * u_perp
+                j2 = p_j - d * u_perp
+                dangerous_points = [j0, j1, j2, j3]
+
+                for point in dangerous_points:
+                    d = np.linalg.norm(point - p_i_new)
+                    if d <= self.sensing_range - self.size and not ray_intersects_aabb(
+                        p_i_new, point, env.obstacles
+                    ):
+                        can_connect = True
+                can_connects[idx] = can_connect
+            can_connects = np.array(can_connects)
+            return can_connects.all()
+        return False
 
     def step(self, agents, env, timestep):
         super().step(timestep=timestep)
@@ -59,6 +109,16 @@ class VoronoiAgent(Agent):
                 desired_v = self.v_max * (epsi / (2 * timestep))
             else:
                 desired_v = self.v_max * (self.eps / (2 * timestep))
+            vel = self.path_planner.total_force(
+                self.pos, self.goal, self.index, agents, env.obstacles
+            )
+            v = np.linalg.norm(vel)
+            vel = vel / v * desired_v
+            next_pos = self.pos + vel * timestep
+            if not self.network_maintainence(
+                next_pos=next_pos, timestep=timestep, env=env, agents=agents
+            ):
+                desired_v = 0
             self.move_to_goal(
                 self.goal, agents, env.obstacles, timestep, desired_v=desired_v
             )
