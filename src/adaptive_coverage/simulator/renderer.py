@@ -161,10 +161,10 @@ class Renderer:
         self.draw_environment()
 
         # Draw voronoi partitions (for voronoi agent)
-        # if self.controller == "voronoi":
-        #     generators = self.trajectories_data[:, self.current_timestep, :-1]
-        #     vor = compute_voronoi_diagrams(generators, self.env)
-        #     self.draw_voronoi(vor, self.screen)
+        if self.controller == "voronoi":
+            generators = self.trajectories_data[:, self.current_timestep, :-1]
+            vor = compute_voronoi_diagrams(generators, self.env)
+            self.draw_voronoi(vor, self.screen)
 
         if self.result_manager is not None and self.log_manager is not None:
             data = pygame.surfarray.array3d(self.screen)  # shape: (width, height, 3)
