@@ -22,13 +22,6 @@ def run():
         agent_size=args.agent_size,
     )
 
-    log_manager = LogManager(
-        num_agents=args.num_agents,
-        log_dir=args.log_dir,
-        env_dir=args.env,
-        controller=args.controller,
-        original_method=args.original_method,
-    )
     result_manager = ResultManager(
         num_agents=args.num_agents,
         res_dir=args.res_dir,
@@ -36,6 +29,7 @@ def run():
         controller=args.controller,
         original_method=args.original_method,
     )
+    log_manager = LogManager(result_manager)
 
     if args.controller == "hexagon":
         swarm = HexagonSwarm(

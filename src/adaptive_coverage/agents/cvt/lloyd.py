@@ -120,10 +120,7 @@ def lloyd(agent, agents, env):
     generators = [agent.index]
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
-        if (
-            other.index != agent.index
-            and distance <= agent.valid_range - agent.tolerance
-        ):
+        if other.index != agent.index and distance <= agent.critical_range:
             if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
                 generators.append(other.index)
 
