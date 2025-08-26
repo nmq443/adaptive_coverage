@@ -1,16 +1,9 @@
--e git+https://github.com/nmq443/adaptive_coverage.git@dfec3e9a6f1d80730653fa9ef3f0c2e5edbf31d2#egg=adaptive_coverage
-contourpy==1.3.2
-cycler==0.12.1
-fonttools==4.59.1
-jsonpickle==4.1.1
-kiwisolver==1.4.9
+imageio==2.37.0
+imageio-ffmpeg==0.6.0
 matplotlib==3.10.5
-networks==0.3.7
+networkx==3.4.2
 numpy==2.2.6
-packaging==25.0
-pillow==11.3.0
-pyparsing==3.2.3
-python-dateutil==2.9.0.post0
 PyYAML==6.0.2
 scipy==1.15.3
-six==1.17.0
+shapely=2.1.1
+pygame==2.6.1
