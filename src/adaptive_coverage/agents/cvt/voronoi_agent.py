@@ -66,9 +66,7 @@ class VoronoiAgent(Agent):
                     return False
         return True
 
-    def mobility_constraint(self, agents, env, timestep):
-        critical_agents = self.get_critical_agents(agents, env)
-
+    def mobility_constraint(self, critical_agents, agents, timestep):
         if len(critical_agents) <= 0:
             return self.v_max * self.eps / (2 * timestep)
 
@@ -77,15 +75,15 @@ class VoronoiAgent(Agent):
             distance = np.linalg.norm(self.pos - agents[critical_id].pos)
             epsi.append(self.sensing_range - distance)
 
-        # epsilon_i = max(epsilon_i - self.eps, 0)
         return self.v_max * min(epsi) / (2 * timestep)
 
-    def find_best_connectivity(self, agents, env, desired_velocity_vector, timestep):
+    def find_best_connectivity(self, agents, env, timestep):
         """
         Finds the best neighbor to maintain a critical connection with,
         based on the minimum angle to the desired velocity vector.
         """
         critical_agents = self.get_critical_agents(agents, env)
+        desired_velocity_vector = self.goal - self.pos
 
         if len(critical_agents) <= 0:
             return None
@@ -98,19 +96,22 @@ class VoronoiAgent(Agent):
             relative_position_vector = neighbor.pos - self.pos
 
             # Use dot product and magnitudes to calculate angle (more robust than arctan2)
-            dot_product = np.dot(desired_velocity_vector, relative_position_vector)
+            dot_product = np.dot(desired_velocity_vector,
+                                 relative_position_vector)
             mag_velocity = np.linalg.norm(desired_velocity_vector)
             mag_relative_pos = np.linalg.norm(relative_position_vector)
 
             # Avoid division by zero
             if mag_velocity > 1e-6 and mag_relative_pos > 1e-6:
                 angle = np.arccos(
-                    np.clip(dot_product / (mag_velocity * mag_relative_pos), -1, 1)
+                    np.clip(dot_product / (mag_velocity *
+                            mag_relative_pos), -1, 1)
                 )
                 if angle < min_angle:
                     min_angle = angle
                     best_neighbor_id = neighbor_id
 
+        '''
         if best_neighbor_id != -1:
             next_pos = self.pos + timestep * desired_velocity_vector
             p_i_new = next_pos
@@ -141,68 +142,23 @@ class VoronoiAgent(Agent):
                     can_connect = True
             if can_connect:
                 return best_neighbor_id
-        return None
-
-    def get_triangle_topologies(self, agents, env):
-        critical_agents = self.get_critical_agents(agents, env)
-        if len(critical_agents) < 2:
-            return
-        triangle_groups = []
-        for i in range(len(critical_agents)):
-            for j in range(i + 1, len(critical_agents)):
-                robot_j = next(r for r in agents if r.index == critical_agents[i])
-                robot_k = next(r for r in agents if r.index == critical_agents[j])
-
-                distance_jk = np.linalg.norm(robot_j.pos - robot_k.pos)
-
-                if distance_jk <= self.sensing_range:
-                    triangle_groups.append([critical_agents[i], critical_agents[j]])
-        return triangle_groups
-
-    def minimize_triangle_topologies(self, agents, env, timestep):
-        redundant = set()
-        triangle_groups = self.get_triangle_topologies(agents, env)
-        if triangle_groups is None:
-            return
-        desired_target_direction = self.goal - self.pos
-        for group in triangle_groups:
-            best_agent = self.find_best_connectivity(
-                agents,
-                env,
-                desired_velocity_vector=desired_target_direction,
-                timestep=timestep,
-            )
-            for id in group:
-                if id != best_agent:
-                    redundant.add(id)
-        return redundant
+        '''
+        return best_neighbor_id
 
     def step(self, agents, env, timestep):
         super().step(timestep=timestep)
         if self.goal is not None and not self.terminated(self.goal):
-            # level 1: behavioural control
-            desired_velocity = self.path_planner.total_force(
-                self.pos, self.goal, self.index, agents, env.obstacles
-            )
-
-            # level 2: movement constraint
-            desired_v = self.mobility_constraint(
-                agents=agents, env=env, timestep=timestep
-            )
-
-            # level 3, 4: minimize topologies
-            redundant = self.minimize_triangle_topologies(agents, env, timestep)
             critical_agents = self.get_critical_agents(agents, env)
-            epsi = []
-            if redundant is not None:
-                for critical_agent in critical_agents:
-                    if critical_agent in redundant:
-                        continue
-                    distance = np.linalg.norm(self.pos - agents[critical_agent].pos)
-                    epsi.append(self.sensing_range - distance)
+            desired_v = self.v_max
+            if len(critical_agents) > 0:
+                best_connect = self.find_best_connectivity(
+                    agents, env, timestep)
+                if best_connect is not None:
+                    desired_v = self.mobility_constraint(
+                        critical_agents=[
+                            best_connect], agents=agents, timestep=timestep
+                    )
 
-                if len(epsi) > 0:
-                    desired_v = self.v_max * min(epsi) / (2 * timestep)
             self.move_to_goal(
                 self.goal, agents, env.obstacles, timestep, desired_v=desired_v
             )
