@@ -18,7 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=10):
+def centroid_region(agent, vertices, env, resolution=15):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -52,14 +52,17 @@ def centroid_region(agent, vertices, env, resolution=10):
     )
 
     # Vectorized sensing range check
-    distances = np.linalg.norm(grid_points - agent.pos, axis=1).reshape(xx.shape)
+    distances = np.linalg.norm(
+        grid_points - agent.pos, axis=1).reshape(xx.shape)
     mask_range = distances < agent.critical_range
 
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
-            in_x = (xx >= x - agent.size * 2) & (xx <= x + w + agent.size * 2)
-            in_y = (yy >= y - agent.size * 2) & (yy <= y + h + agent.size * 2)
+            in_x = (xx >= x - agent.size * 2.5) & (xx <=
+                                                   x + w + agent.size * 2.5)
+            in_y = (yy >= y - agent.size * 2.5) & (yy <=
+                                                   y + h + agent.size * 2.5)
             mask_obstacles &= ~(in_x & in_y)
 
         visibility_mask = np.array(
@@ -93,8 +96,10 @@ def centroid_region(agent, vertices, env, resolution=10):
     total_mass = np.sum(masked_weights * masked_func_values) * (hx * hy) / 4
 
     # Calculate weighted centroid components
-    weighted_x = np.sum(masked_weights * masked_func_values * xx) * (hx * hy) / 4
-    weighted_y = np.sum(masked_weights * masked_func_values * yy) * (hx * hy) / 4
+    weighted_x = np.sum(
+        masked_weights * masked_func_values * xx) * (hx * hy) / 4
+    weighted_y = np.sum(
+        masked_weights * masked_func_values * yy) * (hx * hy) / 4
 
     if total_mass > 1e-8:
         centroid_x = weighted_x / total_mass
@@ -120,7 +125,7 @@ def lloyd(agent, agents, env):
     generators = [agent.index]
     for other in agents:
         distance = np.linalg.norm(other.pos - agent.pos)
-        if other.index != agent.index and distance <= agent.critical_range:
+        if other.index != agent.index and distance < agent.critical_range:
             if not ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
                 generators.append(other.index)
 
@@ -128,7 +133,8 @@ def lloyd(agent, agents, env):
         return agent.pos
 
     # Step 1: compute voronoi diagrams
-    generators_positions = np.array([agents[index].pos for index in generators])
+    generators_positions = np.array(
+        [agents[index].pos for index in generators])
     vor = compute_voronoi_diagrams(generators_positions, env)
 
     # Step 2: compute centroidal voronoi diagrams

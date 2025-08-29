@@ -11,7 +11,7 @@ class VoronoiAgent(Agent):
     def __init__(self, *args, valid_ratio=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_range = self.sensing_range * valid_ratio
-        self.critical_range = self.sensing_range * 0.75
+        self.critical_range = self.sensing_range * 0.7
         self.eps = self.sensing_range - self.critical_range
 
     def get_critical_agents(self, agents, env):
@@ -47,7 +47,7 @@ class VoronoiAgent(Agent):
         if agent.index == self.index:
             return False
         rij = np.linalg.norm(agent.pos - self.pos)
-        if rij < self.critical_range or rij > self.sensing_range - self.size:
+        if rij <= self.critical_range or rij >= self.sensing_range:
             return False
         if ray_intersects_aabb(self.pos, agent.pos, env.obstacles):
             return False
@@ -60,8 +60,8 @@ class VoronoiAgent(Agent):
                 di = np.linalg.norm(agent.pos - self.pos)
                 dj = np.linalg.norm(agent.pos - other_agent.pos)
                 if (
-                    di < self.critical_range - self.size
-                    and dj < self.critical_range - self.size
+                    di < self.critical_range
+                    and dj < self.critical_range
                 ):
                     return False
         return True
