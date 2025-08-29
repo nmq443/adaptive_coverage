@@ -66,9 +66,39 @@ class VoronoiAgent(Agent):
                     return False
         return True
 
-    def mobility_constraint(self, critical_agents, agents, timestep):
+    def mobility_constraint(self, critical_agents, agents, env, timestep):
         if len(critical_agents) <= 0:
             return self.v_max * self.eps / (2 * timestep)
+
+        desired_velocity_vector = self.goal - self.pos
+        next_pos = self.pos + timestep * desired_velocity_vector
+        p_i_new = next_pos
+        p_j = agents[critical_agents[0]].pos
+        d = self.v_max * timestep * 1.5
+
+        # 3 dangerous points
+        #            j1
+        #   p_i  j3  pj  j0
+        #            j2
+        v_ij = p_j - p_i_new
+        u_ij = v_ij / np.linalg.norm(v_ij)
+        j0 = p_j + d * u_ij
+        j3 = p_j - d * u_ij
+        u_perp = np.array([-u_ij[1], u_ij[0]])
+        # Position of j1 and j2
+        j1 = p_j + d * u_perp
+        j2 = p_j - d * u_perp
+        dangerous_points = [j0, j1, j2, j3]
+        can_connect = False
+
+        for point in dangerous_points:
+            dist = np.linalg.norm(point - p_i_new)
+            if dist <= self.sensing_range - self.size and not ray_intersects_aabb(
+                p_i_new, point, env.obstacles
+            ):
+                can_connect = True
+        if not can_connect:
+            return 0
 
         epsi = []
         for critical_id in critical_agents:
@@ -111,38 +141,6 @@ class VoronoiAgent(Agent):
                     min_angle = angle
                     best_neighbor_id = neighbor_id
 
-        '''
-        if best_neighbor_id != -1:
-            next_pos = self.pos + timestep * desired_velocity_vector
-            p_i_new = next_pos
-            p_j = agents[best_neighbor_id].pos
-            desired_v = self.mobility_constraint(agents, env, timestep)
-            d = desired_v * timestep / 2
-
-            # 3 dangerous points
-            #            j1
-            #   p_i  j3  pj  j0
-            #            j2
-            v_ij = p_j - p_i_new
-            u_ij = v_ij / np.linalg.norm(v_ij)
-            j0 = p_j + d * u_ij
-            j3 = p_j - d * u_ij
-            u_perp = np.array([-u_ij[1], u_ij[0]])
-            # Position of j1 and j2
-            j1 = p_j + d * u_perp
-            j2 = p_j - d * u_perp
-            dangerous_points = [j0, j1, j2, j3]
-            can_connect = False
-
-            for point in dangerous_points:
-                dist = np.linalg.norm(point - p_i_new)
-                if dist <= self.sensing_range - self.size and not ray_intersects_aabb(
-                    p_i_new, point, env.obstacles
-                ):
-                    can_connect = True
-            if can_connect:
-                return best_neighbor_id
-        '''
         return best_neighbor_id
 
     def step(self, agents, env, timestep):
@@ -156,7 +154,7 @@ class VoronoiAgent(Agent):
                 if best_connect is not None:
                     desired_v = self.mobility_constraint(
                         critical_agents=[
-                            best_connect], agents=agents, timestep=timestep
+                            best_connect], agents=agents, env=env, timestep=timestep
                     )
 
             self.move_to_goal(
