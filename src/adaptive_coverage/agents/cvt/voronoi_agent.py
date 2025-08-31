@@ -11,7 +11,7 @@ class VoronoiAgent(Agent):
     def __init__(self, *args, valid_ratio=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_range = self.sensing_range * valid_ratio
-        self.critical_range = self.sensing_range * 0.7
+        self.critical_range = self.sensing_range * 0.6
         self.eps = self.sensing_range - self.critical_range
 
     def get_critical_agents(self, agents, env):
@@ -74,7 +74,8 @@ class VoronoiAgent(Agent):
         next_pos = self.pos + timestep * desired_velocity_vector
         p_i_new = next_pos
         p_j = agents[critical_agents[0]].pos
-        d = self.v_max * timestep * 1.5
+        # d = self.v_max * timestep * 1.5
+        d = (self.sensing_range - np.linalg.norm(self.pos - p_j)) / 2
 
         # 3 dangerous points
         #            j1
@@ -93,7 +94,7 @@ class VoronoiAgent(Agent):
 
         for point in dangerous_points:
             dist = np.linalg.norm(point - p_i_new)
-            if dist <= self.sensing_range - self.size and not ray_intersects_aabb(
+            if dist < self.sensing_range and not ray_intersects_aabb(
                 p_i_new, point, env.obstacles
             ):
                 can_connect = True
