@@ -10,6 +10,11 @@ environment:
     first_agent_pos: [3, 2]
     obstacles: [[9, 4, 5, 4], [8, 10, 2, 3]]
   env2:
+    area_width: 35
+    area_height: 15
+    first_agent_pos: [ 3, 2 ]
+    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [13, 8, 4, 4] ]
+  env3:
     area_width: 40
     area_height: 20
     first_agent_pos: [2, 10]
@@ -45,7 +50,7 @@ experiments:
 
 agents:
   controller: "hexagon"
-  original_method: false
+  original_method: true
   num_agents: 20
   agent_size: 0.2
   v_max: 0.1

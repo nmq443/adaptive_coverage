@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pygame
+from adaptive_coverage.utils.utils import plot_travel_distances, plot_ld2
 
 
 class Simulator:
@@ -73,11 +74,13 @@ class Simulator:
 
         # save travel distances
         distances = self.swarm.get_travel_distance()
+        plot_travel_distances(distances, log=self.log_manager, save_dir=self.result_manager.res_dir)
         with open(self.result_manager.travel_distances_filepath, "wb") as f:
             np.save(f, distances)
 
         # save ld2s
         ld2s = np.array(self.swarm.ld2s)
+        plot_ld2(ld2s, log=self.log_manager, save_dir=self.result_manager.res_dir)
         with open(self.result_manager.ld2s_filepath, "wb") as f:
             np.save(f, ld2s)
 
