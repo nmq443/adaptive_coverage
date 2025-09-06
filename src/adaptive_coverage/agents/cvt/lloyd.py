@@ -20,15 +20,16 @@ def density_func(q):
 
 def centroid_region(agent, vertices, env, resolution=10):
     """
-    Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
+    Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
 
     Args:
-        agent_pos (numpy.ndarray): current agent's position.
-        vertices (numpy.ndarray): vertices of the current agent's voronoi partition.
-        resolution (int): number of grid points used to compute integral.
+        agent (object): agent object with pos, size, and critical_range attributes.
+        vertices (numpy.ndarray): vertices of the current agent's Voronoi partition.
+        env (object): environment containing obstacles.
+        resolution (int): number of grid points per dimension.
 
     Returns:
-        numpy.ndarray: centroid of current agent's voronoi partition.
+        numpy.ndarray: centroid of current agent's Voronoi partition.
     """
     polygon = Polygon(vertices)
     xmax = np.max(vertices[:, 0])
@@ -40,18 +41,18 @@ def centroid_region(agent, vertices, env, resolution=10):
     hx = (xmax - xmin) / n
     hy = (ymax - ymin) / m
 
-    x_coords = np.linspace(xmin, xmax, n + 1)
-    y_coords = np.linspace(ymin, ymax, m + 1)
+    # Rectangle rule: sample at midpoints of cells
+    x_coords = xmin + (np.arange(n) + 0.5) * hx
+    y_coords = ymin + (np.arange(m) + 0.5) * hy
     xx, yy = np.meshgrid(x_coords, y_coords)
     grid_points = np.stack([xx.ravel(), yy.ravel()], axis=-1)
 
-    # Vectorized point-in-polygon check
+    # Polygon mask
     shapely_points = [Point(p) for p in grid_points]
-    mask_polygon = np.array([polygon.contains(sp) for sp in shapely_points]).reshape(
-        xx.shape
-    )
+    mask_polygon = np.array([polygon.contains(sp)
+                            for sp in shapely_points]).reshape(xx.shape)
 
-    # Vectorized sensing range check
+    # Sensing range mask
     distances = np.linalg.norm(
         grid_points - agent.pos, axis=1).reshape(xx.shape)
     mask_range = distances < agent.critical_range
@@ -66,40 +67,26 @@ def centroid_region(agent, vertices, env, resolution=10):
             mask_obstacles &= ~(in_x & in_y)
 
         visibility_mask = np.array(
-            [
-                not ray_intersects_aabb(agent.pos, point, env.obstacles)
-                for point in grid_points
-            ]
+            [not ray_intersects_aabb(agent.pos, point, env.obstacles)
+             for point in grid_points]
         ).reshape(xx.shape)
-        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
 
+        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
     else:
         mask = mask_polygon & mask_range
 
-    # Vectorized weight calculation
-    wx = np.ones(n + 1)
-    wx[1:-1] = 2
-    wy = np.ones(m + 1)
-    wy[1:-1] = 2
-    weights = wx[:, np.newaxis] * wy[np.newaxis, :]
+    # Function values (density)
+    func_values = np.array([density_func(point)
+                           for point in grid_points]).reshape(xx.shape)
 
-    # Evaluate the function f at all grid points (iterating because f returns a scalar)
-    func_values = np.array([density_func(point) for point in grid_points]).reshape(
-        xx.shape
-    )
-
-    # Apply the mask (only consider points inside the polygon)
+    # Apply mask
     masked_func_values = func_values * mask
-    masked_weights = weights * mask
 
-    # Calculate mass
-    total_mass = np.sum(masked_weights * masked_func_values) * (hx * hy) / 4
-
-    # Calculate weighted centroid components
-    weighted_x = np.sum(
-        masked_weights * masked_func_values * xx) * (hx * hy) / 4
-    weighted_y = np.sum(
-        masked_weights * masked_func_values * yy) * (hx * hy) / 4
+    # Rectangle rule integration
+    cell_area = hx * hy
+    total_mass = np.sum(masked_func_values) * cell_area
+    weighted_x = np.sum(masked_func_values * xx) * cell_area
+    weighted_y = np.sum(masked_func_values * yy) * cell_area
 
     if total_mass > 1e-8:
         centroid_x = weighted_x / total_mass
@@ -140,7 +127,8 @@ def lloyd(agent, agents, env):
     # Step 2: compute centroidal voronoi diagrams
     centroids = np.zeros_like(generators_positions)
     for i, generator_pos in enumerate(generators_positions):
-        for region in vor.filtered_regions:
+        # for region in vor.filtered_regions:
+        for region in getattr(vor, "filtered_regions"):
             current_vertices = vor.vertices[region + [region[0]], :]
             current_polygon = Polygon(current_vertices)
             if current_polygon.contains(Point(generator_pos)):
@@ -188,6 +176,8 @@ def compute_voronoi_diagrams(generators, env):
                 break
         if region and flag:
             regions.append(region)
-    vor.filtered_points = generators
-    vor.filtered_regions = regions
+    setattr(vor, "filtered_points", generators)
+    setattr(vor, "filtered_regions", regions)
+    # vor.filtered_points = generators
+    # vor.filtered_regions = regions
     return vor
