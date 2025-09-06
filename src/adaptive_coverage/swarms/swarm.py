@@ -1,5 +1,5 @@
 import numpy as np
-from adaptive_coverage.utils.lambda2 import lambda2
+from adaptive_coverage.utils.utils import lambda2
 
 
 class Swarm:
@@ -79,7 +79,8 @@ class Swarm:
                 state = np.array(
                     [self.agents[i].pos[0], self.agents[i].pos[1], self.agents[i].theta]
                 )
-                self.update_state(agent_index=i, current_step=current_step, state=state)
+                self.update_state(
+                    agent_index=i, current_step=current_step, state=state)
             self.update_adj_mat()
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)

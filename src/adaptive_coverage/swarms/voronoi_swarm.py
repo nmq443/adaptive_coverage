@@ -1,7 +1,7 @@
 import numpy as np
 from adaptive_coverage.swarms.swarm import Swarm
 from adaptive_coverage.agents.cvt.voronoi_agent import VoronoiAgent
-from adaptive_coverage.utils.lambda2 import lambda2
+from adaptive_coverage.utils.utils import lambda2
 
 
 class VoronoiSwarm(Swarm):
