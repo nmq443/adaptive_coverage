@@ -316,25 +316,37 @@ def get_args(default_configs):
     )
     parser.add_argument(
         "--show_sensing_range",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show sensing range of agents",
         default=configs["simulation"]["show_sensing_range"],
     )
     parser.add_argument(
         "--show_goal",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's goal",
         default=configs["simulation"]["show_goal"],
     )
     parser.add_argument(
         "--show_connections",
         type=bool,
+        # type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's connections",
         default=configs["simulation"]["show_connections"],
     )
     parser.add_argument(
         "--show_trajectories",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's trajectories",
         default=configs["simulation"]["show_trajectories"],
     )

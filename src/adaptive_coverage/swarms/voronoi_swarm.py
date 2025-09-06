@@ -2,14 +2,15 @@ import numpy as np
 from adaptive_coverage.swarms.swarm import Swarm
 from adaptive_coverage.agents.cvt.voronoi_agent import VoronoiAgent
 from adaptive_coverage.utils.utils import lambda2
+from typing import Union
 
 
 class VoronoiSwarm(Swarm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.generators: list = []
+        self.generators: Union[list, np.ndarray] = []
 
-    def init_agents(self, ref_pos=None):
+    def init_agents(self):
         for i in range(self.num_rows):
             for j in range(self.num_cols):
                 x = self.first_agent_pos[0] + j * self.dist_btw_agents
@@ -27,15 +28,7 @@ class VoronoiSwarm(Swarm):
                         path_planner=self.path_planner,
                     )
                 )
-        self.generators = [agent.pos for agent in self.agents]
-        self.generators = np.array(self.generators)
+        self.generators = np.array([agent.pos for agent in self.agents])
 
-    def step(self, env, timestep, current_step):
+    def step(self, env, timestep: float, current_step: int):
         super().step(env, timestep, current_step)
-        # if len(self.agents) > 0:
-        #     order = np.random.permutation(len(self.agents))
-        #     for i in order:
-        #         self.agents[i].step(self.agents, env, timestep)
-        #     self.update_adj_mat()
-        #     ld2 = lambda2(self.adjacency_matrix)
-        #     self.ld2s.append(ld2)

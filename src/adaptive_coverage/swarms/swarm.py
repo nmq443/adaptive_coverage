@@ -43,12 +43,12 @@ class Swarm:
 
         self.total_time = total_time
         self.timestep = timestep
-        # (num_agents, num_timesteps, (x, y, theta))
+        # (num_agents, num_timesteps, (x, y, theta, penalty_flag)
         self.state = np.zeros(
-            (self.num_agents, int(self.total_time / self.timestep), 3)
+            (self.num_agents, int(self.total_time / self.timestep), 4)
         )
 
-    def init_agents(self, ref_pos=None):
+    def init_agents(self):
         pass
 
     def update_adj_mat(self):
@@ -66,18 +66,16 @@ class Swarm:
                     )
 
     def update_state(self, agent_index, current_step, state):
-        # print(
-        #     f"Agent index: {agent_index}, current step: {current_step}, state: {state}"
-        # )
         self.state[agent_index, current_step] = state
 
-    def step(self, env, timestep, current_step):
+    def step(self, env, timestep, current_step, penalty_flag=0):
         if len(self.agents) > 0:
             order = np.random.permutation(len(self.agents))
             for i in order:
                 self.agents[i].step(self.agents, env, timestep)
                 state = np.array(
-                    [self.agents[i].pos[0], self.agents[i].pos[1], self.agents[i].theta]
+                    [self.agents[i].pos[0], self.agents[i].pos[1],
+                        self.agents[i].theta, penalty_flag]
                 )
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)

@@ -60,8 +60,12 @@ class HexagonSwarm(Swarm):
             order = np.random.permutation(len(self.agents))
             for i in order:
                 self.agents[i].step(self.landmarks, self.agents, env, timestep)
+                penalty_flag = 0
+                if self.agents[i].is_penalty_node:
+                    penalty_flag = 1
                 state = np.array(
-                    [self.agents[i].pos[0], self.agents[i].pos[1], self.agents[i].theta]
+                    [self.agents[i].pos[0], self.agents[i].pos[1],
+                        self.agents[i].theta, penalty_flag]
                 )
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)
