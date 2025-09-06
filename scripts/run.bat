@@ -7,4 +7,10 @@
 :: start python scripts/run.py --env env0 --show_sensing_range True --controller hexagon
 
 :: Voronoi method
-start python scripts/run.py --env env1 --show_sensing_range True --show_connections True --controller voronoi --total_time 10 --num_agents 40
+start python scripts/run.py --env env0 --show_sensing_range True --controller voronoi
+
+start python scripts/run.py --env env1 --show_sensing_range True --controller voronoi
+
+start python scripts/run.py --env env2 --show_sensing_range True --controller voronoi
+
+:: start python scripts/run.py --env env3 --show_connections true --show_sensing_range true --controller voronoi

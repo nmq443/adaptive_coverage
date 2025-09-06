@@ -11,7 +11,7 @@ class VoronoiAgent(Agent):
     def __init__(self, *args, valid_ratio=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_range = self.sensing_range * valid_ratio
-        self.critical_range = self.sensing_range * 0.8
+        self.critical_range = self.sensing_range * 0.9
         self.eps = self.sensing_range - self.critical_range
 
     def get_critical_agents(self, agents, env):
@@ -74,7 +74,8 @@ class VoronoiAgent(Agent):
         next_pos = self.pos + timestep * desired_velocity_vector
         p_i_new = next_pos
         p_j = agents[critical_agents[0]].pos
-        d = (self.sensing_range - np.linalg.norm(self.pos - p_j)) / 2
+        rij = np.linalg.norm(self.pos - p_j)
+        d = (self.sensing_range - rij) / 2
 
         # 3 dangerous points
         #            j1
@@ -83,12 +84,13 @@ class VoronoiAgent(Agent):
         v_ij = p_j - p_i_new
         u_ij = v_ij / np.linalg.norm(v_ij)
         j0 = p_j + d * u_ij
-        j3 = p_j - d * u_ij
+        # j3 = p_j - d * u_ij
         u_perp = np.array([-u_ij[1], u_ij[0]])
         # Position of j1 and j2
         j1 = p_j + d * u_perp
         j2 = p_j - d * u_perp
-        dangerous_points = [j0, j1, j2, j3]
+        # dangerous_points = [j0, j1, j2, j3]
+        dangerous_points = [j0, j1, j2]
         can_connect = False
 
         for point in dangerous_points:
@@ -97,8 +99,8 @@ class VoronoiAgent(Agent):
                 p_i_new, point, env.obstacles
             ):
                 can_connect = True
-        if not can_connect:
-            return 0
+        # if not can_connect:
+            # return 0
 
         epsi = []
         for critical_id in critical_agents:
@@ -107,19 +109,19 @@ class VoronoiAgent(Agent):
 
         return self.v_max * min(epsi) / (2 * timestep)
 
-    def find_best_connectivity(self, agents, env, timestep):
+    def find_best_connectivity(self, critical_agents, agents, env):
         """
         Finds the best neighbor to maintain a critical connection with,
         based on the minimum angle to the desired velocity vector.
         """
-        critical_agents = self.get_critical_agents(agents, env)
+        # critical_agents = self.get_critical_agents(agents, env)
         desired_velocity_vector = self.goal - self.pos
 
         if len(critical_agents) <= 0:
             return None
 
         min_angle = np.pi * 2
-        best_neighbor_id = -1
+        best_neighbor_id = 0
 
         for neighbor_id in critical_agents:
             neighbor = agents[neighbor_id]
@@ -149,8 +151,8 @@ class VoronoiAgent(Agent):
             critical_agents = self.get_critical_agents(agents, env)
             desired_v = self.v_max
             if len(critical_agents) > 0:
-                best_connect = self.find_best_connectivity(
-                    agents, env, timestep)
+                best_connect = self.find_best_connectivity(critical_agents,
+                                                           agents, env)
                 if best_connect is not None:
                     desired_v = self.mobility_constraint(
                         critical_agents=[
