@@ -13,8 +13,13 @@ environment:
     area_width: 35
     area_height: 15
     first_agent_pos: [ 3, 2 ]
-    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [13, 8, 4, 4] ]
+    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [14, 8, 4, 4] ]
   env3:
+    area_width: 35
+    area_height: 15
+    first_agent_pos: [ 3, 2 ]
+    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [15, 8, 5, 3], [30, 7, 4, 5] ]
+  env4:
     area_width: 40
     area_height: 20
     first_agent_pos: [2, 10]
@@ -37,7 +42,7 @@ simulation:
   scale: 40
   screen_size: [1600, 912]
   linewidth: 1
-  total_time: 5000
+  total_time: 4000
   timestep: 1
   show_sensing_range: true
   show_goal: false
@@ -55,7 +60,7 @@ agents:
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.05
-  sensing_range: 7.5
+  sensing_range: 5.0
   communication_range: 5.0
   avoidance_range: 0.05
   rho: 1.0
