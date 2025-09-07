@@ -76,7 +76,7 @@ class Renderer:
         self.scale: float = scale
         self.agent_size: float = agent_size
         self.controller: str = controller
-        self.linewidth: float = linewidth
+        self.linewidth: int = linewidth
         self.show_sensing_range: bool = show_sensing_range
         self.show_goal: bool = show_goal
         self.show_connections: bool = show_connections
@@ -99,8 +99,8 @@ class Renderer:
         self.num_agents: int = 0
         self.num_timesteps: int = 0
         self.current_timestep: int = 0
-        self.screen: Optional[pygame.Surface] = None
-        self.clock: Optional[pygame.time.Clock] = None
+        self.screen: pygame.Surface = None
+        self.clock: pygame.time.Clock = None
         self.running: bool = False
         self.fps: int = fps
         self.trail_length: int = trail_length
@@ -249,19 +249,20 @@ class Renderer:
         pos = meters2pixels(pos, self.scale)
         sensing_range = meters2pixels(self.sensing_range, self.scale)
         pygame.draw.circle(
-            self.screen, self.agent_sensing_color, pos, sensing_range, self.linewidth
+            self.screen, self.agent_sensing_color, pos, sensing_range, self.linewidth*2
         )
 
         # If voronoi agent, draw critical range
-        # if self.controller == "voronoi":
-        #     critical_range = meters2pixels(self.sensing_range * 0.75, self.scale)
-        #     pygame.draw.circle(
-        #         self.screen,
-        #         self.agent_sensing_color,
-        #         pos,
-        #         critical_range,
-        #         self.linewidth,
-        #     )
+        if self.controller == "voronoi":
+            critical_range = meters2pixels(
+                self.sensing_range * 0.7, self.scale)
+            pygame.draw.circle(
+                self.screen,
+                self.agent_sensing_color,
+                pos,
+                critical_range,
+                self.linewidth,
+            )
 
     def draw_trails(self, index):
         """

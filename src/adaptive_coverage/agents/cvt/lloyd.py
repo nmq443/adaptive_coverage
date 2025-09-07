@@ -60,10 +60,10 @@ def centroid_region(agent, vertices, env, resolution=10):
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
-            in_x = (xx >= x - agent.size * 2.5) & (xx <=
-                                                   x + w + agent.size * 2.5)
-            in_y = (yy >= y - agent.size * 2.5) & (yy <=
-                                                   y + h + agent.size * 2.5)
+            in_x = (xx >= x - agent.size * 3) & (xx <=
+                                                 x + w + agent.size * 3)
+            in_y = (yy >= y - agent.size * 3) & (yy <=
+                                                 y + h + agent.size * 3)
             mask_obstacles &= ~(in_x & in_y)
 
         visibility_mask = np.array(
