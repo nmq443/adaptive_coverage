@@ -18,7 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=10):
+def centroid_region(agent, vertices, env, resolution=20):
     """
     Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
 
