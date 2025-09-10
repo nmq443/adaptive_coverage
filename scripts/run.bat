@@ -8,8 +8,8 @@
 
 :: Voronoi method
 
-start python scripts/run.py --env env2 --show_connections true --show_sensing_range True --controller voronoi
+start cmd /k python scripts/run.py --env env2 --show_connections true --show_sensing_range True --controller voronoi
 
-start python scripts/run.py --env env3 --show_connections true --show_sensing_range True --controller voronoi
+start cmd /k python scripts/run.py --env env3 --show_connections true --show_sensing_range True --controller voronoi
 
-start python scripts/run.py --env env4 --show_connections true --show_sensing_range true --controller voronoi
+start cmd /k python scripts/run.py --env env4 --show_connections true --show_sensing_range true --controller voronoi
