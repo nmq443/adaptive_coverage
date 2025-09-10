@@ -18,7 +18,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=20):
+def centroid_region(agent, vertices, env, resolution=30):
     """
     Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
 
@@ -60,10 +60,10 @@ def centroid_region(agent, vertices, env, resolution=20):
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
-            in_x = (xx >= x - agent.size * 3) & (xx <=
-                                                 x + w + agent.size * 3)
-            in_y = (yy >= y - agent.size * 3) & (yy <=
-                                                 y + h + agent.size * 3)
+            in_x = (xx >= x - agent.size * 4) & (xx <=
+                                                 x + w + agent.size * 4)
+            in_y = (yy >= y - agent.size * 4) & (yy <=
+                                                 y + h + agent.size * 4)
             mask_obstacles &= ~(in_x & in_y)
 
         visibility_mask = np.array(
