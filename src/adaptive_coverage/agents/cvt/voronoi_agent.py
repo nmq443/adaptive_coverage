@@ -54,7 +54,7 @@ class VoronoiAgent(Agent):
         rij = np.linalg.norm(agent.pos - self.pos)
 
         # must be inside annulus (critical area)
-        if not (self.critical_range < rij <= self.sensing_range):
+        if not (self.critical_range < rij < self.sensing_range):
             return False
 
         # check line-of-sight (if blocked -> not considered critical)
@@ -430,7 +430,8 @@ class VoronoiAgent(Agent):
         neighbor positions (j0, j1, j2).
         """
         rij = np.linalg.norm(neighbor.pos - self.pos)
-        d = (self.sensing_range - rij) / 2.0
+        # should be sensing_range - rij, not critical_range - rij
+        d = (self.critical_range - rij) / 2.0
         if d <= 0:
             return False
 
