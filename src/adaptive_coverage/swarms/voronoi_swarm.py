@@ -11,6 +11,7 @@ class VoronoiSwarm(Swarm):
         self.generators: Union[list, np.ndarray] = []
 
     def init_agents(self):
+        """Initialize all agents in a grid-like formation."""
         for i in range(self.num_rows):
             for j in range(self.num_cols):
                 x = self.first_agent_pos[0] + j * self.dist_btw_agents

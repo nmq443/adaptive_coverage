@@ -255,7 +255,7 @@ class Renderer:
         # If voronoi agent, draw critical range
         if self.controller == "voronoi":
             critical_range = meters2pixels(
-                self.sensing_range * 0.7, self.scale)
+                self.sensing_range * 0.8, self.scale)
             pygame.draw.circle(
                 self.screen,
                 self.agent_sensing_color,

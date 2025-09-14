@@ -13,9 +13,29 @@ class ArtificialPotentialField:
         self.avoidance_range = avoidance_range
 
     def goal_force(self, pos, goal):
+        """
+        Heading to goal behavior.
+
+        Args:
+            pos: current position.
+            goal: desired goal.
+
+        Returns:
+            Force to desired goal.
+        """
         return self.kg * (goal - pos)
 
     def obstacle_force(self, pos, obstacles):
+        """
+        Obstacles avoidance behaviors.
+
+        Args:
+            pos: current position.
+            obstacles: list of obstacles, represented as a (n, 4) array.
+
+        Returns:
+            Force to avoid obstacles.
+        """
         if len(obstacles) == 0:
             return np.zeros(2)
 
@@ -41,6 +61,17 @@ class ArtificialPotentialField:
         return fo
 
     def collision_force(self, pos, agent_index, agents):
+        """
+        Collision avoidance force.
+
+        Args:
+            pos: current position.
+            agent_index: current agent's index.
+            agents: list of all agents.
+
+        Returns:
+            Force to avoid collision.
+        """
         positions = np.array(
             [agent.pos for agent in agents if agent.index != agent_index]
         )
@@ -71,6 +102,7 @@ class ArtificialPotentialField:
         return fc
 
     def total_force(self, pos, goal, agent_index, agents, obstacles):
+        """Find total force based on 3 behaviors: goal, collision avoidance, obstacle avoidance."""
         fg = self.goal_force(pos, goal)
         fo = self.obstacle_force(pos, obstacles)
         fc = self.collision_force(pos, agent_index, agents)

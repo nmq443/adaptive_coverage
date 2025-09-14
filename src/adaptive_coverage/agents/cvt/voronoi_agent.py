@@ -10,14 +10,22 @@ class VoronoiAgent(Agent):
     def __init__(self, *args, valid_ratio=1, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_range = self.sensing_range * valid_ratio
-        self.critical_range = self.sensing_range * 0.7
+        self.critical_range = self.sensing_range * 0.8
         self.eps = self.sensing_range - self.critical_range
         # store ignored links (i -> j) that we treat as non-critical (after minimization)
         self.ignored_links: set[int] = set()
 
-    # ---------- existing methods (unchanged except minor fixes) ----------
-
     def get_critical_agents(self, agents, env):
+        """
+        Get critical agents with definition in *Hierarchical Distributed Control for Global Network Integrity Preservation in Multi-Robot Systems*.
+
+        Args: 
+            agents: list of all agents.
+            env: simulation environment.
+
+        Return:
+            list of all critical agents.
+        """
         critical_agents = []
         for agent in agents:
             if agent.index != self.index:
@@ -29,10 +37,17 @@ class VoronoiAgent(Agent):
 
     def is_critical_agent(self, agent, agents, env):
         """
-        Reworked to follow paper's Definition 1:
+        Check if an agent is this agent's critical agent:
         - agent must be in the annulus (critical area): distance in (critical_range, sensing_range]
-        - and there must exist at least one other agent k that belongs to our noncritical area
-          but not to agent.j's noncritical area -> i.e. Sn_i \ Sn_j is non-empty.
+        - There must exist at least one other agent k that belongs to our non-critical area but not to agent.j's non-critical area -> i.e. Sn_i \ Sn_j is non-empty.
+
+        Args:
+            agent: agent to be checked.
+            agents: list of all agents.
+            env: simulation environment.
+
+        Return:
+            True if agent is critical.
         """
         if agent.index == self.index:
             return False
@@ -53,8 +68,12 @@ class VoronoiAgent(Agent):
             # other in our noncritical area?
             d_other_i = np.linalg.norm(other.pos - self.pos)
             d_other_j = np.linalg.norm(other.pos - agent.pos)
-            in_Sn_i = (d_other_i <= self.critical_range)
-            in_Sn_j = (d_other_j <= agent.critical_range)
+            if ray_intersects_aabb(self.pos, other.pos, env.obstacles):
+                return False
+            if ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
+                return False
+            in_Sn_i = (d_other_i < self.critical_range)
+            in_Sn_j = (d_other_j < agent.critical_range)
             # if there exists a k in Sn_i but not in Sn_j, then agent is critical
             if in_Sn_i and (not in_Sn_j):
                 return True
@@ -62,7 +81,6 @@ class VoronoiAgent(Agent):
         # if no such k exists, it's noncritical by Definition 1
         return False
 
-    # ---------- mobility constraint fix ----------
     def mobility_constraint(self, critical_agents, agents, env, timestep):
         if len(critical_agents) <= 0:
             return self.v_max
@@ -83,7 +101,6 @@ class VoronoiAgent(Agent):
         allowed_v = allowed_step / max(timestep, 1e-9)
         v_cap = min(self.v_max, allowed_v)
 
-        # --- NEW: adaptive predictive connectivity check ---
         desired_vec = self.goal - self.pos
         norm_desired = np.linalg.norm(desired_vec)
         if norm_desired < 1e-9:
@@ -108,37 +125,6 @@ class VoronoiAgent(Agent):
 
         # if none of the reduced steps are safe, stay still
         return 0.0
-
-    # def mobility_constraint(self, critical_agents, agents, env, timestep):
-    #     """
-    #     Returns a velocity limit (scalar) that respects the mobility-constraint.
-    #     Implements paper Eq.17 idea: allowed_step = min_j (r_c - r_ij) / 2
-    #     allowed_velocity = allowed_step / dt  (we return velocity bound)
-    #     and then cap with self.v_max.
-    #     """
-    #     if len(critical_agents) <= 0:
-    #         # no constraints -> can use full velocity
-    #         return self.v_max
-
-    #     epsi = []
-    #     for critical_id in critical_agents:
-    #         distance = np.linalg.norm(self.pos - agents[critical_id].pos)
-    #         # if distance >= sensing_range, that critical shouldn't have been returned,
-    #         # but guard anyway.
-    #         if distance >= self.sensing_range:
-    #             continue
-    #         epsi.append(self.sensing_range - distance)
-
-    #     if len(epsi) == 0:
-    #         return self.v_max
-
-    #     min_eps = min(epsi)
-    #     # allowed run-step (paper): delta_x <= min_eps / 2
-    #     allowed_step = min_eps / 2.0
-    #     # convert to allowed velocity (step per timestep)
-    #     allowed_v = allowed_step / max(timestep, 1e-9)
-    #     # cap by v_max
-    #     return min(self.v_max, allowed_v)
 
     # ---------- helpers for connectivity minimization ----------
 
@@ -177,8 +163,9 @@ class VoronoiAgent(Agent):
 
     def get_ngroup(self, agents, env):
         """
-        Return Ng_i: neighbour indices in cyclic order (by angle around self).
-        Only includes neighbours that are currently connected (and not ignored).
+        Return 
+            Ng_i: neighbour indices in cyclic order (by angle around self). 
+            Only includes neighbours that are currently connected (and not ignored).
         """
         neighbors = []
         for a in agents:
@@ -197,6 +184,11 @@ class VoronoiAgent(Agent):
         return [idx for _, idx in neighbors]
 
     def angle_to_goal(self, neighbor_pos):
+        """
+        Compute angle to desired goal.
+        Return:
+            angle to desired goal.
+        """
         v_des = self.goal - self.pos
         v_rel = neighbor_pos - self.pos
         mv = np.linalg.norm(v_des)
@@ -333,8 +325,6 @@ class VoronoiAgent(Agent):
                         Rn_K.add(cid)
         return Rn_T, Rn_K
 
-    # ---------- apply minimization (update ignored_links) ----------
-
     def minimize_local_connectivity(self, agents, env):
         """
         High-level call to compute Rn_T and Rn_K and update self.ignored_links
@@ -458,7 +448,7 @@ class VoronoiAgent(Agent):
 
         for wpos in worst_cases:
             dist = np.linalg.norm(next_pos - wpos)
-            if dist <= self.sensing_range:
+            if dist < self.critical_range:
                 if not ray_intersects_aabb(next_pos, wpos, env.obstacles):
                     return True
         return False

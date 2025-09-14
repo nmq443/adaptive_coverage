@@ -10,26 +10,26 @@ def density_func(q):
     Distribution density function. Right now I'm using uniform distribution.
 
     Args:
-        q (numpy.ndarray): 2D position.
+        q: 2D position.
 
     Returns:
-        float: f(q) represents the importance of q.
+        f(q) represents the importance of q.
     """
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=30):
+def centroid_region(agent, vertices, env, resolution=20):
     """
     Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
 
     Args:
-        agent (object): agent object with pos, size, and critical_range attributes.
-        vertices (numpy.ndarray): vertices of the current agent's Voronoi partition.
-        env (object): environment containing obstacles.
-        resolution (int): number of grid points per dimension.
+        agent: agent object with pos, size, and critical_range attributes.
+        vertices: vertices of the current agent's Voronoi partition.
+        env: environment containing obstacles.
+        resolution: number of grid points per dimension.
 
     Returns:
-        numpy.ndarray: centroid of current agent's Voronoi partition.
+        centroid of current agent's Voronoi partition.
     """
     polygon = Polygon(vertices)
     xmax = np.max(vertices[:, 0])
@@ -92,6 +92,17 @@ def centroid_region(agent, vertices, env, resolution=30):
         centroid_x = weighted_x / total_mass
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
+        centroid = np.array([centroid_x, centroid_y])
+        # Post-check: if centroid lies inside an obstacle, pick nearest valid grid point
+        if any(Polygon([(x, y), (x+w, y), (x+w, y+h), (x, y+h)]).contains(Point(centroid))
+               for (x, y, w, h) in env.obstacles):
+            # fallback: choose closest valid point from sampled grid
+            valid_points = grid_points[mask.ravel()]
+            if len(valid_points) > 0:
+                distances = np.linalg.norm(valid_points - agent.pos, axis=1)
+                centroid = valid_points[np.argmin(distances)]
+            else:
+                centroid = agent.pos
     else:
         centroid = agent.pos
 
@@ -103,9 +114,9 @@ def lloyd(agent, agents, env):
     Continuous lloyd algorithm to find centroidal voronoi diagrams.
 
     Args:
-        agent (Agent): current agent.
-        agents (list): list of all agents.
-        env (Environment): simulation environment.
+        agent: current agent.
+        agents: list of all agents.
+        env: simulation environment.
     Returns:
         numpy.ndarray: goal for current agent.
     """
@@ -144,11 +155,11 @@ def compute_voronoi_diagrams(generators, env):
     Compute bounded voronoi diagrams inside a polygon.
 
     Args:
-        generators (numpy.ndarray): the generators array for computing polygon.
-        env (Environment): simulation environment.
+        generators: the generators array for computing polygon.
+        env: simulation environment.
 
     Returns:
-        vor (scipy.spatial.Voronoi): the resulting voronoi
+        vor: the resulting voronoi
     """
     mirroreds = []
     # mirror over edges
@@ -178,6 +189,4 @@ def compute_voronoi_diagrams(generators, env):
             regions.append(region)
     setattr(vor, "filtered_points", generators)
     setattr(vor, "filtered_regions", regions)
-    # vor.filtered_points = generators
-    # vor.filtered_regions = regions
     return vor

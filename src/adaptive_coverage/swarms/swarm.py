@@ -52,6 +52,9 @@ class Swarm:
         pass
 
     def update_adj_mat(self):
+        """
+        Update adjacency matrix.
+        """
         self.adjacency_matrix.fill(0)
         sr2 = self.agents[0].sensing_range ** 2
         for i in range(self.num_agents):
@@ -66,6 +69,14 @@ class Swarm:
                     )
 
     def update_state(self, agent_index, current_step, state):
+        """
+        Update current agent's state.
+
+        Args:
+            agent_index: index of agent to be updated.
+            current_step: current time step.
+            state: updated state.
+        """
         self.state[agent_index, current_step] = state
 
     def step(self, env, timestep, current_step, penalty_flag=0):

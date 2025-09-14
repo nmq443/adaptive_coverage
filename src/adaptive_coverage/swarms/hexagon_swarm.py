@@ -25,6 +25,7 @@ class HexagonSwarm(Swarm):
         self.pso_num_iterations = pso_num_iterations
 
     def init_agents(self):
+        """Initialize all agents in a grid-like formation."""
         for i in range(self.num_rows):
             for j in range(self.num_cols):
                 x = self.first_agent_pos[0] + j * self.dist_btw_agents
@@ -53,6 +54,7 @@ class HexagonSwarm(Swarm):
         self.determine_root(-1, self.agents[-1].pos)
 
     def determine_root(self, agent_id, agent_goal):
+        """Choose an initial agent to be the first landmark."""
         self.agents[agent_id].set_state("occupied")
 
     def step(self, env, current_step, timestep):
