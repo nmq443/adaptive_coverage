@@ -36,14 +36,14 @@ def pixels2meters(x, scale):
     return x / scale
 
 
-def perpendicular(x: np.array, a: np.array, b: np.array):
+def perpendicular(x, a, b):
     """
     Finds projection of x on ab.
 
     Args:
-        a: NumPy array [ax, ay] representing point A.
-        b: NumPy array [bx, by] representing point B.
-        x: NumPy array [cx, cy] representing point X.
+        a: numpy array [ax, ay] representing point A.
+        b: numpy array [bx, by] representing point B.
+        x: numpy array [cx, cy] representing point X.
 
     Returns:
         NumPy array [hx, hy] representing point H.
@@ -115,12 +115,13 @@ def get_relative_index(cur_agent_pos, target_agent_pos):
     return int(np.mean(angles) % (2 * np.pi)) % 6
 
 
-def nearest_points_on_obstacles(agent_pos: np.ndarray, obstacles: np.ndarray):
+def nearest_points_on_obstacles(agent_pos, obstacles):
     """
     Vectorized computation of the nearest point on each rectangular obstacle.
 
-    agent_pos: np.array of shape (2,)
-    obstacles: np.array of shape (N, 4) — [x, y, w, h]
+    Args:
+        agent_pos: np.array of shape (2,)
+        obstacles: np.array of shape (N, 4) — [x, y, w, h]
 
     Returns:
         np.array of shape (N, 2) — nearest points on each obstacle
@@ -137,11 +138,11 @@ def nearest_points_on_obstacles(agent_pos: np.ndarray, obstacles: np.ndarray):
 
 
 def normalize_angle(angle: float):
-    """Normalize angle."""
     return np.arctan2(np.sin(angle), np.cos(angle))
 
 
 def lambda2(adj_mat):
+    """Get lambda2 value from an adjacency matrix."""
     g = nx.from_numpy_array(adj_mat)
 
     # Compute the Laplacian matrix (as a NumPy array)
@@ -150,9 +151,6 @@ def lambda2(adj_mat):
     # Compute all eigenvalues (ascending order)
     eigenvalues = eigvalsh(L)  # eigvalsh is for symmetric/hermitian matrices
 
-    # Print all eigenvalues
-    # print("Eigenvalues:", eigenvalues)
-
     # Get the second smallest eigenvalue (Fiedler value)
     fiedler_value = eigenvalues[1]
     # print("Second smallest eigenvalue (Fiedler value):", fiedler_value)
@@ -160,6 +158,7 @@ def lambda2(adj_mat):
 
 
 def str2bool(v):
+    """Convert from string "true" or "false" to bool True or False."""
     if isinstance(v, bool):
         return v
     if v.lower() in ("yes", "true", "t", "1"):
@@ -461,10 +460,6 @@ def save_configs(args, file_path):
 
     with open(file_path, "w") as f:
         yaml.dump(output_config, f, sort_keys=False)
-
-
-def save_results():
-    pass
 
 
 def compute_coverage_percentage(positions, env, sensing_range):
