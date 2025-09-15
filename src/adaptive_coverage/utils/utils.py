@@ -140,6 +140,7 @@ def normalize_angle(angle: float):
     """Normalize angle."""
     return np.arctan2(np.sin(angle), np.cos(angle))
 
+
 def lambda2(adj_mat):
     g = nx.from_numpy_array(adj_mat)
 
@@ -157,6 +158,18 @@ def lambda2(adj_mat):
     # print("Second smallest eigenvalue (Fiedler value):", fiedler_value)
     return fiedler_value
 
+
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "1"):
+        return True
+    elif v.lower() in ("no", "false", "f", "0"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
+
 def get_args(default_configs):
     with open(default_configs, "r") as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
@@ -172,7 +185,9 @@ def get_args(default_configs):
     )
     parser.add_argument(
         "--original_method",
-        type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="If using hexagon, use original method or not",
         default=configs["agents"]["original_method"],
     )
@@ -301,49 +316,59 @@ def get_args(default_configs):
     )
     parser.add_argument(
         "--show_sensing_range",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show sensing range of agents",
         default=configs["simulation"]["show_sensing_range"],
     )
     parser.add_argument(
         "--show_goal",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's goal",
         default=configs["simulation"]["show_goal"],
     )
     parser.add_argument(
         "--show_connections",
         type=bool,
+        # type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's connections",
         default=configs["simulation"]["show_connections"],
     )
     parser.add_argument(
         "--show_trajectories",
-        type=bool,
+        # type=bool,
+        type=str2bool,
+        nargs="?",
+        const=True,
         help="Show agent's trajectories",
         default=configs["simulation"]["show_trajectories"],
     )
 
-    # Results and logs
+    # Results
     parser.add_argument(
         "--res_dir",
         type=str,
         help="Where to put results",
         default=configs["experiments"]["res_dir"],
     )
-    parser.add_argument(
-        "--log_dir",
-        type=str,
-        help="Where to put log files",
-        default=configs["experiments"]["log_dir"],
-    )
-    parser.add_argument("--env", type=str, help="Which environment", default="env0")
+
+    parser.add_argument("--env", type=str,
+                        help="Which environment", default="env0")
     parser.add_argument(
         "--area_width", type=float, help="Area width", default=None
     )  # Set a placeholder default
-    parser.add_argument("--area_height", help="Area height", type=float, default=None)
+    parser.add_argument("--area_height", help="Area height",
+                        type=float, default=None)
     parser.add_argument("--obstacles", type=float, nargs="*", default=None)
-    parser.add_argument("--first_agent_pos", type=float, nargs="*", default=None)
+    parser.add_argument("--first_agent_pos", type=float,
+                        nargs="*", default=None)
 
     args = parser.parse_args()
     if args.area_width is None:  # If not overridden by command line
@@ -401,28 +426,34 @@ def save_configs(args, file_path):
     )
 
     output_config["experiments"]["res_dir"] = config_dict.pop("res_dir")
-    output_config["experiments"]["log_dir"] = config_dict.pop("log_dir")
 
     # Path planner configs
-    output_config["agents"]["path_planner"]["kg"] = config_dict.pop("goal_factor")
-    output_config["agents"]["path_planner"]["ko"] = config_dict.pop("obstacle_factor")
-    output_config["agents"]["path_planner"]["kc"] = config_dict.pop("collision_factor")
-    output_config["agents"]["path_planner"]["beta_c"] = config_dict.pop("beta_c")
+    output_config["agents"]["path_planner"]["kg"] = config_dict.pop(
+        "goal_factor")
+    output_config["agents"]["path_planner"]["ko"] = config_dict.pop(
+        "obstacle_factor")
+    output_config["agents"]["path_planner"]["kc"] = config_dict.pop(
+        "collision_factor")
+    output_config["agents"]["path_planner"]["beta_c"] = config_dict.pop(
+        "beta_c")
 
     # Other agent configs
     output_config["agents"]["controller"] = config_dict.pop("controller")
-    output_config["agents"]["original_method"] = config_dict.pop("original_method")
+    output_config["agents"]["original_method"] = config_dict.pop(
+        "original_method")
     output_config["agents"]["num_agents"] = config_dict.pop("num_agents")
     output_config["agents"]["agent_size"] = config_dict.pop("agent_size")
     output_config["agents"]["v_max"] = config_dict.pop("v_max")
     output_config["agents"]["tolerance"] = config_dict.pop("tolerance")
     output_config["agents"]["sensing_range"] = config_dict.pop("sensing_range")
-    output_config["agents"]["avoidance_range"] = config_dict.pop("avoidance_range")
+    output_config["agents"]["avoidance_range"] = config_dict.pop(
+        "avoidance_range")
     output_config["agents"]["rho"] = config_dict.pop("rho")
     output_config["agents"]["pso_num_iterations"] = config_dict.pop(
         "pso_num_iterations"
     )
-    output_config["agents"]["pso_num_particles"] = config_dict.pop("pso_num_particles")
+    output_config["agents"]["pso_num_particles"] = config_dict.pop(
+        "pso_num_particles")
     output_config["agents"]["pso_weights"] = config_dict.pop("pso_weights")
 
     # The remaining key is 'env' which we've already used.
@@ -431,8 +462,10 @@ def save_configs(args, file_path):
     with open(file_path, "w") as f:
         yaml.dump(output_config, f, sort_keys=False)
 
+
 def save_results():
     pass
+
 
 def compute_coverage_percentage(positions, env, sensing_range):
     """
@@ -456,7 +489,8 @@ def compute_coverage_percentage(positions, env, sensing_range):
     grid_points = np.column_stack((xx.ravel(), yy.ravel()))  # shape: (N, 2)
 
     # Step 1: Filter points inside the polygon
-    inside_polygon_mask = np.array([polygon.contains(Point(p)) for p in grid_points])
+    inside_polygon_mask = np.array(
+        [polygon.contains(Point(p)) for p in grid_points])
     inside_polygon_points = grid_points[inside_polygon_mask]
 
     # Step 2: Compute coverage mask (robots)
@@ -489,6 +523,7 @@ def compute_coverage_percentage(positions, env, sensing_range):
         else 0.0
     )
 
+
 def plot_travel_distances(distances, log=None, agent_labels=None, save_dir=""):
     """
     Plots the total travel distances for each robot as a bar chart.
@@ -512,7 +547,8 @@ def plot_travel_distances(distances, log=None, agent_labels=None, save_dir=""):
     x_pos = np.arange(num_agents)
 
     # Create the figure and axes
-    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust figsize for better proportions
+    # Adjust figsize for better proportions
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     # Plot the bar chart
     bars = ax.bar(
@@ -520,7 +556,8 @@ def plot_travel_distances(distances, log=None, agent_labels=None, save_dir=""):
     )  # Added a color for better aesthetics
 
     # Set labels and title
-    ax.set_xlabel("Agent", fontsize=12)  # Changed to "Robot", increased font size
+    # Changed to "Robot", increased font size
+    ax.set_xlabel("Agent", fontsize=12)
     ax.set_ylabel(
         "Total Distance (m)", fontsize=12
     )  # More descriptive label, increased font size

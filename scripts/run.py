@@ -1,12 +1,13 @@
-import os
-from adaptive_coverage.utils.utils import get_args, save_configs
-from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
-from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm
-from adaptive_coverage.swarms.voronoi_swarm import VoronoiSwarm
-from adaptive_coverage.path_planner.apf import ArtificialPotentialField
-from adaptive_coverage.environment.environment import Environment
-from adaptive_coverage.simulator.simulator import Simulator
 from adaptive_coverage.simulator.renderer import Renderer
+from adaptive_coverage.simulator.simulator import Simulator
+from adaptive_coverage.environment.environment import Environment
+from adaptive_coverage.path_planner.apf import ArtificialPotentialField
+from adaptive_coverage.swarms.voronoi_swarm import VoronoiSwarm
+from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm
+from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
+from adaptive_coverage.utils.utils import get_args, save_configs
+import os
+os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 def run():
@@ -67,7 +68,8 @@ def run():
             log_manager=log_manager,
         )
 
-    env = Environment(args.area_width, args.area_height, args.obstacles, offset=1)
+    env = Environment(args.area_width, args.area_height,
+                      args.obstacles, offset=1)
 
     sim = Simulator(
         screen_size=args.screen_size,
@@ -86,7 +88,8 @@ def run():
 
 
 def render(args, log_manager, result_manager):
-    env = Environment(args.area_width, args.area_height, args.obstacles, offset=1)
+    env = Environment(args.area_width, args.area_height,
+                      args.obstacles, offset=1)
     renderer = Renderer(
         screen_size=args.screen_size,
         trajectories_filepath=result_manager.swarm_data_filepath,

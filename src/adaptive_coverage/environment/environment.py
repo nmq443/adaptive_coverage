@@ -30,7 +30,7 @@ class Environment:
 
     def init(self):
         """
-        Initialize the obstacles, rectangles.
+        Initialize the obstacles.
         """
         for obs in self.obstacles:
             self.obstacles_rects.append(
@@ -46,13 +46,13 @@ class Environment:
 
     def point_is_in_environment(self, point, agent_size):
         """
-        Check if a circle (agent) with given radius is inside or near the polygon.
+        Check if an agent with given size is inside the environment.
 
         Args:
-            point (np.ndarray): (x, y) position of the agent.
+            point: (x, y) position in 2D of the agent.
 
         Returns:
-            bool: True if the entire circle is within or touches the polygon.
+            True if the entire circle is within or touches the polygon.
         """
         circle = Point(point).buffer(agent_size)
 

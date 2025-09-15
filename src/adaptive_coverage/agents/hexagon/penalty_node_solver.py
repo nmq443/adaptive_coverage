@@ -4,7 +4,7 @@ from adaptive_coverage.utils.utils import (
     nearest_points_on_obstacles,
     ray_intersects_aabb,
 )
-from adaptive_coverage.utils.lambda2 import lambda2
+from adaptive_coverage.utils.utils import lambda2
 
 
 class PenaltyNodeSolver:
@@ -97,7 +97,8 @@ class PSOSolver(PenaltyNodeSolver):
         t = np.random.uniform(0, 1, self.num_particles).reshape(-1, 1)
 
         # Linear interpolation along the segment
-        base_positions = (1 - t) * self.v1 + t * self.v2  # shape: (num_particles, 2)
+        base_positions = (1 - t) * self.v1 + t * \
+            self.v2  # shape: (num_particles, 2)
 
         # Random perpendicular offsets
         offsets = np.random.uniform(
@@ -110,7 +111,8 @@ class PSOSolver(PenaltyNodeSolver):
         self.velocities = np.zeros_like(self.positions)
 
         self.pbest = self.positions.copy()
-        self.pbest_val = np.array([self.fitness_func(p) for p in self.positions])
+        self.pbest_val = np.array([self.fitness_func(p)
+                                  for p in self.positions])
         self.gbest = self.pbest[np.argmax(self.pbest_val)]
         self.gbest_val = np.max(self.pbest_val)  # minimize fitness function
 
@@ -129,10 +131,12 @@ class PSOSolver(PenaltyNodeSolver):
 
         if len(self.env.obstacles) > 0:
             x_in = (self.env.obstacles[:, 0] <= position[0]) & (
-                position[0] <= self.env.obstacles[:, 0] + self.env.obstacles[:, 2]
+                position[0] <= self.env.obstacles[:, 0] +
+                self.env.obstacles[:, 2]
             )
             y_in = (self.env.obstacles[:, 1] <= position[1]) & (
-                position[1] <= self.env.obstacles[:, 1] + self.env.obstacles[:, 3]
+                position[1] <= self.env.obstacles[:, 1] +
+                self.env.obstacles[:, 3]
             )
             in_obs = x_in & y_in
         else:
@@ -169,7 +173,8 @@ class PSOSolver(PenaltyNodeSolver):
 
     def obstacle_avoidance(self, position: np.ndarray):
         if len(self.env.obstacles) > 0:
-            obs_pts = nearest_points_on_obstacles(self.agent.pos, self.env.obstacles)
+            obs_pts = nearest_points_on_obstacles(
+                self.agent.pos, self.env.obstacles)
             dist_to_obs = np.linalg.norm(self.agent.pos - obs_pts)
             if dist_to_obs <= self.agent.sensing_range:
                 diff = position - obs_pts
@@ -202,7 +207,8 @@ class PSOSolver(PenaltyNodeSolver):
 
     def validate_positions(self):
         """Validate and correct all particle positions."""
-        valid_positions = np.array([self.is_valid_particle(p) for p in self.positions])
+        valid_positions = np.array(
+            [self.is_valid_particle(p) for p in self.positions])
         in_obstacle = np.array(
             [self.env.point_is_in_obstacle(p) for p in self.positions]
         )
@@ -220,7 +226,8 @@ class PSOSolver(PenaltyNodeSolver):
         )
 
         # Identify invalid particles (either outside valid sector, in obstacle, or out of range)
-        invalid_mask = (~valid_positions) | in_obstacle | (~in_range) | (~in_fov)
+        invalid_mask = (~valid_positions) | in_obstacle | (
+            ~in_range) | (~in_fov)
 
         if np.any(invalid_mask):
             # Calculate mean position of valid particles for projection

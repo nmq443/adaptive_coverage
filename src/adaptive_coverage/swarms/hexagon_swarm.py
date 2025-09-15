@@ -2,7 +2,7 @@ import numpy as np
 from collections import deque
 from adaptive_coverage.swarms.swarm import Swarm
 from adaptive_coverage.agents.hexagon.hexagon_agent import HexagonAgent
-from adaptive_coverage.utils.lambda2 import lambda2
+from adaptive_coverage.utils.utils import lambda2
 
 
 class HexagonSwarm(Swarm):
@@ -25,6 +25,7 @@ class HexagonSwarm(Swarm):
         self.pso_num_iterations = pso_num_iterations
 
     def init_agents(self):
+        """Initialize all agents in a grid-like formation."""
         for i in range(self.num_rows):
             for j in range(self.num_cols):
                 x = self.first_agent_pos[0] + j * self.dist_btw_agents
@@ -53,6 +54,7 @@ class HexagonSwarm(Swarm):
         self.determine_root(-1, self.agents[-1].pos)
 
     def determine_root(self, agent_id, agent_goal):
+        """Choose an initial agent to be the first landmark."""
         self.agents[agent_id].set_state("occupied")
 
     def step(self, env, current_step, timestep):
@@ -60,10 +62,15 @@ class HexagonSwarm(Swarm):
             order = np.random.permutation(len(self.agents))
             for i in order:
                 self.agents[i].step(self.landmarks, self.agents, env, timestep)
+                penalty_flag = 0
+                if self.agents[i].is_penalty_node:
+                    penalty_flag = 1
                 state = np.array(
-                    [self.agents[i].pos[0], self.agents[i].pos[1], self.agents[i].theta]
+                    [self.agents[i].pos[0], self.agents[i].pos[1],
+                        self.agents[i].theta, penalty_flag]
                 )
-                self.update_state(agent_index=i, current_step=current_step, state=state)
+                self.update_state(
+                    agent_index=i, current_step=current_step, state=state)
             self.update_adj_mat()
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)
