@@ -351,19 +351,14 @@ def get_args(default_configs):
         default=configs["simulation"]["show_trajectories"],
     )
 
-    # Results and logs
+    # Results
     parser.add_argument(
         "--res_dir",
         type=str,
         help="Where to put results",
         default=configs["experiments"]["res_dir"],
     )
-    parser.add_argument(
-        "--log_dir",
-        type=str,
-        help="Where to put log files",
-        default=configs["experiments"]["log_dir"],
-    )
+
     parser.add_argument("--env", type=str,
                         help="Which environment", default="env0")
     parser.add_argument(
@@ -431,7 +426,6 @@ def save_configs(args, file_path):
     )
 
     output_config["experiments"]["res_dir"] = config_dict.pop("res_dir")
-    output_config["experiments"]["log_dir"] = config_dict.pop("log_dir")
 
     # Path planner configs
     output_config["agents"]["path_planner"]["kg"] = config_dict.pop(

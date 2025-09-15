@@ -18,8 +18,9 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=20):
-    """
+"""
+def centroid_region(agent, vertices, env, resolution=5):
+    '''
     Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
 
     Args:
@@ -30,7 +31,7 @@ def centroid_region(agent, vertices, env, resolution=20):
 
     Returns:
         centroid of current agent's Voronoi partition.
-    """
+    '''
     polygon = Polygon(vertices)
     xmax = np.max(vertices[:, 0])
     xmin = np.min(vertices[:, 0])
@@ -60,11 +61,14 @@ def centroid_region(agent, vertices, env, resolution=20):
     if len(env.obstacles) > 0:
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
-            in_x = (xx >= x - agent.size * 4) & (xx <=
-                                                 x + w + agent.size * 4)
-            in_y = (yy >= y - agent.size * 4) & (yy <=
-                                                 y + h + agent.size * 4)
-            mask_obstacles &= ~(in_x & in_y)
+            # in_x = (xx >= x - agent.size * 4) & (xx <=
+            #  x + w + agent.size * 4)
+            in_x = (xx >= x) & (xx <= x + w)
+            in_y = (yy >= y) & (yy <= y + h)
+            # in_y = (yy >= y - agent.size * 4) & (yy <=
+            #  y + h + agent.size * 4)
+            # mask_obstacles &= ~(in_x & in_y)
+            mask_obstacles &= ~(in_x | in_y)
 
         visibility_mask = np.array(
             [not ray_intersects_aabb(agent.pos, point, env.obstacles)
@@ -92,10 +96,15 @@ def centroid_region(agent, vertices, env, resolution=20):
         centroid_x = weighted_x / total_mass
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
-        centroid = np.array([centroid_x, centroid_y])
+        for x, y, w, h in env.obstacles:
+            in_x = (centroid_x >= x - agent.size) & (centroid_x <=
+                                                         x + w + agent.size)
+            in_y = (centroid_y >= y - agent.size) & (centroid_y <=
+                                                         y + h + agent.size * 4)
+            # mask_obstacles &= ~(in_x & in_y)
+            mask_obstacles &= ~(in_x | in_y)
         # Post-check: if centroid lies inside an obstacle, pick nearest valid grid point
-        if any(Polygon([(x, y), (x+w, y), (x+w, y+h), (x, y+h)]).contains(Point(centroid))
-               for (x, y, w, h) in env.obstacles):
+        if mask_obstacles.any():
             # fallback: choose closest valid point from sampled grid
             valid_points = grid_points[mask.ravel()]
             if len(valid_points) > 0:
@@ -103,6 +112,108 @@ def centroid_region(agent, vertices, env, resolution=20):
                 centroid = valid_points[np.argmin(distances)]
             else:
                 centroid = agent.pos
+    else:
+        centroid = agent.pos
+
+    return centroid
+
+"""
+
+
+def centroid_region(agent, vertices, env, resolution=15):
+    '''
+    Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
+
+    Args:
+        agent_pos (numpy.ndarray): current agent's position.
+        vertices (numpy.ndarray): vertices of the current agent's voronoi partition.
+        resolution (int): number of grid points used to compute integral.
+
+    Returns:
+        numpy.ndarray: centroid of current agent's voronoi partition.
+    '''
+    polygon = Polygon(vertices)
+    xmax = np.max(vertices[:, 0])
+    xmin = np.min(vertices[:, 0])
+    ymax = np.max(vertices[:, 1])
+    ymin = np.min(vertices[:, 1])
+    n = resolution
+    m = resolution
+    hx = (xmax - xmin) / n
+    hy = (ymax - ymin) / m
+
+    x_coords = np.linspace(xmin, xmax, n + 1)
+    y_coords = np.linspace(ymin, ymax, m + 1)
+    xx, yy = np.meshgrid(x_coords, y_coords)
+    grid_points = np.stack([xx.ravel(), yy.ravel()], axis=-1)
+
+    # Vectorized point-in-polygon check
+    shapely_points = [Point(p) for p in grid_points]
+    mask_polygon = np.array([polygon.contains(sp) for sp in shapely_points]).reshape(
+        xx.shape
+    )
+
+    # Vectorized sensing range check
+    distances = np.linalg.norm(
+        grid_points - agent.pos, axis=1).reshape(xx.shape)
+    mask_range = distances < agent.critical_range
+
+    if len(env.obstacles) > 0:
+        mask_obstacles = np.ones(xx.shape, dtype=bool)
+        for x, y, w, h in env.obstacles:
+            in_x = (xx >= x) & (xx <= x + w)
+            in_y = (yy >= y) & (yy <= y + h)
+            mask_obstacles &= ~(in_x & in_y)
+
+        visibility_mask = np.array(
+            [
+                not ray_intersects_aabb(agent.pos, point, env.obstacles)
+                for point in grid_points
+            ]
+        ).reshape(xx.shape)
+        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
+
+    else:
+        mask = mask_polygon & mask_range
+
+    # Vectorized weight calculation
+    wx = np.ones(n + 1)
+    wx[1:-1] = 2
+    wy = np.ones(m + 1)
+    wy[1:-1] = 2
+    weights = wx[:, np.newaxis] * wy[np.newaxis, :]
+
+    # Evaluate the function f at all grid points (iterating because f returns a scalar)
+    func_values = np.array([density_func(point) for point in grid_points]).reshape(
+        xx.shape
+    )
+
+    # Apply the mask (only consider points inside the polygon)
+    masked_func_values = func_values * mask
+    masked_weights = weights * mask
+
+    # Calculate mass
+    total_mass = np.sum(masked_weights * masked_func_values) * (hx * hy) / 4
+
+    # Calculate weighted centroid components
+    weighted_x = np.sum(
+        masked_weights * masked_func_values * xx) * (hx * hy) / 4
+    weighted_y = np.sum(
+        masked_weights * masked_func_values * yy) * (hx * hy) / 4
+
+    if total_mass > 1e-8:
+        centroid_x = weighted_x / total_mass
+        centroid_y = weighted_y / total_mass
+        centroid = np.array([centroid_x, centroid_y])
+        # in_obs = False
+        # for x, y, w, h in env.obstacles:
+        #     in_x = (centroid_x >= x) and (centroid_x <= x + w)
+        #     in_y = (centroid_y >= y) and (centroid_y <= y + h)
+        #     if in_x or in_y:
+        #         in_obs = True
+        #         break
+        # if in_obs:
+        #     centroid = agent.pos
     else:
         centroid = agent.pos
 
@@ -147,6 +258,7 @@ def lloyd(agent, agents, env):
 
     # Step 3: move points to centroids
     goal = centroids[0]
+    goal = handle_goal(goal, agent.pos, env)
     return goal
 
 
@@ -190,3 +302,25 @@ def compute_voronoi_diagrams(generators, env):
     setattr(vor, "filtered_points", generators)
     setattr(vor, "filtered_regions", regions)
     return vor
+
+
+def handle_goal(goal, agent_pos, env):
+    for obs in env.obstacles:
+        x, y, w, h = obs
+        edges = np.array([
+            [[x, y], [x + w, y]],
+            [[x + w, y], [x + w, y + h]],
+            [[x + w, y + h], [x, y + h]],
+            [[x, y + h], [x, y]]
+        ])
+        if x <= goal[0] <= x + w and y <= goal[1] <= y + h:  # is inside an obstacle
+            agent_to_goal = LineString(np.array([agent_pos, goal]))
+            intersect = None
+            for edge in edges:
+                obs_edge = LineString(edge)
+                if agent_to_goal.intersects(obs_edge):
+                    intersect = agent_to_goal.intersection(obs_edge)
+            if intersect is not None:
+                goal = np.array([intersect.x, intersect.y])
+
+    return goal
