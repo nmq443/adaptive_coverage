@@ -197,6 +197,12 @@ def get_args(default_configs):
         default=configs["agents"]["num_agents"],
     )
     parser.add_argument(
+        "--critical_ratio",
+        help="Critical range",
+        type=float,
+        default=configs["agents"]["critical_ratio"],
+    )
+    parser.add_argument(
         "--total_time",
         help="Total simulation time",
         type=int,

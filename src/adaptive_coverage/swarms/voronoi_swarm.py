@@ -6,8 +6,9 @@ from typing import Union
 
 
 class VoronoiSwarm(Swarm):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, critical_ratio=0.75, **kwargs):
         super().__init__(*args, **kwargs)
+        self.critical_ratio = 0.75
         self.generators: Union[list, np.ndarray] = []
 
     def init_agents(self):
@@ -25,6 +26,7 @@ class VoronoiSwarm(Swarm):
                         index=i * self.num_cols + j,
                         init_pos=init_pos,
                         size=self.agent_size,
+                        critical_ratio=self.critical_ratio,
                         sensing_range=self.sensing_range,
                         path_planner=self.path_planner,
                     )

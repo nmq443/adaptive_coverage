@@ -18,110 +18,8 @@ def density_func(q):
     return 1
 
 
-"""
-def centroid_region(agent, vertices, env, resolution=5):
-    '''
-    Compute the centroid of the polygon using the Rectangle Rule (midpoint rule) on a grid.
-
-    Args:
-        agent: agent object with pos, size, and critical_range attributes.
-        vertices: vertices of the current agent's Voronoi partition.
-        env: environment containing obstacles.
-        resolution: number of grid points per dimension.
-
-    Returns:
-        centroid of current agent's Voronoi partition.
-    '''
-    polygon = Polygon(vertices)
-    xmax = np.max(vertices[:, 0])
-    xmin = np.min(vertices[:, 0])
-    ymax = np.max(vertices[:, 1])
-    ymin = np.min(vertices[:, 1])
-    n = resolution
-    m = resolution
-    hx = (xmax - xmin) / n
-    hy = (ymax - ymin) / m
-
-    # Rectangle rule: sample at midpoints of cells
-    x_coords = xmin + (np.arange(n) + 0.5) * hx
-    y_coords = ymin + (np.arange(m) + 0.5) * hy
-    xx, yy = np.meshgrid(x_coords, y_coords)
-    grid_points = np.stack([xx.ravel(), yy.ravel()], axis=-1)
-
-    # Polygon mask
-    shapely_points = [Point(p) for p in grid_points]
-    mask_polygon = np.array([polygon.contains(sp)
-                            for sp in shapely_points]).reshape(xx.shape)
-
-    # Sensing range mask
-    distances = np.linalg.norm(
-        grid_points - agent.pos, axis=1).reshape(xx.shape)
-    mask_range = distances < agent.critical_range
-
-    if len(env.obstacles) > 0:
-        mask_obstacles = np.ones(xx.shape, dtype=bool)
-        for x, y, w, h in env.obstacles:
-            # in_x = (xx >= x - agent.size * 4) & (xx <=
-            #  x + w + agent.size * 4)
-            in_x = (xx >= x) & (xx <= x + w)
-            in_y = (yy >= y) & (yy <= y + h)
-            # in_y = (yy >= y - agent.size * 4) & (yy <=
-            #  y + h + agent.size * 4)
-            # mask_obstacles &= ~(in_x & in_y)
-            mask_obstacles &= ~(in_x | in_y)
-
-        visibility_mask = np.array(
-            [not ray_intersects_aabb(agent.pos, point, env.obstacles)
-             for point in grid_points]
-        ).reshape(xx.shape)
-
-        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
-    else:
-        mask = mask_polygon & mask_range
-
-    # Function values (density)
-    func_values = np.array([density_func(point)
-                           for point in grid_points]).reshape(xx.shape)
-
-    # Apply mask
-    masked_func_values = func_values * mask
-
-    # Rectangle rule integration
-    cell_area = hx * hy
-    total_mass = np.sum(masked_func_values) * cell_area
-    weighted_x = np.sum(masked_func_values * xx) * cell_area
-    weighted_y = np.sum(masked_func_values * yy) * cell_area
-
-    if total_mass > 1e-8:
-        centroid_x = weighted_x / total_mass
-        centroid_y = weighted_y / total_mass
-        centroid = np.array([centroid_x, centroid_y])
-        for x, y, w, h in env.obstacles:
-            in_x = (centroid_x >= x - agent.size) & (centroid_x <=
-                                                         x + w + agent.size)
-            in_y = (centroid_y >= y - agent.size) & (centroid_y <=
-                                                         y + h + agent.size * 4)
-            # mask_obstacles &= ~(in_x & in_y)
-            mask_obstacles &= ~(in_x | in_y)
-        # Post-check: if centroid lies inside an obstacle, pick nearest valid grid point
-        if mask_obstacles.any():
-            # fallback: choose closest valid point from sampled grid
-            valid_points = grid_points[mask.ravel()]
-            if len(valid_points) > 0:
-                distances = np.linalg.norm(valid_points - agent.pos, axis=1)
-                centroid = valid_points[np.argmin(distances)]
-            else:
-                centroid = agent.pos
-    else:
-        centroid = agent.pos
-
-    return centroid
-
-"""
-
-
 def centroid_region(agent, vertices, env, resolution=15):
-    '''
+    """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
     Args:
@@ -131,7 +29,7 @@ def centroid_region(agent, vertices, env, resolution=15):
 
     Returns:
         numpy.ndarray: centroid of current agent's voronoi partition.
-    '''
+    """
     polygon = Polygon(vertices)
     xmax = np.max(vertices[:, 0])
     xmin = np.min(vertices[:, 0])
@@ -258,7 +156,7 @@ def lloyd(agent, agents, env):
 
     # Step 3: move points to centroids
     goal = centroids[0]
-    goal = handle_goal(goal, agent.pos, env)
+    goal = handle_goal(goal, agent, env)
     return goal
 
 
@@ -304,7 +202,9 @@ def compute_voronoi_diagrams(generators, env):
     return vor
 
 
-def handle_goal(goal, agent_pos, env):
+def handle_goal(goal, agent, env):
+    original_goal = goal
+
     for obs in env.obstacles:
         x, y, w, h = obs
         edges = np.array([
@@ -313,14 +213,20 @@ def handle_goal(goal, agent_pos, env):
             [[x + w, y + h], [x, y + h]],
             [[x, y + h], [x, y]]
         ])
-        if x <= goal[0] <= x + w and y <= goal[1] <= y + h:  # is inside an obstacle
-            agent_to_goal = LineString(np.array([agent_pos, goal]))
-            intersect = None
-            for edge in edges:
-                obs_edge = LineString(edge)
-                if agent_to_goal.intersects(obs_edge):
-                    intersect = agent_to_goal.intersection(obs_edge)
-            if intersect is not None:
-                goal = np.array([intersect.x, intersect.y])
+        agent_to_goal = LineString(np.array([agent.pos, goal]))
+        intersect = None
+        for edge in edges:
+            obs_edge = LineString(edge)
+            if agent_to_goal.intersects(obs_edge):
+                intersect = agent_to_goal.intersection(obs_edge)
+        if intersect is not None:
+            goal = np.array([intersect.x, intersect.y])
+
+    if np.linalg.norm(goal - original_goal) > agent.tolerance:
+        dir = goal - agent.pos
+        dist = np.linalg.norm(dir)
+        # new_dir = (dist - agent.size) * dir / dist
+        new_dir = (dist - agent.size * 2) * dir / dist
+        goal = new_dir + agent.pos
 
     return goal

@@ -63,6 +63,7 @@ def run():
             timestep=args.timestep,
             total_time=args.total_time,
             sensing_range=args.sensing_range,
+            critical_ratio=args.critical_ratio,
             first_agent_pos=args.first_agent_pos,
             result_manager=result_manager,
             log_manager=log_manager,

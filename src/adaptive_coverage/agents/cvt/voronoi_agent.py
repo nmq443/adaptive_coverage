@@ -7,10 +7,9 @@ from collections import deque
 
 
 class VoronoiAgent(Agent):
-    def __init__(self, *args, valid_ratio=1, **kwargs):
+    def __init__(self, *args, critical_ratio=0.75, **kwargs):
         super().__init__(*args, **kwargs)
-        self.valid_range = self.sensing_range * valid_ratio
-        self.critical_range = self.sensing_range * 0.8
+        self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
         # store ignored links (i -> j) that we treat as non-critical (after minimization)
         self.ignored_links: set[int] = set()
@@ -140,7 +139,7 @@ class VoronoiAgent(Agent):
         for a in agents:
             if a.index == self.index:
                 continue
-            if np.linalg.norm(a.pos - self.pos) <= self.sensing_range:
+            if np.linalg.norm(a.pos - self.pos) < self.sensing_range:
                 # check line-of-sight between self and a to be considered neighbor (paper assumes)
                 if not ray_intersects_aabb(self.pos, a.pos, env.obstacles):
                     N_i.append(a)
@@ -156,7 +155,7 @@ class VoronoiAgent(Agent):
                     # if we've ignored the connection, don't count it
                     continue
                 d_ab = np.linalg.norm(a.pos - b.pos)
-                if d_ab <= self.sensing_range:
+                if d_ab < self.sensing_range:
                     if not ray_intersects_aabb(a.pos, b.pos, env.obstacles):
                         adj[a.index].add(b.index)
         return adj
@@ -174,7 +173,7 @@ class VoronoiAgent(Agent):
             if a.index in self.ignored_links:
                 continue
             d = np.linalg.norm(a.pos - self.pos)
-            if d <= self.sensing_range and not ray_intersects_aabb(self.pos, a.pos, env.obstacles):
+            if d < self.sensing_range and not ray_intersects_aabb(self.pos, a.pos, env.obstacles):
                 vec = a.pos - self.pos
                 angle = np.arctan2(vec[1], vec[0])
                 neighbors.append((angle, a.index))
