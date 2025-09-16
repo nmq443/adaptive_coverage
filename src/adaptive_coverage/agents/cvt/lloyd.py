@@ -1,3 +1,4 @@
+from shapely.geometry import LineString, Polygon, Point
 import numpy as np
 import pygame
 from scipy.spatial import Voronoi
@@ -203,6 +204,54 @@ def compute_voronoi_diagrams(generators, env):
 
 
 def handle_goal(goal, agent, env):
+    original_goal = np.array(goal)
+    agent_to_goal = LineString([agent.pos, goal])
+
+    # Inflate obstacles by agent.size (buffer creates clearance area)
+    inflated_obstacles = []
+    for obs in env.obstacles:
+        x, y, w, h = obs
+        rect = Polygon([
+            (x, y), (x + w, y),
+            (x + w, y + h), (x, y + h)
+        ])
+        inflated_obstacles.append(rect.buffer(agent.size))
+
+    closest_intersect = None
+    min_dist = float("inf")
+
+    # Check path intersections with inflated obstacles
+    for poly in inflated_obstacles:
+        if agent_to_goal.intersects(poly):
+            inter = agent_to_goal.intersection(poly.boundary)
+            if not inter.is_empty:
+                if inter.geom_type == "Point":
+                    dist = Point(agent.pos).distance(inter)
+                    if dist < min_dist:
+                        min_dist = dist
+                        closest_intersect = np.array([inter.x, inter.y])
+                else:
+                    # handle LineString intersection, pick nearest point
+                    for pt in inter.geoms:
+                        dist = Point(agent.pos).distance(pt)
+                        if dist < min_dist:
+                            min_dist = dist
+                            closest_intersect = np.array([pt.x, pt.y])
+
+    # Adjust goal if intersection happens
+    if closest_intersect is not None:
+        dir_vec = closest_intersect - agent.pos
+        dist = np.linalg.norm(dir_vec)
+        new_dir = (dist - agent.size) * dir_vec / dist
+        goal = new_dir + agent.pos
+    else:
+        goal = original_goal
+
+    return goal
+
+
+"""
+def handle_goal(goal, agent, env):
     original_goal = goal
 
     for obs in env.obstacles:
@@ -225,8 +274,9 @@ def handle_goal(goal, agent, env):
     if np.linalg.norm(goal - original_goal) > agent.tolerance:
         dir = goal - agent.pos
         dist = np.linalg.norm(dir)
-        # new_dir = (dist - agent.size) * dir / dist
-        new_dir = (dist - agent.size * 2) * dir / dist
+        new_dir = (dist - agent.size) * dir / dist
         goal = new_dir + agent.pos
 
     return goal
+
+"""
