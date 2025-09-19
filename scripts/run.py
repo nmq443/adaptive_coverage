@@ -97,6 +97,7 @@ def render(args, log_manager, result_manager):
         controller=args.controller,
         agent_size=args.agent_size,
         sensing_range=args.sensing_range,
+        critical_ratio=args.critical_ratio,
         result_manager=result_manager,
         log_manager=log_manager,
         env=env,

@@ -11,6 +11,7 @@ class Renderer:
         self,
         env,
         agent_size,
+        critical_ratio,
         sensing_range,
         scale,
         screen_size,
@@ -44,6 +45,7 @@ class Renderer:
             agent_size: size of the agent in meters, because an agent is represented as a circle, agent_size is the
             circle's radius.
             sensing_range: sensing range of the agent in meters.
+            critical_ratio: used to determine critical range when using voronoi method.
             scale: scaling factor from simulation plane to rendering plane.
             screen_size: size of the rendering screen in pixels.
             trajectories_filepath: filepath to result data.
@@ -71,6 +73,7 @@ class Renderer:
         """
         self.screen_size: tuple = screen_size
         self.sensing_range: float = sensing_range
+        self.critical_range: float = self.sensing_range * critical_ratio
         self.trajectories_filepath: str = trajectories_filepath
         self.env = env
         self.scale: float = scale
