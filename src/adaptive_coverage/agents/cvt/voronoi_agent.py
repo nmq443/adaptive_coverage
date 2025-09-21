@@ -106,21 +106,17 @@ class VoronoiAgent(Agent):
             return v_cap
         desired_dir = desired_vec / norm_desired
 
-        # try full step, then gradually smaller steps if unsafe
-        fractions = [1.0, 0.75, 0.5, 0.25, 0.1]
-        for frac in fractions:
-            step_size = v_cap * timestep * frac
-            next_pos = self.pos + desired_dir * step_size
+        next_pos = self.pos + desired_dir * v_cap * self.timestep
 
-            all_ok = True
-            for critical_id in critical_agents:
-                neighbor = agents[critical_id]
-                if not self.check_future_connectivity(next_pos, neighbor, env):
-                    all_ok = False
-                    break
+        all_ok = True
+        for critical_id in critical_agents:
+            neighbor = agents[critical_id]
+            if not self.check_future_connectivity(next_pos, neighbor, env):
+                all_ok = False
+                break
 
-            if all_ok:
-                return (step_size / timestep)  # convert back to velocity
+        if all_ok:
+            return v_cap
 
         # if none of the reduced steps are safe, stay still
         return 0.0
@@ -428,9 +424,7 @@ class VoronoiAgent(Agent):
         Check if next_pos maintains connectivity with neighbor under 3 worst-case
         neighbor positions (j0, j1, j2).
         """
-        rij = np.linalg.norm(neighbor.pos - self.pos)
-        # should be sensing_range - rij, not critical_range - rij
-        d = (self.critical_range - rij) / 2.0
+        d = self.timestep * self.v_max
         if d <= 0:
             return False
 
@@ -449,6 +443,8 @@ class VoronoiAgent(Agent):
         for wpos in worst_cases:
             dist = np.linalg.norm(next_pos - wpos)
             if dist < self.critical_range:
-                if not ray_intersects_aabb(next_pos, wpos, env.obstacles):
-                    return True
-        return False
+                if ray_intersects_aabb(next_pos, wpos, env.obstacles):
+                    return False
+            else:
+                return False
+        return True

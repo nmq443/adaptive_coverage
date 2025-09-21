@@ -9,6 +9,7 @@ class Agent:
         size,
         path_planner,
         sensing_range,
+        timestep,
         v_max=0.05,
         avoidance_range=0.05,
         tolerance=0.05,
@@ -21,6 +22,7 @@ class Agent:
         self.size = size
         self.v_max = v_max
         self.sensing_range = sensing_range
+        self.timestep = timestep
 
         # Path planning parameters
         self.path_planner = path_planner
