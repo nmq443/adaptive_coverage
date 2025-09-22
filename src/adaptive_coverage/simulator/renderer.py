@@ -3,7 +3,9 @@ import numpy as np
 import os
 from adaptive_coverage.utils.utils import meters2pixels, ray_intersects_aabb
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
-from typing import Union, Optional
+from adaptive_coverage.environment.environment import Environment
+from adaptive_coverage.simulator.data_manager import ResultManager, LogManager
+from typing import Union
 
 
 class Renderer:
@@ -16,8 +18,8 @@ class Renderer:
         scale,
         screen_size,
         trajectories_filepath,
-        result_manager=None,
-        log_manager=None,
+        result_manager,
+        log_manager,
         controller="voronoi",
         agent_color="red",
         agent_sensing_color="blue",
@@ -75,7 +77,7 @@ class Renderer:
         self.sensing_range: float = sensing_range
         self.critical_range: float = self.sensing_range * critical_ratio
         self.trajectories_filepath: str = trajectories_filepath
-        self.env = env
+        self.env: Environment = env
         self.scale: float = scale
         self.agent_size: float = agent_size
         self.controller: str = controller
@@ -90,7 +92,7 @@ class Renderer:
         self.goal_color: Union[pygame.color.Color, str] = goal_color
         self.obs_color: Union[pygame.color.Color, str] = obs_color
         self.heading_color: Union[pygame.color.Color, str] = heading_color
-        self.index_color = index_color
+        self.index_color: Union[pygame.color.Color, str] = index_color
         if self.controller == "hexagon":
             self.occupied_color: Union[pygame.color.Color,
                                        str] = occupied_color
@@ -102,14 +104,14 @@ class Renderer:
         self.num_agents: int = 0
         self.num_timesteps: int = 0
         self.current_timestep: int = 0
-        self.screen: pygame.Surface = None
-        self.clock: pygame.time.Clock = None
+        self.screen: pygame.Surface | None = None
+        self.clock: pygame.time.Clock | None = None
         self.running: bool = False
         self.fps: int = fps
         self.trail_length: int = trail_length
         self.font_size: int = font_size
-        self.result_manager = result_manager
-        self.log_manager = log_manager
+        self.result_manager: ResultManager = result_manager
+        self.log_manager: LogManager = log_manager
 
     def load_data(self):
         """
@@ -143,49 +145,52 @@ class Renderer:
         """
         Rendering at each frame.
         """
-        self.screen.fill("white")
+        if self.screen is not None:
+            self.screen.fill("white")
 
-        for i in range(self.num_agents):
-            current_pos_sim = self.trajectories_data[i,
-                                                     self.current_timestep, :-2]
-            penalty_flag = self.trajectories_data[i, self.current_timestep, -1]
-            yaw = self.trajectories_data[i, self.current_timestep, -1]
+            for i in range(self.num_agents):
+                current_pos_sim = self.trajectories_data[i,
+                                                         self.current_timestep, :-2]
+                penalty_flag = self.trajectories_data[i,
+                                                      self.current_timestep, -1]
+                yaw = self.trajectories_data[i, self.current_timestep, -1]
 
-            # Draw agents
-            self.draw_agent(i, current_pos_sim, penalty_flag)
+                # Draw agents
+                self.draw_agent(i, current_pos_sim, penalty_flag)
 
-            # Draw heading
-            self.draw_heading(current_pos_sim, yaw)
+                # Draw heading
+                self.draw_heading(current_pos_sim, yaw)
 
-            # Draw trails
-            # self.draw_trails(i)
+                # Draw trails
+                # self.draw_trails(i)
 
-            # Draw sensing range
-            if self.show_sensing_range:
-                self.draw_sensing_range(current_pos_sim)
+                # Draw sensing range
+                if self.show_sensing_range:
+                    self.draw_sensing_range(current_pos_sim)
 
-            # Draw connection links
-            if self.show_connections:
-                self.draw_connections(i, current_pos_sim)
+                # Draw connection links
+                if self.show_connections:
+                    self.draw_connections(i, current_pos_sim)
 
-        # Draw environment
-        self.draw_environment()
+            # Draw environment
+            self.draw_environment()
 
-        # Draw voronoi partitions (for voronoi agent)
-        if self.controller == "voronoi":
-            generators = self.trajectories_data[:, self.current_timestep, :-2]
-            vor = compute_voronoi_diagrams(generators, self.env)
-            self.draw_voronoi(vor, self.screen)
+            # Draw voronoi partitions (for voronoi agent)
+            if self.controller == "voronoi":
+                generators = self.trajectories_data[:,
+                                                    self.current_timestep, :-2]
+                vor = compute_voronoi_diagrams(generators, self.env)
+                self.draw_voronoi(vor)
 
-        if self.result_manager is not None and self.log_manager is not None:
-            data = pygame.surfarray.array3d(
-                self.screen)  # shape: (width, height, 3)
-            # Convert to (height, width, 3)
-            frame = np.transpose(data, (1, 0, 2))
-            self.result_manager.update_video(frame)
-            if self.current_timestep == 0:
-                self.result_manager.update_frames(frame)
-        pygame.display.flip()
+            if self.result_manager is not None and self.log_manager is not None:
+                data = pygame.surfarray.array3d(
+                    self.screen)  # shape: (width, height, 3)
+                # Convert to (height, width, 3)
+                frame = np.transpose(data, (1, 0, 2))
+                self.result_manager.update_video(frame)
+                if self.current_timestep == 0:
+                    self.result_manager.update_frames(frame)
+            pygame.display.flip()
 
     def draw_heading(self, pos, yaw):
         """
@@ -195,30 +200,32 @@ class Renderer:
             pos: agent's simulation plane's position.
             yaw: agent's simulation plane's heading angle.
         """
-        length = 2 * self.agent_size
-        start_pos = meters2pixels(pos, self.scale)
-        end_pos = pos + length * np.array([np.cos(yaw), np.sin(yaw)])
-        end_pos = meters2pixels(end_pos, self.scale)
-        pygame.draw.line(
-            self.screen, self.heading_color, start_pos, end_pos, self.linewidth
-        )
+        if self.screen is not None:
+            length = 2 * self.agent_size
+            start_pos = meters2pixels(pos, self.scale)
+            end_pos = pos + length * np.array([np.cos(yaw), np.sin(yaw)])
+            end_pos = meters2pixels(end_pos, self.scale)
+            pygame.draw.line(
+                self.screen, self.heading_color, start_pos, end_pos, self.linewidth
+            )
 
     def draw_environment(self):
         """
         Render the environment.
         """
-        for i, edge in enumerate(self.env.edges):
-            start_pos = meters2pixels(edge[0], self.scale)
-            end_pos = meters2pixels(edge[1], self.scale)
-            pygame.draw.line(
-                self.screen, self.obs_color, start_pos, end_pos, self.linewidth
-            )
+        if self.screen is not None:
+            for i, edge in enumerate(self.env.edges):
+                start_pos = meters2pixels(edge[0], self.scale)
+                end_pos = meters2pixels(edge[1], self.scale)
+                pygame.draw.line(
+                    self.screen, self.obs_color, start_pos, end_pos, self.linewidth
+                )
 
-        for obs in self.env.obstacles:
-            rect = np.array([obs[0], obs[1], obs[2], obs[3]])
-            rect = meters2pixels(rect, self.scale)
-            pygame.draw.rect(self.screen, self.obs_color,
-                             pygame.rect.Rect(rect))
+            for obs in self.env.obstacles:
+                rect = np.array([obs[0], obs[1], obs[2], obs[3]])
+                rect = meters2pixels(rect, self.scale)
+                pygame.draw.rect(self.screen, self.obs_color,
+                                 pygame.rect.Rect(rect))
 
     def draw_agent(self, index, pos, penalty_flag=0):
         """
@@ -228,19 +235,21 @@ class Renderer:
             index: index of agent.
             pos: agent's simulation plane's position.
         """
-        pos = meters2pixels(pos, self.scale)
-        agent_size = meters2pixels(self.agent_size, self.scale)
-        if penalty_flag == 1:
-            pygame.draw.circle(
-                self.screen, self.penalty_color, pos, agent_size)
-        else:
-            pygame.draw.circle(self.screen, self.agent_color, pos, agent_size)
-        # Render agent's index
-        text_surface = self.font.render(str(index), True, self.index_color)
-        text_rect = text_surface.get_rect(
-            center=(pos[0] + agent_size, pos[1] - agent_size)
-        )
-        self.screen.blit(text_surface, text_rect)
+        if self.screen is not None:
+            pos = meters2pixels(pos, self.scale)
+            agent_size = meters2pixels(self.agent_size, self.scale)
+            if penalty_flag == 1:
+                pygame.draw.circle(
+                    self.screen, self.penalty_color, pos, agent_size)
+            else:
+                pygame.draw.circle(
+                    self.screen, self.agent_color, pos, agent_size)
+            # Render agent's index
+            text_surface = self.font.render(str(index), True, self.index_color)
+            text_rect = text_surface.get_rect(
+                center=(pos[0] + agent_size, pos[1] - agent_size)
+            )
+            self.screen.blit(text_surface, text_rect)
 
     def draw_sensing_range(self, pos):
         """
@@ -249,23 +258,24 @@ class Renderer:
         Args:
             pos: simulation plane's position.
         """
-        pos = meters2pixels(pos, self.scale)
-        sensing_range = meters2pixels(self.sensing_range, self.scale)
-        pygame.draw.circle(
-            self.screen, self.agent_sensing_color, pos, sensing_range, self.linewidth*2
-        )
-
-        # If voronoi agent, draw critical range
-        if self.controller == "voronoi":
-            critical_range = meters2pixels(
-                self.sensing_range * 0.8, self.scale)
+        if self.screen is not None:
+            pos = meters2pixels(pos, self.scale)
+            sensing_range = meters2pixels(self.sensing_range, self.scale)
             pygame.draw.circle(
-                self.screen,
-                self.agent_sensing_color,
-                pos,
-                critical_range,
-                self.linewidth,
+                self.screen, self.agent_sensing_color, pos, sensing_range, self.linewidth*2
             )
+
+            # If voronoi agent, draw critical range
+            if self.controller == "voronoi":
+                critical_range = meters2pixels(
+                    self.critical_range, self.scale)
+                pygame.draw.circle(
+                    self.screen,
+                    self.agent_sensing_color,
+                    pos,
+                    critical_range,
+                    self.linewidth,
+                )
 
     def draw_trails(self, index):
         """
@@ -274,23 +284,24 @@ class Renderer:
         Args:
             index: agent's index
         """
-        start_trail_idx = max(0, self.current_timestep - self.trail_length)
-        trail_points_sim = self.trajectories_data[
-            index, start_trail_idx: self.current_timestep + 1, :-1
-        ]
-        trail_points_screen = []
-        for j in range(trail_points_sim.shape[0]):
-            trail_points_screen.append(
-                meters2pixels(trail_points_sim[j], self.scale))
+        if self.screen is not None:
+            start_trail_idx = max(0, self.current_timestep - self.trail_length)
+            trail_points_sim = self.trajectories_data[
+                index, start_trail_idx: self.current_timestep + 1, :-1
+            ]
+            trail_points_screen = []
+            for j in range(trail_points_sim.shape[0]):
+                trail_points_screen.append(
+                    meters2pixels(trail_points_sim[j], self.scale))
 
-        if len(trail_points_screen) > 1:
-            pygame.draw.lines(
-                self.screen,
-                self.agent_color,
-                False,
-                trail_points_screen,
-                self.linewidth,
-            )
+            if len(trail_points_screen) > 1:
+                pygame.draw.lines(
+                    self.screen,
+                    self.agent_color,
+                    False,
+                    trail_points_screen,
+                    self.linewidth,
+                )
 
     def draw_connections(self, i, pos):
         """
@@ -300,45 +311,46 @@ class Renderer:
             i: agent's index.
             pos: agent's simulation plane's position.
         """
-        for j in range(self.num_agents):
-            if i == j:
-                continue
-            other_pos_sim = self.trajectories_data[j,
-                                                   self.current_timestep, :-2]
-            if ray_intersects_aabb(pos, other_pos_sim, self.env.obstacles):
-                continue
-            dist = np.linalg.norm(pos - other_pos_sim)
-            if dist <= self.sensing_range:
-                start_pos = meters2pixels(pos, self.scale)
-                end_pos = meters2pixels(other_pos_sim, self.scale)
-                pygame.draw.line(
-                    self.screen,
-                    self.agent_color,
-                    start_pos,
-                    end_pos,
-                    self.linewidth,
-                )
+        if self.screen is not None:
+            for j in range(self.num_agents):
+                if i == j:
+                    continue
+                other_pos_sim = self.trajectories_data[j,
+                                                       self.current_timestep, :-2]
+                if ray_intersects_aabb(pos, other_pos_sim, self.env.obstacles):
+                    continue
+                dist = np.linalg.norm(pos - other_pos_sim)
+                if dist <= self.sensing_range:
+                    start_pos = meters2pixels(pos, self.scale)
+                    end_pos = meters2pixels(other_pos_sim, self.scale)
+                    pygame.draw.line(
+                        self.screen,
+                        self.agent_color,
+                        start_pos,
+                        end_pos,
+                        self.linewidth,
+                    )
 
-    def draw_voronoi(self, vor, surface):
+    def draw_voronoi(self, vor):
         """
         Draw voronoi on screen.
 
         Args:
             vor: voronoi partition.
-            surface: surface to render on.
         """
-        # Plot ridges
-        for region in vor.filtered_regions:
-            vertices = vor.vertices[region + [region[0]], :]
-            for i in range(len(vertices) - 1):
-                start_pos = meters2pixels(vertices[i], self.scale)
-                end_pos = meters2pixels(vertices[i + 1], self.scale)
-                pygame.draw.line(surface, "black", start_pos,
+        if self.screen is not None:
+            # Plot ridges
+            for region in vor.filtered_regions:
+                vertices = vor.vertices[region + [region[0]], :]
+                for i in range(len(vertices) - 1):
+                    start_pos = meters2pixels(vertices[i], self.scale)
+                    end_pos = meters2pixels(vertices[i + 1], self.scale)
+                    pygame.draw.line(self.screen, "black", start_pos,
+                                     end_pos, self.linewidth)
+                start_pos = meters2pixels(vertices[-1], self.scale)
+                end_pos = meters2pixels(vertices[0], self.scale)
+                pygame.draw.line(self.screen, "black", start_pos,
                                  end_pos, self.linewidth)
-            start_pos = meters2pixels(vertices[-1], self.scale)
-            end_pos = meters2pixels(vertices[0], self.scale)
-            pygame.draw.line(surface, "black", start_pos,
-                             end_pos, self.linewidth)
 
     def run(self):
         if not self.load_data():
@@ -367,7 +379,8 @@ class Renderer:
                 # self.current_timestep = 0 # Uncomment to loop
                 self.running = False  # Stop when finished
 
-            self.clock.tick(self.fps)
+            if self.clock is not None:
+                self.clock.tick(self.fps)
 
         self.save()
         pygame.quit()
@@ -376,7 +389,7 @@ class Renderer:
         """
         Save the playback video.
         """
-        if self.result_manager is not None and self.log_manager is not None:
+        if self.result_manager is not None and self.log_manager is not None and self.screen is not None:
             data = pygame.surfarray.array3d(
                 self.screen)  # shape: (width, height, 3)
             # Convert to (height, width, 3)
@@ -385,3 +398,5 @@ class Renderer:
 
             self.result_manager.save_video()
             self.result_manager.save_images()
+            self.log_manager.log(
+                f"Saved results to {self.result_manager.res_dir}")

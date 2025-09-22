@@ -451,6 +451,8 @@ def save_configs(args, file_path):
     output_config["agents"]["v_max"] = config_dict.pop("v_max")
     output_config["agents"]["tolerance"] = config_dict.pop("tolerance")
     output_config["agents"]["sensing_range"] = config_dict.pop("sensing_range")
+    output_config["agents"]["critical_ratio"] = config_dict.pop(
+        "critical_ratio")
     output_config["agents"]["avoidance_range"] = config_dict.pop(
         "avoidance_range")
     output_config["agents"]["rho"] = config_dict.pop("rho")

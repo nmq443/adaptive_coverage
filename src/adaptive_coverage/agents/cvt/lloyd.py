@@ -19,7 +19,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=15):
+def centroid_region(agent, vertices, env, resolution=10):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
 
@@ -104,15 +104,6 @@ def centroid_region(agent, vertices, env, resolution=15):
         centroid_x = weighted_x / total_mass
         centroid_y = weighted_y / total_mass
         centroid = np.array([centroid_x, centroid_y])
-        # in_obs = False
-        # for x, y, w, h in env.obstacles:
-        #     in_x = (centroid_x >= x) and (centroid_x <= x + w)
-        #     in_y = (centroid_y >= y) and (centroid_y <= y + h)
-        #     if in_x or in_y:
-        #         in_obs = True
-        #         break
-        # if in_obs:
-        #     centroid = agent.pos
     else:
         centroid = agent.pos
 
@@ -204,6 +195,17 @@ def compute_voronoi_diagrams(generators, env):
 
 
 def handle_goal(goal, agent, env):
+    """
+    Handle goal computed by the agent.
+
+    Args:
+        goal: raw agent's goal to be checked.
+        agent: current agent.
+        env: simulation environment.
+
+    Returns:
+        goal: valid goal.
+    """
     original_goal = np.array(goal)
     agent_to_goal = LineString([agent.pos, goal])
 
@@ -248,35 +250,3 @@ def handle_goal(goal, agent, env):
         goal = original_goal
 
     return goal
-
-
-"""
-def handle_goal(goal, agent, env):
-    original_goal = goal
-
-    for obs in env.obstacles:
-        x, y, w, h = obs
-        edges = np.array([
-            [[x, y], [x + w, y]],
-            [[x + w, y], [x + w, y + h]],
-            [[x + w, y + h], [x, y + h]],
-            [[x, y + h], [x, y]]
-        ])
-        agent_to_goal = LineString(np.array([agent.pos, goal]))
-        intersect = None
-        for edge in edges:
-            obs_edge = LineString(edge)
-            if agent_to_goal.intersects(obs_edge):
-                intersect = agent_to_goal.intersection(obs_edge)
-        if intersect is not None:
-            goal = np.array([intersect.x, intersect.y])
-
-    if np.linalg.norm(goal - original_goal) > agent.tolerance:
-        dir = goal - agent.pos
-        dist = np.linalg.norm(dir)
-        new_dir = (dist - agent.size) * dir / dist
-        goal = new_dir + agent.pos
-
-    return goal
-
-"""
