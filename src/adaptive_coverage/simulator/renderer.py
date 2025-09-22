@@ -225,7 +225,7 @@ class Renderer:
                 rect = np.array([obs[0], obs[1], obs[2], obs[3]])
                 rect = meters2pixels(rect, self.scale)
                 pygame.draw.rect(self.screen, self.obs_color,
-                                 pygame.rect.Rect(rect))
+                                 pygame.rect.Rect(rect[0], rect[1], rect[2], rect[3]))
 
     def draw_agent(self, index, pos, penalty_flag=0):
         """

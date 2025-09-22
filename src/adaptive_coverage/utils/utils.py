@@ -527,7 +527,7 @@ def compute_coverage_percentage(positions, env, sensing_range):
     )
 
 
-def plot_travel_distances(distances, log=None, agent_labels=None, save_dir=""):
+def plot_travel_distances(distances, log, agent_labels=None, save_dir=""):
     """
     Plots the total travel distances for each robot as a bar chart.
 
@@ -609,7 +609,7 @@ def plot_travel_distances(distances, log=None, agent_labels=None, save_dir=""):
         plt.show()  # Display the plot if not saving
 
 
-def plot_ld2(lambda2_values, log=None, save_dir=""):
+def plot_ld2(lambda2_values, log, save_dir=""):
     """
     Plots the Lambda2 value of the swarm over time, indicating cohesion.
 
