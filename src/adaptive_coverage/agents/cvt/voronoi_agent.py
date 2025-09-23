@@ -435,7 +435,7 @@ class VoronoiAgent(Agent):
         u_ij = v_ij / norm_v
         u_perp = np.array([-u_ij[1], u_ij[0]])
 
-        j0 = neighbor.pos + d * u_ij
+        j0 = neighbor.pos
         j1 = neighbor.pos + d * u_perp
         j2 = neighbor.pos - d * u_perp
         worst_cases = [j0, j1, j2]
