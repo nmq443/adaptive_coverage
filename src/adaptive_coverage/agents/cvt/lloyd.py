@@ -1,7 +1,7 @@
-from shapely.geometry import LineString, Polygon, Point
 import numpy as np
-import pygame
+from concurrent.futures import ThreadPoolExecutor
 from scipy.spatial import Voronoi
+from shapely import points
 from shapely.geometry import Polygon, Point, LineString
 from adaptive_coverage.utils.utils import perpendicular, ray_intersects_aabb
 
@@ -19,25 +19,15 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=10):
+def centroid_region(agent, vertices, env, resolution=20):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
-
-    Args:
-        agent_pos (numpy.ndarray): current agent's position.
-        vertices (numpy.ndarray): vertices of the current agent's voronoi partition.
-        resolution (int): number of grid points used to compute integral.
-
-    Returns:
-        numpy.ndarray: centroid of current agent's voronoi partition.
     """
+
     polygon = Polygon(vertices)
-    xmax = np.max(vertices[:, 0])
-    xmin = np.min(vertices[:, 0])
-    ymax = np.max(vertices[:, 1])
-    ymin = np.min(vertices[:, 1])
-    n = resolution
-    m = resolution
+    xmax, xmin = np.max(vertices[:, 0]), np.min(vertices[:, 0])
+    ymax, ymin = np.max(vertices[:, 1]), np.min(vertices[:, 1])
+    n = m = resolution
     hx = (xmax - xmin) / n
     hy = (ymax - ymin) / m
 
@@ -46,11 +36,8 @@ def centroid_region(agent, vertices, env, resolution=10):
     xx, yy = np.meshgrid(x_coords, y_coords)
     grid_points = np.stack([xx.ravel(), yy.ravel()], axis=-1)
 
-    # Vectorized point-in-polygon check
-    shapely_points = [Point(p) for p in grid_points]
-    mask_polygon = np.array([polygon.contains(sp) for sp in shapely_points]).reshape(
-        xx.shape
-    )
+    # Vectorized point-in-polygon check (Shapely 2.1+)
+    mask_polygon = polygon.contains(points(grid_points)).reshape(xx.shape)
 
     # Vectorized sensing range check
     distances = np.linalg.norm(
@@ -58,36 +45,44 @@ def centroid_region(agent, vertices, env, resolution=10):
     mask_range = distances < agent.critical_range
 
     if len(env.obstacles) > 0:
+        # Obstacles mask (axis-aligned bounding boxes)
         mask_obstacles = np.ones(xx.shape, dtype=bool)
         for x, y, w, h in env.obstacles:
             in_x = (xx >= x) & (xx <= x + w)
             in_y = (yy >= y) & (yy <= y + h)
             mask_obstacles &= ~(in_x & in_y)
 
+        # Parallelized visibility check
+        with ThreadPoolExecutor() as executor:
+            results = list(executor.map(
+                lambda p: not ray_intersects_aabb(agent.pos, p, env.obstacles),
+                grid_points
+            ))
+        visibility_mask = np.array(results).reshape(xx.shape)
+        '''
         visibility_mask = np.array(
             [
                 not ray_intersects_aabb(agent.pos, point, env.obstacles)
                 for point in grid_points
             ]
         ).reshape(xx.shape)
-        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
+        '''
 
+        mask = mask_polygon & mask_range & mask_obstacles & visibility_mask
     else:
         mask = mask_polygon & mask_range
 
-    # Vectorized weight calculation
+    # Vectorized weights for trapezoidal rule
     wx = np.ones(n + 1)
     wx[1:-1] = 2
     wy = np.ones(m + 1)
     wy[1:-1] = 2
     weights = wx[:, np.newaxis] * wy[np.newaxis, :]
 
-    # Evaluate the function f at all grid points (iterating because f returns a scalar)
-    func_values = np.array([density_func(point) for point in grid_points]).reshape(
-        xx.shape
-    )
+    # Density function is constant 1
+    func_values = np.ones(xx.shape)
 
-    # Apply the mask (only consider points inside the polygon)
+    # Apply masks
     masked_func_values = func_values * mask
     masked_weights = weights * mask
 
@@ -101,9 +96,7 @@ def centroid_region(agent, vertices, env, resolution=10):
         masked_weights * masked_func_values * yy) * (hx * hy) / 4
 
     if total_mass > 1e-8:
-        centroid_x = weighted_x / total_mass
-        centroid_y = weighted_y / total_mass
-        centroid = np.array([centroid_x, centroid_y])
+        centroid = np.array([weighted_x / total_mass, weighted_y / total_mass])
     else:
         centroid = agent.pos
 
