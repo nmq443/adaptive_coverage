@@ -44,6 +44,7 @@ class HexagonSwarm(Swarm):
                         avoidance_range=self.avoidance_range,
                         tolerance=self.tolerance,
                         sensing_range=self.sensing_range,
+                        timestep=self.timestep,
                         path_planner=self.path_planner,
                         rho=self.rho,
                         pso_weights=self.pso_weights,
