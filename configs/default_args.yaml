@@ -42,8 +42,8 @@ simulation:
   scale: 40
   screen_size: [1600, 912]
   linewidth: 1
-  total_time: 10000
-  timestep: 2
+  total_time: 5000
+  timestep: 0.5
   show_sensing_range: true
   show_goal: false
   show_connections: true
@@ -59,8 +59,8 @@ agents:
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.05
-  sensing_range: 4.5
-  communication_range: 4.5
+  sensing_range: 3.5
+  communication_range: 3.5
   critical_ratio: 0.75
   avoidance_range: 0.05
   rho: 1.0
