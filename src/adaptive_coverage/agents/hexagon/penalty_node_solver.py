@@ -165,12 +165,13 @@ class PSOSolver(PenaltyNodeSolver):
                     if i == j:
                         continue
                     d = np.linalg.norm(agent_positions[i] - agent_positions[j])
-                    if d <= self.agent.sensing_range:
-                        adj_mat[i][j] = adj_mat[j][i] = d
+                    if d < self.agent.sensing_range:
+                        adj_mat[i][j] = adj_mat[j][i] = 1
             return lambda2(adj_mat)
         else:
             return 0
 
+    '''
     def obstacle_avoidance(self, position: np.ndarray):
         if len(self.env.obstacles) > 0:
             obs_pts = nearest_points_on_obstacles(
@@ -183,6 +184,41 @@ class PSOSolver(PenaltyNodeSolver):
                 return 0
         else:
             return 0
+    '''
+
+    def obstacle_avoidance(self, position: np.ndarray):
+        """
+        Obstacle avoidance metric.
+
+        Returns a value in [0, 1]:
+            - 0   = worst (inside obstacle or blocked line of sight)
+            - 1   = safe (far from obstacles and clear line of sight)
+        """
+        if len(self.env.obstacles) == 0:
+            return 1.0  # no obstacles -> fully safe
+
+        # --- Case 1: Candidate inside obstacle -> immediate penalty
+        if self.env.point_is_in_obstacle(position, self.agent.size):
+            return 0.0
+
+        # --- Case 2: Distance to nearest obstacle surface
+        obs_pts = nearest_points_on_obstacles(position, self.env.obstacles)
+        dist_to_obs = np.linalg.norm(position - obs_pts)
+
+        # Normalize: within avoidance_range -> scaled [0,1], outside -> safe
+        if dist_to_obs < self.avoidance_range:
+            dist_score = dist_to_obs / self.avoidance_range  # 0 near -> 1 at limit
+        else:
+            dist_score = 1.0
+
+        # --- Case 3: Line-of-sight penalty (block between agent and candidate)
+        if ray_intersects_aabb(self.agent.pos, position, self.env.obstacles):
+            los_score = 0.0
+        else:
+            los_score = 1.0
+
+        # --- Combine: weighted product (safe only if both distance & LOS are good)
+        return dist_score * los_score
 
     def fitness_func(
         self,

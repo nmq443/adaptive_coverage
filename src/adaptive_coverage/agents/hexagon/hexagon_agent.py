@@ -96,7 +96,8 @@ class HexagonAgent(Agent):
             phi = phi_0 + 2 * np.pi * i / 6
             phi = normalize_angle(phi)
             virtual_target = self.pos + np.array(
-                [self.hexagon_range * np.cos(phi), self.hexagon_range * np.sin(phi)]
+                [self.hexagon_range *
+                    np.cos(phi), self.hexagon_range * np.sin(phi)]
             )
             # virtual_target = np.round(virtual_target, 3)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
@@ -220,12 +221,13 @@ class HexagonAgent(Agent):
             ):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= self.tolerance):  # not in a coverage range
+                if np.any(distances <= self.hexagon_range):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets
         for other_agent in agents:
-            virtual_targets = np.array([pt for pt in other_agent.virtual_targets])
+            virtual_targets = np.array(
+                [pt for pt in other_agent.virtual_targets])
             if len(virtual_targets) > 0:
                 distances = np.linalg.norm(virtual_targets - target, axis=1)
                 distances = np.round(distances, 5)
@@ -283,7 +285,8 @@ class HexagonAgent(Agent):
                     # self.stop()
                     self.set_state("occupied")
                 else:
-                    self.move_to_goal(self.goal, agents, env.obstacles, timestep)
+                    self.move_to_goal(self.goal, agents,
+                                      env.obstacles, timestep)
 
     def on_unassigned(self, landmarks, agents, env):
         """

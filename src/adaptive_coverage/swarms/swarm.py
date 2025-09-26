@@ -64,9 +64,7 @@ class Swarm:
                 diff = self.agents[i].pos - self.agents[j].pos
                 dist2 = np.dot(diff, diff)
                 if dist2 <= sr2:
-                    self.adjacency_matrix[i][j] = self.adjacency_matrix[j][i] = np.sqrt(
-                        dist2
-                    )
+                    self.adjacency_matrix[i][j] = self.adjacency_matrix[j][i] = 1
 
     def update_state(self, agent_index, current_step, state):
         """
