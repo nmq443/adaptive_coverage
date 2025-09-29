@@ -19,7 +19,7 @@ def density_func(q):
     return 1
 
 
-def centroid_region(agent, vertices, env, resolution=20):
+def centroid_region(agent, vertices, env, resolution=25):
     """
     Compute the centroid of the polygon using vectorized Trapezoidal rule on a grid.
     """

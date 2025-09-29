@@ -388,6 +388,7 @@ class VoronoiAgent(Agent):
         for a in agents:
             if not hasattr(a, "ignored_links"):
                 a.ignored_links = set()
+        self.goal = lloyd(self, agents, env)
 
         # If we have a goal, attempt to minimize local connectivity first (levels 3/4)
         if self.goal is not None and not self.terminated(self.goal):
