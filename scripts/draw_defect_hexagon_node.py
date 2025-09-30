@@ -14,9 +14,21 @@ phi_0_rad = np.deg2rad(phi_0_deg)
 # --- Create Plot ---
 fig, ax = plt.subplots(figsize=(7, 7))
 
+obstacle_vertices = np.array([
+    (-5.0, -1.0),
+    (-2.3, - 0.9),
+    (-2.0, -3.0),
+    (-3.5, -3.0)
+])
+obstacle = patches.Polygon(
+    obstacle_vertices, closed=True, facecolor='blue', edgecolor='black', zorder=1)
+ax.add_patch(obstacle)
+ax.text(-rh_radius - 0.5, -3.0, 'Vật cản', ha='center',
+        va='top', color='k', fontsize=12, fontweight='bold')
+
 # 1. Plot the main circle (background for the hexagonal sensing area)
 sensing_circle = patches.Circle(center, rh_radius,
-                                facecolor='lightgray', edgecolor='navy', linewidth=1)
+                                facecolor='lightgray', edgecolor='navy', linewidth=1, zorder=0)
 ax.add_patch(sensing_circle)
 
 # 2. Plot the Robot (Red Circle at the center)
@@ -24,7 +36,7 @@ robot = patches.Circle(center, robot_radius,
                        color='red', zorder=5)
 ax.add_patch(robot)
 ax.text(center[0], center[1] + robot_radius * 1.2,
-        'Robot', ha='center', va='bottom', fontsize=10)
+        'Robot i', ha='center', va='bottom', fontsize=10)
 ax.text(center[0], center[1] + robot_radius * 0.5, 'i',
         ha='center', va='center', fontsize=10, fontstyle='italic')
 
@@ -44,16 +56,18 @@ for i in range(num_nodes):
 
     # Label the node (P_i^1, P_i^2, etc.)
     text_pos = (x + 0.5, y + 0.6)
+    color = 'black'
     if i == 0 or i == 1 or i == 2:
         text_pos = (x, y + 0.6)
     if i == 3:
         text_pos = (x - 0.7, y + 0.4)
+        color = 'w'
     if i == 4:
         text_pos = (x, y - 0.8)
     if i == 5:
         text_pos = (x + 0.6, y)
     ax.text(text_pos[0], text_pos[1], r'$P_i^{' + str(i+1) + '}$',
-            ha='center', va='bottom', fontsize=12)
+            ha='center', va='bottom', fontsize=12, color=color)
 
 # 4. Draw dotted lines from robot to nodes and form the hexagon
 # Lines from robot to nodes
@@ -132,8 +146,10 @@ ax.axis('off')
 # plt.text(0.5, 0.05, '(a) Nút lục giác đầy đủ', ha='center',
 #  va='center', transform=ax.transAxes, fontsize=14)
 
+ax.text(-rh_radius * 0.75, -rh_radius * 0.25, 'Đỉnh ẩn', ha='center',
+        va='top', color='w', fontsize=12, fontweight='bold')
 
 # 10. Display the plot
 plt.tight_layout()
-plt.savefig("results/figures/perfect_hexagon_node.png")
+plt.savefig("results/figures/defect_hexagon_node.png")
 plt.show()
