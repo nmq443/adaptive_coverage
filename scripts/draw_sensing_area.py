@@ -50,6 +50,7 @@ ax.axis('off')
 plt.show()
 
 '''
+import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -140,5 +141,8 @@ ax.set_aspect('equal', adjustable='box')
 ax.axis('off')
 
 # 8. Display the plot
-plt.savefig("results/figures/sensing_area.png")
+save_dir = "results/figures"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+plt.savefig(os.path.join(save_dir, "sensing_area.png"))
 plt.show()

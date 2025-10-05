@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
@@ -103,5 +104,8 @@ ax.axis('off')
 
 # 7. Display the plot
 # plt.title('Mô hình tương tác vùng quan trọng giữa hai thực thể i và j', fontsize=14)
-plt.savefig("results/figures/area_btw_i_and_j.png")
+save_dir = "results/figures"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+plt.savefig(os.path.join(save_dir, "area_btw_i_and_j.png"))
 plt.show()

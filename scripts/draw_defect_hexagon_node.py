@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
@@ -151,5 +152,8 @@ ax.text(-rh_radius * 0.75, -rh_radius * 0.25, 'Đỉnh ẩn', ha='center',
 
 # 10. Display the plot
 plt.tight_layout()
-plt.savefig("results/figures/defect_hexagon_node.png")
+save_dir = "results/figures"
+if not os.path.exists(save_dir):
+    os.makedirs(save_dir)
+plt.savefig(os.path.join(save_dir, "defect_hexagon_node.png"))
 plt.show()
