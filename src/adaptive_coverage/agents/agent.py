@@ -21,6 +21,7 @@ class Agent:
         self.vel = np.zeros(2)
         self.size = size
         self.v_max = v_max
+        self.speed = 0
         self.sensing_range = sensing_range
         self.timestep = timestep
 
@@ -41,7 +42,7 @@ class Agent:
         distances = np.linalg.norm(displacements, axis=1)
         return np.sum(distances)
 
-    def move_to_goal(self, goal, agents, obstacles, timestep, desired_v=None):
+    def move_to_goal(self, goal, agents, obstacles, desired_v=None):
         self.goal = goal
         if self.terminated(goal):
             self.stop()
@@ -49,11 +50,27 @@ class Agent:
             self.vel = self.path_planner.total_force(
                 self.pos, self.goal, self.index, agents, obstacles
             )
+            self.vel = self.vel / np.linalg.norm(self.vel)
             self.limit_speed(desired_v=desired_v)
-            self.pos += self.vel * timestep
+            self.pos += self.vel * self.timestep
 
     def terminated(self, goal):
         return np.linalg.norm(self.pos - goal) <= self.tolerance
+
+    def get_pos(self):
+        return self.pos
+
+    def get_speed(self):
+        return self.speed
+
+    def get_vel(self):
+        return self.vel
+
+    def get_theta(self):
+        return self.theta
+
+    def get_goal(self):
+        return self.goal
 
     def stop(self):
         self.vel = np.zeros(2)
@@ -64,5 +81,6 @@ class Agent:
         if v >= self.v_max:
             self.vel = self.vel / v * s
 
-    def step(self, timestep, *args, **kwargs):
+    def step(self, *args, **kwargs):
         self.theta = np.arctan2(self.vel[1], self.vel[0])
+        self.speed = np.linalg.norm(self.vel)

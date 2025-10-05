@@ -43,9 +43,9 @@ class Swarm:
 
         self.total_time = total_time
         self.timestep = timestep
-        # (num_agents, num_timesteps, (x, y, theta, penalty_flag)
+        # (num_agents, num_timesteps, (x, y, theta, goal_x, goal_y, dx, dy, speed, penalty_flag)
         self.state = np.zeros(
-            (self.num_agents, int(self.total_time / self.timestep), 4)
+            (self.num_agents, int(self.total_time / self.timestep), 9)
         )
 
     def init_agents(self):
@@ -77,14 +77,20 @@ class Swarm:
         """
         self.state[agent_index, current_step] = state
 
-    def step(self, env, timestep, current_step, penalty_flag=0):
+    def step(self, env, current_step, penalty_flag=0):
         if len(self.agents) > 0:
-            order = np.random.permutation(len(self.agents))
+            # order = np.random.permutation(len(self.agents))
+            order = np.arange(len(self.agents))
             for i in order:
-                self.agents[i].step(self.agents, env, timestep)
+                self.agents[i].step(self.agents, env)
+                pos = self.agents[i].get_pos()
+                vel = self.agents[i].get_vel()
+                speed = self.agents[i].get_speed()
+                theta = self.agents[i].get_theta()
+                goal = self.agents[i].get_goal()
                 state = np.array(
-                    [self.agents[i].pos[0], self.agents[i].pos[1],
-                        self.agents[i].theta, penalty_flag]
+                    [pos[0], pos[1], theta, goal[0], goal[1],
+                        vel[0], vel[1], speed, penalty_flag]
                 )
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)

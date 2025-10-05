@@ -48,7 +48,7 @@ class Simulator:
 
     def loop(self):
         self.swarm.step(
-            env=self.env, timestep=self.timestep, current_step=self.step_count
+            env=self.env, current_step=self.step_count
         )
 
     def handle_input(self):
@@ -61,8 +61,10 @@ class Simulator:
 
     def save_results(self):
         self.save_swarm_datas()
-        self.log_manager.log(f"Saving results to {self.result_manager.res_dir}")
-        self.log_manager.log(f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
+        self.log_manager.log(
+            f"Saving results to {self.result_manager.res_dir}")
+        self.log_manager.log(
+            f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 
     def save_swarm_datas(self):
         # datas = []
@@ -74,13 +76,15 @@ class Simulator:
 
         # save travel distances
         distances = self.swarm.get_travel_distance()
-        plot_travel_distances(distances, log=self.log_manager, save_dir=self.result_manager.res_dir)
+        plot_travel_distances(distances, log=self.log_manager,
+                              save_dir=self.result_manager.res_dir)
         with open(self.result_manager.travel_distances_filepath, "wb") as f:
             np.save(f, distances)
 
         # save ld2s
         ld2s = np.array(self.swarm.ld2s)
-        plot_ld2(ld2s, log=self.log_manager, save_dir=self.result_manager.res_dir)
+        plot_ld2(ld2s, log=self.log_manager,
+                 save_dir=self.result_manager.res_dir)
         with open(self.result_manager.ld2s_filepath, "wb") as f:
             np.save(f, ld2s)
 

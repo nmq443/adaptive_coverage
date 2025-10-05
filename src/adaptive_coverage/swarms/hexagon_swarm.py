@@ -58,18 +58,28 @@ class HexagonSwarm(Swarm):
         """Choose an initial agent to be the first landmark."""
         self.agents[agent_id].set_state("occupied")
 
-    def step(self, env, current_step, timestep):
+    def step(self, env, current_step):
         if len(self.agents) > 0:
             order = np.random.permutation(len(self.agents))
             for i in order:
-                self.agents[i].step(self.landmarks, self.agents, env, timestep)
+                self.agents[i].step(self.landmarks, self.agents, env)
+
+                # save the current state
+                pos = self.agents[i].get_pos()
+                vel = self.agents[i].get_vel()
+                speed = self.agents[i].get_speed()
+                theta = self.agents[i].get_theta()
+                goal = self.agents[i].get_goal()
+                if goal is None:
+                    goal = pos
                 penalty_flag = 0
                 if self.agents[i].is_penalty_node:
                     penalty_flag = 1
                 state = np.array(
-                    [self.agents[i].pos[0], self.agents[i].pos[1],
-                        self.agents[i].theta, penalty_flag]
+                    [pos[0], pos[1], theta, goal[0], goal[1],
+                        vel[0], vel[1], speed, penalty_flag]
                 )
+
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)
             self.update_adj_mat()

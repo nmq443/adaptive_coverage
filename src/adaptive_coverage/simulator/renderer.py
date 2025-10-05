@@ -150,10 +150,16 @@ class Renderer:
 
             for i in range(self.num_agents):
                 current_pos_sim = self.trajectories_data[i,
-                                                         self.current_timestep, :-2]
+                                                         self.current_timestep, :2]
+                current_goal_sim = self.trajectories_data[i,
+                                                          self.current_timestep, 3:5]
+                current_vel = self.trajectories_data[i,
+                                                     self.current_timestep, 5:7]
+                current_speed = self.trajectories_data[i,
+                                                       self.current_timestep, 7]
                 penalty_flag = self.trajectories_data[i,
-                                                      self.current_timestep, -1]
-                yaw = self.trajectories_data[i, self.current_timestep, -1]
+                                                      self.current_timestep, 8]
+                yaw = self.trajectories_data[i, self.current_timestep, 2]
 
                 # Draw agents
                 self.draw_agent(i, current_pos_sim, penalty_flag)
@@ -178,7 +184,7 @@ class Renderer:
             # Draw voronoi partitions (for voronoi agent)
             if self.controller == "voronoi":
                 generators = self.trajectories_data[:,
-                                                    self.current_timestep, :-2]
+                                                    self.current_timestep, :2]
                 vor = compute_voronoi_diagrams(generators, self.env)
                 self.draw_voronoi(vor)
 
