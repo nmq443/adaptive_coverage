@@ -341,7 +341,7 @@ class Renderer:
                 if i == j:
                     continue
                 other_pos_sim = self.trajectories_data[j,
-                                                       self.current_timestep, :-2]
+                                                       self.current_timestep, :2]
                 if ray_intersects_aabb(pos, other_pos_sim, self.env.obstacles):
                     continue
                 dist = np.linalg.norm(pos - other_pos_sim)

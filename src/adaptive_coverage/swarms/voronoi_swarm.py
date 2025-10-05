@@ -34,5 +34,5 @@ class VoronoiSwarm(Swarm):
                 )
         self.generators = np.array([agent.pos for agent in self.agents])
 
-    def step(self, env, timestep: float, current_step: int):
-        super().step(env, timestep, current_step)
+    def step(self, env, current_step):
+        super().step(env, current_step)
