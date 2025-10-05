@@ -196,6 +196,7 @@ class Renderer:
                 self.result_manager.update_video(frame)
                 if self.current_timestep == 0:
                     self.result_manager.update_frames(frame)
+
             pygame.display.flip()
 
     def draw_heading(self, pos, yaw):
@@ -220,6 +221,24 @@ class Renderer:
         Render the environment.
         """
         if self.screen is not None:
+            x_min = meters2pixels(self.env.x_min, self.scale)
+            y_min = meters2pixels(self.env.y_min, self.scale)
+            x_max = meters2pixels(self.env.x_max, self.scale)
+            y_max = meters2pixels(self.env.y_max, self.scale)
+            screen_w, screen_h = self.screen_size
+
+            # 1. Left area
+            pygame.draw.rect(self.screen, 'white',
+                             pygame.Rect(0, 0, x_min, screen_h))
+            # 2. Right area
+            pygame.draw.rect(self.screen, 'white',
+                             pygame.Rect(x_max, 0, screen_w - x_max, screen_h))
+            # 3. Top area
+            pygame.draw.rect(self.screen, 'white',
+                             pygame.Rect(x_min, 0, x_max - x_min, y_min))
+            # 4. Bottom area
+            pygame.draw.rect(self.screen, 'white',
+                             pygame.Rect(x_min, y_max, x_max - x_min, screen_h - y_max))
             for i, edge in enumerate(self.env.edges):
                 start_pos = meters2pixels(edge[0], self.scale)
                 end_pos = meters2pixels(edge[1], self.scale)
