@@ -107,7 +107,7 @@ ax.text(-3.75, 0.94, "$S_{out}^i$")
 ax.text(-5.75, 0.45, "Đỉnh ẩn")
 
 ax.set_xlim(-rh * 2.5, rh * 1.5)
-ax.set_ylim(-rh * 1.5, rh * 1.5)
+ax.set_ylim(-rh * 1.2, rh * 1.2)
 
 ax.set_aspect('equal')
 ax.axis('off')
