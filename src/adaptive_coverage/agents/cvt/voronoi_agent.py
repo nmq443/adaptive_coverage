@@ -68,13 +68,13 @@ class VoronoiAgent(Agent):
             d_other_i = np.linalg.norm(other.pos - self.pos)
             d_other_j = np.linalg.norm(other.pos - agent.pos)
             if ray_intersects_aabb(self.pos, other.pos, env.obstacles):
-                return False
+                continue
             if ray_intersects_aabb(agent.pos, other.pos, env.obstacles):
-                return False
+                continue
             in_Sn_i = (d_other_i < self.critical_range)
             in_Sn_j = (d_other_j < agent.critical_range)
             # if there exists a k in Sn_i but not in Sn_j, then agent is critical
-            if in_Sn_i and (not in_Sn_j):
+            if (in_Sn_i and (not in_Sn_j)) or ((not in_Sn_i) and in_Sn_j):
                 return True
 
         # if no such k exists, it's noncritical by Definition 1
@@ -448,32 +448,17 @@ class VoronoiAgent(Agent):
 
     def check_future_connectivity_sample(self, next_pos, neighbor, env, N=24, eps=1e-9):
         d = self.timestep * self.v_max
-        if d <= 0:
-            return False
 
         p = neighbor.pos
         v = next_pos - p
         r = np.linalg.norm(v)
-        if r < eps:
-            return False
-        u_ij = v / r
-
-        # QUICK DISTANCE SUFFICIENT TEST:
-        # if (r + d) < critical_range, all neighbor positions are within comm range
-        if r + d >= self.critical_range:
-            return False
-
-        # If the disk is large enough to include next_pos (d >= r), treat specially:
-        if d >= r:
-            # neighbor could overlap or go around q — treat conservatively and require sampling
-            pass
 
         # Sample the boundary of the neighbor's motion disk
         thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
         for th in thetas:
             wpos = p + d * np.array([np.cos(th), np.sin(th)])
             # distance check (should be redundant given r + d < R, but keep for numerical safety)
-            if np.linalg.norm(next_pos - wpos) >= self.critical_range:
+            if np.linalg.norm(next_pos - wpos) > self.sensing_range:
                 return False
             # LOS check
             if ray_intersects_aabb(next_pos, wpos, env.obstacles):
