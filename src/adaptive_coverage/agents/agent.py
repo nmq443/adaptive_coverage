@@ -78,8 +78,7 @@ class Agent:
     def limit_speed(self, desired_v=None):
         v = np.linalg.norm(self.vel)
         s = self.v_max if desired_v is None else desired_v
-        if v >= self.v_max:
-            self.vel = self.vel / v * s
+        self.vel = self.vel / v * s
 
     def step(self, *args, **kwargs):
         self.theta = np.arctan2(self.vel[1], self.vel[0])

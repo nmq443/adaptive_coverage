@@ -59,7 +59,7 @@ agents:
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.05
-  sensing_range: 4.5
+  sensing_range: 5.5
   communication_range: 3.5
   critical_ratio: 0.8
   avoidance_range: 0.05
