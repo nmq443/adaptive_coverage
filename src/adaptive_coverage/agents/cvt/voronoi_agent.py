@@ -459,7 +459,7 @@ class VoronoiAgent(Agent):
         for th in thetas:
             wpos = p + d * np.array([np.cos(th), np.sin(th)])
             # distance check (should be redundant given r + d < R, but keep for numerical safety)
-            if np.linalg.norm(next_pos - wpos) > self.critical_range:
+            if np.linalg.norm(next_pos - wpos) > self.sensing_range:
                 return False
             # LOS check
             if ray_intersects_aabb(next_pos, wpos, env.obstacles):
