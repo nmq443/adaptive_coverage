@@ -1,5 +1,5 @@
 import numpy as np
-from adaptive_coverage.utils.utils import lambda2
+from adaptive_coverage.utils.utils import lambda2, ray_intersects_aabb
 
 
 class Swarm:
@@ -51,7 +51,7 @@ class Swarm:
     def init_agents(self):
         pass
 
-    def update_adj_mat(self):
+    def update_adj_mat(self, env):
         """
         Update adjacency matrix.
         """
@@ -60,6 +60,8 @@ class Swarm:
         for i in range(self.num_agents):
             for j in range(i + 1, self.num_agents):
                 if i == j:
+                    continue
+                if ray_intersects_aabb(self.agents[i].pos, self.agents[j].pos, env.obstacles):
                     continue
                 diff = self.agents[i].pos - self.agents[j].pos
                 dist2 = np.dot(diff, diff)
@@ -94,7 +96,7 @@ class Swarm:
                 )
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)
-            self.update_adj_mat()
+            self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)
 
