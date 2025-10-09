@@ -45,7 +45,7 @@ class Swarm:
         self.timestep = timestep
         # (num_agents, num_timesteps, (x, y, theta, goal_x, goal_y, dx, dy, speed, penalty_flag)
         self.state = np.zeros(
-            (self.num_agents, int(self.total_time / self.timestep), 9)
+            (self.num_agents, int(self.total_time / self.timestep), 11)
         )
 
     def init_agents(self):
@@ -87,12 +87,13 @@ class Swarm:
                 self.agents[i].step(self.agents, env)
                 pos = self.agents[i].get_pos()
                 vel = self.agents[i].get_vel()
+                next_pos = pos + vel * self.timestep
                 speed = self.agents[i].get_speed()
                 theta = self.agents[i].get_theta()
                 goal = self.agents[i].get_goal()
                 state = np.array(
                     [pos[0], pos[1], theta, goal[0], goal[1],
-                        vel[0], vel[1], speed, penalty_flag]
+                        vel[0], vel[1], speed, penalty_flag, next_pos[0], next_pos[1]]
                 )
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)

@@ -83,7 +83,7 @@ class VoronoiAgent(Agent):
 
     def mobility_constraint(self, critical_agents, agents, env):
         if len(critical_agents) <= 0:
-            return self.v_max
+            return self.v_max * (self.eps / (2 * self.timestep))
 
         epsi = []
         for critical_id in critical_agents:
@@ -91,10 +91,12 @@ class VoronoiAgent(Agent):
             distance = np.linalg.norm(self.pos - neighbor.pos)
             if distance >= self.sensing_range:
                 continue
+            if ray_intersects_aabb(self.pos, neighbor.pos, env.obstacles):
+                continue
             epsi.append(self.sensing_range - distance)
 
         if len(epsi) == 0:
-            return self.v_max
+            return self.v_max * (self.eps / (2 * self.timestep))
 
         min_eps = min(epsi)
         v = self.v_max * min_eps / (2 * self.timestep)
