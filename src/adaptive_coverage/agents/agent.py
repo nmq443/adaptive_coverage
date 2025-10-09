@@ -78,9 +78,9 @@ class Agent:
 
     def limit_speed(self, desired_v=None):
         v = np.linalg.norm(self.vel)
-        s = self.v_max if desired_v is None else desired_v
-        if abs(s) <= 1e-4:
+        if v == 0:
             return
+        s = self.v_max if desired_v is None else desired_v
         self.vel = self.vel / v * s
 
     def step(self, *args, **kwargs):

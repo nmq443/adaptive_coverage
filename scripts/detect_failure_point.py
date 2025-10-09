@@ -1,3 +1,4 @@
+import os
 import yaml
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,8 +7,9 @@ from adaptive_coverage.utils.utils import ray_intersects_aabb
 # ================================
 # Load data
 # ================================
-lambda2 = np.load("results/voronoi/env2/20_agents/run1/ld2s_data.npy")
-swarm_data = np.load("results/voronoi/env2/20_agents/run1/swarm_data.npy")
+res_dir = "results/voronoi/env4/20_agents/run0/"
+lambda2 = np.load(os.path.join(res_dir, "ld2s_data.npy"))
+swarm_data = np.load(os.path.join(res_dir, "swarm_data.npy"))
 
 tol = 1e-6
 zero_indices = np.where(np.abs(lambda2) < tol)[0]
@@ -31,10 +33,11 @@ next_pos_y = swarm_selected[:, :, 10]
 # ================================
 # Load environment config
 # ================================
-with open("results/voronoi/env2/20_agents/run1/configs.yaml", "r") as f:
+with open(os.path.join(res_dir, "configs.yaml"), "r") as f:
     config = yaml.safe_load(f)
 
-env_cfg = config["environment"]["env2"]
+env_key = "env4"  # hardcoded
+env_cfg = config["environment"][env_key]
 agents_cfg = config["agents"]
 area_width = env_cfg["area_width"]
 area_height = env_cfg["area_height"]
@@ -91,7 +94,7 @@ def draw_frame(t):
             zorder=3,
         )
         ax.scatter(gx, gy, color=c, marker="x", s=80, zorder=2)
-        ax.scatter(nx, ny, color=c, marker='o', s=30, zorder=2)
+        ax.scatter(nx, ny, color=c, marker='s', s=10, zorder=2)
         ax.text(x + 0.15, y + 0.15, str(i), fontsize=9, color=c)
 
     # Connection links (line-of-sight)
@@ -127,8 +130,8 @@ def on_key(event):
     draw_frame(current_t)
 
 
-disconnect_step = 319
-t = disconnect_step - 1  # timestep 318
+disconnect_step = failure_idx
+t = disconnect_step - 1
 
 print(f"\n=== State at timestep {t} ===")
 
@@ -145,7 +148,6 @@ for i in range(num_agents):
         f"penalty={penalty_}"
         f"next pos=({next_pos_x_:.2f}, {next_pos_y_:.2f})  "
     )
-
 fig.canvas.mpl_connect("key_press_event", on_key)
 draw_frame(current_t)
 plt.show()
