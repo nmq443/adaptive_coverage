@@ -79,7 +79,7 @@ class VoronoiAgent(Agent):
         return True
 
     def mobility_constraint(self, critical_agents, agents, env):
-        if len(critical_agents) <= 0:
+        if len(critical_agents) == 0:
             return self.v_max * (self.eps / (2 * self.timestep))
 
         epsi = []
@@ -108,7 +108,7 @@ class VoronoiAgent(Agent):
         for critical_id in critical_agents:
             neighbor = agents[critical_id]
             # if not self.check_future_connectivity(next_pos, neighbor, env):
-            if not self.check_future_connectivity_sample(next_pos, neighbor, env):
+            if not self.check_future_connectivity_sample(next_pos, neighbor, env, N=360):
                 all_ok = False
                 break
 
@@ -159,36 +159,24 @@ class VoronoiAgent(Agent):
                 topos.append([i, j])
         return topos
 
-    def find_best_connectivity(self, topos, critical_agents, agents):
+    def find_best_connectivity_in_a_topology(self, topo, agents):
         """
-        Finds the best neighbor to maintain a critical connection with,
-        based on the minimum angle to the desired velocity vector.
-        """
-        # critical_agents = self.get_critical_agents(agents, env)
-        if len(topos) <= 0:
-            return None
+        Find the best connectivity in a local topology by finding the link that has minimum angle with reference to goal.
 
+        Args:
+            topo: a local topology.
+            agents: list of all agents.
+
+        Returns:
+            An integer indicates best link to maintain.
+        """
+        best_neighbor_id = -1
         desired_velocity_vector = self.goal - self.pos
-
-        if len(critical_agents) <= 0:
-            return None
-
         min_angle = np.pi * 2
-        best_neighbor_id = None
 
-        for neighbor_id in critical_agents:
-            in_any_topo = False
-            for topo in topos:
-                if neighbor_id in topo:
-                    in_any_topo = True
-                    break
-            if not in_any_topo:
-                continue
-
+        for neighbor_id in topo:
             neighbor = agents[neighbor_id]
             relative_position_vector = neighbor.pos - self.pos
-
-            # Use dot product and magnitudes to calculate angle (more robust than arctan2)
             dot_product = np.dot(desired_velocity_vector,
                                  relative_position_vector)
             mag_velocity = np.linalg.norm(desired_velocity_vector)
@@ -203,8 +191,30 @@ class VoronoiAgent(Agent):
                 if angle < min_angle:
                     min_angle = angle
                     best_neighbor_id = neighbor_id
-
         return best_neighbor_id
+
+    def remove_redundancy(self, topos, agents):
+        """
+        Remove redundant links.
+
+        Args:
+            topos: list of local topologies.
+            critical_agents: list of critical_agents.
+            agents: list of all agents.
+
+        Returns:
+            A list of non-redundant critical agents.
+        """
+        new_critical_agents = []
+
+        if len(topos) <= 0:
+            return []
+
+        for topo in topos:
+            new_critical_agents.append(
+                self.find_best_connectivity_in_a_topology(topo, agents))
+
+        return new_critical_agents
 
     def step(self, agents, env):
         super().step()
@@ -216,16 +226,10 @@ class VoronoiAgent(Agent):
 
             topos = self.get_triangle_topologies(critical_agents, agents, env)
 
-            best_connectivity = self.find_best_connectivity(
-                topos, critical_agents, agents)
-
-            if best_connectivity is not None:
-                real_critical_agents = [best_connectivity]
-            else:
-                real_critical_agents = critical_agents
+            new_critical_agents = self.remove_redundancy(topos, agents)
 
             desired_v = self.mobility_constraint(
-                real_critical_agents, agents, env)
+                new_critical_agents, agents, env)
 
             self.move_to_goal(
                 self.goal, agents, env.obstacles, desired_v=desired_v
@@ -235,8 +239,8 @@ class VoronoiAgent(Agent):
 
     def check_future_connectivity(self, next_pos, neighbor, env):
         """
-        Check if next_pos maintains connectivity with neighbor under 3 worst-case
-        neighbor positions (j0, j1, j2).
+        Check if next_pos maintains connectivity with neighbor under worst-case
+        neighbor positions.
         """
         d = self.timestep * self.v_max
 

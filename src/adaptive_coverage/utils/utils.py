@@ -671,3 +671,10 @@ def plot_ld2(lambda2_values, log, save_dir=""):
         log.log(f"Plot saved to: {save_path}")
     else:
         plt.show()
+
+
+def normalize(v, eps=1e-6):
+    norm = np.linalg.norm(v)
+    if norm < eps:
+        return v
+    return v / norm

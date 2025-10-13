@@ -1,5 +1,5 @@
 import numpy as np
-from adaptive_coverage.utils.utils import nearest_points_on_obstacles
+from adaptive_coverage.utils.utils import nearest_points_on_obstacles, normalize
 
 
 class ArtificialPotentialField:
@@ -106,4 +106,4 @@ class ArtificialPotentialField:
         fg = self.goal_force(pos, goal)
         fo = self.obstacle_force(pos, obstacles)
         fc = self.collision_force(pos, agent_index, agents)
-        return fg + fc + fo
+        return normalize(fg + fc + fo)
