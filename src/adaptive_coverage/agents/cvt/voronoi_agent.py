@@ -100,6 +100,9 @@ class VoronoiAgent(Agent):
 
         desired_vec = self.goal - self.pos
         norm_desired = np.linalg.norm(desired_vec)
+        if norm_desired < 1e-9:
+            return 0.0
+
         desired_dir = desired_vec / norm_desired
 
         next_pos = self.pos + desired_dir * v * self.timestep
@@ -136,27 +139,32 @@ class VoronoiAgent(Agent):
     def get_triangle_topologies(self, critical_agents, agents, env):
         """
         Finds all local triangle topologies of current agent.
-
-        Args:
-            critical_agents: list of current agent's critical agents.
-
-        Returns:
-            A list of triangle topologies.
+        - critical_agents: list of agent indices (integers)
+        Returns a list of topologies, each as [agent_idx_j, agent_idx_k]
         """
-        if len(critical_agents) <= 0:
+        if len(critical_agents) <= 1:
             return []
+
+        # ensure we have numpy array of ints
+        crit = np.array(critical_agents, dtype=int)
+
+        # compute angle of each critical agent relative to self
+        rel = np.array([agents[idx].pos - self.pos for idx in crit])
+        thetas = np.arctan2(rel[:, 1], rel[:, 0])  # angle in [-pi, pi)
+        sort_idx = np.argsort(thetas)
+        crit_sorted = crit[sort_idx]
+
         topos = []
-        # sort the local critical agents index based on distance to current agent
-        critical_agent_positions = np.array(
-            [agents[index].pos for index in critical_agents])
-        distances = np.linalg.norm(critical_agent_positions - self.pos, axis=1)
-        sorted_indices = np.argsort(distances)
-        critical_agents = np.array(critical_agents)[sorted_indices]
-        for i in range(len(critical_agents) - 1):
-            j = i + 1
-            dist_ij = np.linalg.norm(agents[j].pos - agents[i].pos)
-            if dist_ij < self.sensing_range and not ray_intersects_aabb(agents[i].pos, agents[j].pos, env.obstacles):
-                topos.append([i, j])
+        q = len(crit_sorted)
+        # cyclic adjacency: each pair (m, m+1) and also (q-1,0)
+        for m in range(q):
+            a_idx = int(crit_sorted[m])
+            b_idx = int(crit_sorted[(m+1) % q])
+            # check they are mutually visible and connected to each other (edge between them)
+            dist_ab = np.linalg.norm(agents[a_idx].pos - agents[b_idx].pos)
+            if dist_ab < self.sensing_range and not ray_intersects_aabb(agents[a_idx].pos, agents[b_idx].pos, env.obstacles):
+                # triangle topology with this agent i and neighbors a_idx,b_idx
+                topos.append([a_idx, b_idx])
         return topos
 
     def find_best_connectivity_in_a_topology(self, topo, agents):
@@ -181,6 +189,8 @@ class VoronoiAgent(Agent):
                                  relative_position_vector)
             mag_velocity = np.linalg.norm(desired_velocity_vector)
             mag_relative_pos = np.linalg.norm(relative_position_vector)
+            if mag_relative_pos < 1e-6:
+                continue
 
             # Avoid division by zero
             if mag_velocity > 1e-6 and mag_relative_pos > 1e-6:
@@ -207,14 +217,24 @@ class VoronoiAgent(Agent):
         """
         new_critical_agents = []
 
-        if len(topos) <= 0:
+        if len(topos) == 0:
             return []
 
         for topo in topos:
-            new_critical_agents.append(
-                self.find_best_connectivity_in_a_topology(topo, agents))
+            best = self.find_best_connectivity_in_a_topology(topo, agents)
+            if best != -1:
+                new_critical_agents.append(int(best))
+            # new_critical_agents.append(
+                # self.find_best_connectivity_in_a_topology(topo, agents))
 
-        return new_critical_agents
+        seen = set()
+        out = []
+        for x in new_critical_agents:
+            if x not in seen:
+                seen.add(x)
+                out.append(x)
+
+        return out
 
     def step(self, agents, env):
         super().step()
