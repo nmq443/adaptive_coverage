@@ -10,6 +10,7 @@ from adaptive_coverage.utils.utils import ray_intersects_aabb
 res_dir = "results/voronoi/env4/20_agents/run0/"
 lambda2 = np.load(os.path.join(res_dir, "ld2s_data.npy"))
 swarm_data = np.load(os.path.join(res_dir, "swarm_data.npy"))
+critical_agents_data = np.load(os.path.join(res_dir, "critical_agents.npy"))
 
 tol = 1e-6
 zero_indices = np.where(np.abs(lambda2) < tol)[0]
@@ -138,6 +139,26 @@ print(f"\n=== State at timestep {t} ===")
 for i in range(num_agents):
     x_, y_, theta_, gx_, gy_, dx_, dy_, speed_, penalty_, next_pos_x_, next_pos_y_ = swarm_data[
         i, t]
+    critical_agents = critical_agents_data[i, t]
+    print(
+        f"Agent {i:02d}: "
+        f"pos=({x_:.2f}, {y_:.2f})  "
+        f"goal=({gx_:.2f}, {gy_:.2f})  "
+        f"θ={theta_:.2f}  "
+        f"v=({dx_:.2f}, {dy_:.2f})  "
+        f"speed={speed_:.3f}  "
+        f"penalty={penalty_}  "
+        f"next pos=({next_pos_x_:.2f}, {next_pos_y_:.2f})  "
+        # f"critical agents={np.where(np.array(critical_agents) != 0)}  "
+        f"critical agents={critical_agents}  "
+    )
+
+'''
+t = t + 1
+print(f"State at step {t}")
+for i in range(num_agents):
+    x_, y_, theta_, gx_, gy_, dx_, dy_, speed_, penalty_, next_pos_x_, next_pos_y_ = swarm_data[
+        i, t]
     print(
         f"Agent {i:02d}: "
         f"pos=({x_:.2f}, {y_:.2f})  "
@@ -148,6 +169,7 @@ for i in range(num_agents):
         f"penalty={penalty_}"
         f"next pos=({next_pos_x_:.2f}, {next_pos_y_:.2f})  "
     )
+'''
 fig.canvas.mpl_connect("key_press_event", on_key)
 draw_frame(current_t)
 plt.show()

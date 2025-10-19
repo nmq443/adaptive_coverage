@@ -57,9 +57,9 @@ agents:
   original_method: true
   num_agents: 20
   agent_size: 0.2
-  v_max: 0.1
+  v_max: 0.01
   tolerance: 0.01
-  sensing_range: 3.5
+  sensing_range: 7.5
   communication_range: 3.5
   critical_ratio: 0.75
   avoidance_range: 0.05

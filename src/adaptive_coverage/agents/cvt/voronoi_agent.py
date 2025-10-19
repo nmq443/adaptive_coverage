@@ -240,6 +240,11 @@ class VoronoiAgent(Agent):
                 seen.add(x)
                 out.append(x)
 
+        final = self.find_best_connectivity_in_a_topology(out, agents)
+
+        if final != -1:
+            return [final]
+
         return out
 
     def step(self, agents, env):
@@ -271,8 +276,6 @@ class VoronoiAgent(Agent):
         Check if next_pos maintains connectivity with neighbor under worst-case
         neighbor positions.
         """
-        # d = self.timestep * self.v_max
-
         v_ij = next_pos - neighbor.pos
         norm_v = np.linalg.norm(v_ij)
         if norm_v < 1e-9:
