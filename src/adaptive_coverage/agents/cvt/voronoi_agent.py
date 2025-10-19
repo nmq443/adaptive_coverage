@@ -12,6 +12,7 @@ class VoronoiAgent(Agent):
         self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
         self.tolerance = self.size
+        self.non_redundant_agents = []
 
     def get_critical_agents(self, agents, env):
         """
@@ -72,16 +73,20 @@ class VoronoiAgent(Agent):
             in_Sn_j = (d_other_j < agent.critical_range)
 
             # if there exists a k in Sn_i union Sn_j, then agent is critical
-            if in_Sn_i or in_Sn_j:
+            if in_Sn_i and in_Sn_j:
                 return False
 
         # if no such k exists, it's noncritical by Definition 1
         return True
 
+    def get_non_redundant_agents(self):
+        return self.non_redundant_agents
+
     def mobility_constraint(self, critical_agents, agents, env):
         if len(critical_agents) == 0:
             return self.v_max * (self.eps / (2 * self.timestep))
 
+        self.non_redundant_agents = critical_agents
         epsi = []
         for critical_id in critical_agents:
             neighbor = agents[critical_id]
@@ -108,10 +113,11 @@ class VoronoiAgent(Agent):
         next_pos = self.pos + desired_dir * v * self.timestep
 
         all_ok = True
+        d = min_eps * self.timestep / 2
         for critical_id in critical_agents:
             neighbor = agents[critical_id]
-            # if not self.check_future_connectivity(next_pos, neighbor, env):
-            if not self.check_future_connectivity_sample(next_pos, neighbor, env, N=360):
+            if not self.check_future_connectivity(next_pos, neighbor, d, env):
+                # if not self.check_future_connectivity_sample(next_pos, neighbor, env, N=360):
                 all_ok = False
                 break
 
@@ -251,18 +257,21 @@ class VoronoiAgent(Agent):
             desired_v = self.mobility_constraint(
                 new_critical_agents, agents, env)
 
-            self.move_to_goal(
-                self.goal, agents, env.obstacles, desired_v=desired_v
-            )
+            if desired_v < 1e-5:
+                self.stop()
+            else:
+                self.move_to_goal(
+                    self.goal, agents, env.obstacles, desired_v=desired_v
+                )
         else:
             self.goal = lloyd(self, agents, env)
 
-    def check_future_connectivity(self, next_pos, neighbor, env):
+    def check_future_connectivity(self, next_pos, neighbor, d, env):
         """
         Check if next_pos maintains connectivity with neighbor under worst-case
         neighbor positions.
         """
-        d = self.timestep * self.v_max
+        # d = self.timestep * self.v_max
 
         v_ij = next_pos - neighbor.pos
         norm_v = np.linalg.norm(v_ij)

@@ -41,6 +41,8 @@ class ResultManager:
         self.travel_distances_filepath = os.path.join(
             self.res_dir, "travel_distances.npy"
         )
+        self.critical_agents_filepath = os.path.join(
+            self.res_dir, "critical_agents.npy")
 
     def init_directories(self):
         """
@@ -135,7 +137,8 @@ class LogManager:
         self.console = logging.StreamHandler()
         self.console.setLevel(logging.INFO)
         # set a format which is simpler for console use
-        formatter = logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s")
+        formatter = logging.Formatter(
+            "%(name)-12s: %(levelname)-8s %(message)s")
         # tell the handler to use this format
         self.console.setFormatter(formatter)
         # add the handler to the root logger
@@ -151,4 +154,5 @@ class LogManager:
         Initialize the log file path within the same directory as the results.
         """
         self.log_dir = self.res_manager.res_dir
-        self.log_file = os.path.join(self.log_dir, f"{self.controller}_log.log")
+        self.log_file = os.path.join(
+            self.log_dir, f"{self.controller}_log.log")

@@ -78,6 +78,7 @@ def run():
         env=env,
         result_manager=result_manager,
         log_manager=log_manager,
+        controller=args.controller,
         scale=args.scale,
         total_time=args.total_time,
         timestep=args.timestep,

@@ -2,7 +2,7 @@ import numpy as np
 from adaptive_coverage.swarms.swarm import Swarm
 from adaptive_coverage.agents.cvt.voronoi_agent import VoronoiAgent
 from adaptive_coverage.utils.utils import lambda2
-from typing import Union
+from typing import Union, Optional
 
 
 class VoronoiSwarm(Swarm):
@@ -10,6 +10,12 @@ class VoronoiSwarm(Swarm):
         super().__init__(*args, **kwargs)
         self.critical_ratio = critical_ratio
         self.generators: Union[list, np.ndarray] = []
+        # at each step, we save current agent's critical agents list
+        # encode like this: if agent j is critical agent of agent i
+        # then agent i's critical_agents[j] = 1
+        # else 0
+        self.critical_agents: np.ndarray = np.zeros(
+            (self.state.shape[0], self.state.shape[1], self.num_agents))
 
     def init_agents(self):
         """Initialize all agents in a grid-like formation."""
@@ -34,5 +40,45 @@ class VoronoiSwarm(Swarm):
                 )
         self.generators = np.array([agent.pos for agent in self.agents])
 
+    def update_critical_agents_state(self, agent_index, current_step, state):
+        self.critical_agents[agent_index, current_step] = state
+
     def step(self, env, current_step):
-        super().step(env, current_step)
+        if len(self.agents) > 0:
+            # order = np.random.permutation(len(self.agents))
+            order = np.arange(len(self.agents))
+            for i in order:
+                self.agents[i].step(self.agents, env)
+                pos = self.agents[i].get_pos()
+                vel = self.agents[i].get_vel()
+                next_pos = pos + vel * self.timestep
+                speed = self.agents[i].get_speed()
+                theta = self.agents[i].get_theta()
+                goal = self.agents[i].get_goal()
+                penalty_flag = 0
+                state = np.array(
+                    [pos[0], pos[1], theta, goal[0], goal[1],
+                        vel[0], vel[1], speed, penalty_flag, next_pos[0], next_pos[1]]
+                )
+
+                self.update_state(
+                    agent_index=i, current_step=current_step, state=state)
+                non_redundant_agents = self.agents[i].get_non_redundant_agents(
+                )
+                state = np.zeros(self.num_agents)
+                state[non_redundant_agents] = 1
+                self.update_critical_agents_state(i, current_step, state)
+
+            self.update_adj_mat(env)
+            ld2 = lambda2(self.adjacency_matrix)
+            self.ld2s.append(ld2)
+
+        if len(self.agents) > 0:
+            # order = np.random.permutation(len(self.agents))
+            order = np.arange(len(self.agents))
+            for i in order:
+                non_redundant_agents = self.agents[i].get_non_redundant_agents(
+                )
+                state = np.zeros(self.num_agents)
+                state[non_redundant_agents] = 1
+                self.update_critical_agents_state(i, current_step, state)
