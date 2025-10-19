@@ -16,3 +16,7 @@ This work is developed in Python 3.10. To install, create a virtual environment 
 ## How to run
 
 For now, just run `cd scripts && python3 main.py`
+
+## TODO
+* Fix bug: critical agents of current agent is empty
+* Expand one-connected topology
