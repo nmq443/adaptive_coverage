@@ -288,7 +288,8 @@ class VoronoiAgent(Agent):
         j2 = neighbor.pos - d * u_perp
         j3 = neighbor.pos + d * u_ij
         j4 = neighbor.pos - d * u_ij
-        worst_cases = [j0, j1, j2, j3, j4]
+        # worst_cases = [j0, j1, j2, j3, j4]
+        worst_cases = [j1, j2]
 
         for wpos in worst_cases:
             dist = np.linalg.norm(next_pos - wpos)
