@@ -102,6 +102,9 @@ class Simulator:
         if self.controller == "voronoi":
             with open(self.result_manager.critical_agents_filepath, "wb") as f:
                 np.save(f, np.array(self.swarm.critical_agents))
+            with open(self.result_manager.critical_agents_before_removing_redundant_filepath, "wb") as f:
+                np.save(f, np.array(
+                    self.swarm.critical_agents_before_removing_redundant))
 
     def execute(self):
         self.init()

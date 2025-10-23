@@ -16,6 +16,8 @@ class VoronoiSwarm(Swarm):
         # else 0
         self.critical_agents: np.ndarray = np.zeros(
             (self.state.shape[0], self.state.shape[1], self.num_agents))
+        self.critical_agents_before_removing_redundant: np.ndarray = np.zeros(
+            (self.state.shape[0], self.state.shape[1], self.num_agents))
 
     def init_agents(self):
         """Initialize all agents in a grid-like formation."""
@@ -40,14 +42,28 @@ class VoronoiSwarm(Swarm):
                 )
         self.generators = np.array([agent.pos for agent in self.agents])
 
-    def update_critical_agents_state(self, agent_index, current_step, state):
-        self.critical_agents[agent_index, current_step] = state
+    def update_critical_agents_state(self, agent_index, current_step, state, before=False):
+        if before:
+            self.critical_agents_before_removing_redundant[agent_index,
+                                                           current_step] = state
+        else:
+            self.critical_agents[agent_index, current_step] = state
 
     def step(self, env, current_step):
         if len(self.agents) > 0:
             # order = np.random.permutation(len(self.agents))
             order = np.arange(len(self.agents))
             for i in order:
+                # record agent's critical agents before removing redundant
+                critical_agents = self.agents[i].get_critical_agents(self.agents, env
+                                                                     )
+                state = np.zeros(self.num_agents)
+                if len(critical_agents) >= 1:
+                    state[critical_agents] = 1
+                self.update_critical_agents_state(
+                    i, current_step, state, False)
+
+                # perform a step
                 self.agents[i].step(self.agents, env)
                 pos = self.agents[i].get_pos()
                 vel = self.agents[i].get_vel()
@@ -61,13 +77,17 @@ class VoronoiSwarm(Swarm):
                         vel[0], vel[1], speed, penalty_flag, next_pos[0], next_pos[1]]
                 )
 
+                # record agent's state
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)
+
+                # record critical agents after removing redundant
                 non_redundant_agents = self.agents[i].get_non_redundant_agents(
                 )
                 state = np.zeros(self.num_agents)
                 state[non_redundant_agents] = 1
-                self.update_critical_agents_state(i, current_step, state)
+                self.update_critical_agents_state(
+                    i, current_step, state, False)
 
             self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
