@@ -48,10 +48,13 @@ class VoronoiAgent(Agent):
         """
         if agent.index == self.index:
             return False
+
         rij = np.linalg.norm(agent.pos - self.pos)
 
         # NOTE: no need for this condition any more
         # must be inside annulus (critical area)
+        if not (rij < self.sensing_range):
+            return False
         # if not (self.critical_range < rij < self.sensing_range):
         # return False
 
