@@ -43,6 +43,8 @@ class ResultManager:
         )
         self.critical_agents_filepath = os.path.join(
             self.res_dir, "critical_agents.npy")
+        self.critical_agents_before_removing_redundant_filepath = os.path.join(
+            self.res_dir, "critical_agents_before_removing_redundant.npy")
 
     def init_directories(self):
         """
