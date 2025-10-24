@@ -11,7 +11,7 @@ class VoronoiAgent(Agent):
         super().__init__(*args, **kwargs)
         self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
-        self.tolerance = self.size
+        self.tolerance = self.size * 2
         self.non_redundant_agents = []
 
     def get_critical_agents(self, agents, env):
