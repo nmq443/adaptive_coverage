@@ -53,8 +53,10 @@ class VoronoiAgent(Agent):
 
         # NOTE: no need for this condition any more
         # must be inside annulus (critical area)
+        # but still need to be inside sensing area
         if not (rij < self.sensing_range):
             return False
+
         # if not (self.critical_range < rij < self.sensing_range):
         # return False
 
