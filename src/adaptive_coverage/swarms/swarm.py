@@ -1,5 +1,5 @@
 import numpy as np
-from adaptive_coverage.utils.utils import lambda2, ray_intersects_aabb
+from adaptive_coverage.utils.utils import lambda2, ray_intersects_aabb, compute_coverage_percentage
 
 
 class Swarm:
@@ -108,3 +108,8 @@ class Swarm:
             distance = agent.get_travel_distance(self.state)
             distances.append(distance)
         return np.array(distances)
+
+    def get_coverage_percentage(self, env):
+        positions = self.state[:, -1, :2]
+        sensing_range = self.sensing_range
+        return compute_coverage_percentage(positions, env, sensing_range)

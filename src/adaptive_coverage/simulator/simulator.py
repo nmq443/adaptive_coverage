@@ -67,10 +67,6 @@ class Simulator:
             f"Final lambda2 value: {self.swarm.ld2s[-1]: .2f}")
 
     def save_swarm_datas(self):
-        # datas = []
-        # for agent in self.swarm.agents:
-        #     datas.append(agent.traj)
-        # datas = np.array(datas)
         with open(self.result_manager.swarm_data_filepath, "wb") as f:
             np.save(f, self.swarm.state)
 
@@ -105,6 +101,11 @@ class Simulator:
             with open(self.result_manager.critical_agents_before_removing_redundant_filepath, "wb") as f:
                 np.save(f, np.array(
                     self.swarm.critical_agents_before_removing_redundant))
+
+        # save coverage percentage
+        percentage = self.swarm.get_coverage_percentage(self.env)
+        with open(os.path.join(self.result_manager.res_dir, "coverage_area.txt"), 'w') as f:
+            f.write(f"Area coverage: {percentage: .2f}\n")
 
     def execute(self):
         self.init()
