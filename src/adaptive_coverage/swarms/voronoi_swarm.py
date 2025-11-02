@@ -51,8 +51,8 @@ class VoronoiSwarm(Swarm):
 
     def step(self, env, current_step):
         if len(self.agents) > 0:
-            # order = np.random.permutation(len(self.agents))
-            order = np.arange(len(self.agents))
+            order = np.random.permutation(len(self.agents))
+            # order = np.arange(len(self.agents))
             for i in order:
                 # record agent's critical agents before removing redundant
                 critical_agents = self.agents[i].get_critical_agents(self.agents, env

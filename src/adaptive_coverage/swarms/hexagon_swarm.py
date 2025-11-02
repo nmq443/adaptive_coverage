@@ -70,6 +70,7 @@ class HexagonSwarm(Swarm):
                 speed = self.agents[i].get_speed()
                 theta = self.agents[i].get_theta()
                 goal = self.agents[i].get_goal()
+                next_pos = pos + self.timestep * vel
                 if goal is None:
                     goal = pos
                 penalty_flag = 0
@@ -77,11 +78,11 @@ class HexagonSwarm(Swarm):
                     penalty_flag = 1
                 state = np.array(
                     [pos[0], pos[1], theta, goal[0], goal[1],
-                        vel[0], vel[1], speed, penalty_flag]
+                        vel[0], vel[1], speed, penalty_flag, next_pos[0], next_pos[1]]
                 )
 
                 self.update_state(
                     agent_index=i, current_step=current_step, state=state)
-            self.update_adj_mat()
+            self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)

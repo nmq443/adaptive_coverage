@@ -372,6 +372,7 @@ def get_args(default_configs):
     parser.add_argument("--area_height", help="Area height",
                         type=float, default=None)
     parser.add_argument("--obstacles", type=float, nargs="*", default=None)
+    parser.add_argument("--vertices", type=float, nargs="*", default=None)
     parser.add_argument("--first_agent_pos", type=float,
                         nargs="*", default=None)
 
@@ -384,6 +385,8 @@ def get_args(default_configs):
         args.obstacles = configs["environment"][args.env]["obstacles"]
     if args.first_agent_pos is None:
         args.first_agent_pos = configs["environment"][args.env]["first_agent_pos"]
+    if args.vertices is None:
+        args.vertices = configs["environment"][args.env]["vertices"]
     return args
 
 

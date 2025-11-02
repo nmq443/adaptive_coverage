@@ -4,39 +4,92 @@ environment:
     area_height: 15
     first_agent_pos: [3, 2]
     obstacles: []
+    vertices:
+      - [0, 0]
+      - [30, 0]
+      - [30, 15]
+      - [0, 15]
+
   env1:
     area_width: 35
     area_height: 15
     first_agent_pos: [3, 2]
     obstacles: [[9, 4, 5, 4], [8, 10, 2, 3]]
+    vertices:
+      - [0, 0]
+      - [35, 0]
+      - [35, 15]
+      - [0, 15]
+
   env2:
     area_width: 35
     area_height: 15
-    first_agent_pos: [ 3, 2 ]
-    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [14, 8, 4, 4] ]
+    first_agent_pos: [3, 2]
+    obstacles: [[9, 4, 5, 4], [8, 10, 2, 3], [14, 8, 4, 4]]
+    vertices:
+      - [0, 0]
+      - [35, 0]
+      - [35, 15]
+      - [0, 15]
+
   env3:
     area_width: 35
     area_height: 15
-    first_agent_pos: [ 3, 2 ]
-    obstacles: [ [ 9, 4, 5, 4 ], [ 8, 10, 2, 3 ], [15, 8, 5, 3], [30, 7, 4, 5] ]
+    first_agent_pos: [3, 2]
+    obstacles: [[9, 4, 5, 4], [8, 10, 2, 3], [15, 8, 5, 3], [30, 7, 4, 5]]
+    vertices:
+      - [0, 0]
+      - [35, 0]
+      - [35, 15]
+      - [0, 15]
+
   env4:
     area_width: 40
     area_height: 20
     first_agent_pos: [2, 10]
-    obstacles: [
-        # upper half
-        [8, 7, 7, 1],
-        [8, 1, 1, 7],
-        [18, 7, 9, 1],
-        [22, 1, 1, 7],
-        [30, 7, 9, 1],
-        # lower half
-        [8, 11, 5, 1],
-        [8, 11, 1, 8],
-        [16, 11, 15, 1],
-        [25, 11, 1, 8],
-        [35, 11, 4, 1],
-      ]
+    obstacles:
+      - [8, 7, 7, 1]
+      - [8, 1, 1, 7]
+      - [18, 7, 9, 1]
+      - [22, 1, 1, 7]
+      - [30, 7, 9, 1]
+      - [8, 11, 5, 1]
+      - [8, 11, 1, 8]
+      - [16, 11, 15, 1]
+      - [25, 11, 1, 8]
+      - [35, 11, 4, 1]
+    vertices:
+      - [0, 0]
+      - [40, 0]
+      - [40, 20]
+      - [0, 20]
+
+  env5:
+    area_width: 40
+    area_height: 20
+    first_agent_pos: [5, 5]
+    obstacles: []
+    vertices:
+      - [5, 0]
+      - [15, 0]
+      - [20, 8]
+      - [15, 16]
+      - [5, 16]
+      - [0, 8]
+  
+  env6:
+    area_width: 40
+    area_height: 20
+    first_agent_pos: [10, 8]
+    obstacles: []
+    vertices:
+      - [4, 2]
+      - [16, 2]
+      - [22, 8]
+      - [22, 14]
+      - [16, 20]
+      - [8, 20]
+      - [4, 14]
 
 simulation:
   scale: 40
@@ -57,7 +110,7 @@ agents:
   original_method: true
   num_agents: 20
   agent_size: 0.2
-  v_max: 0.001
+  v_max: 0.01
   tolerance: 0.01
   sensing_range: 7.5
   communication_range: 3.5

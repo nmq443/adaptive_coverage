@@ -69,7 +69,7 @@ def run():
             log_manager=log_manager,
         )
 
-    env = Environment(args.area_width, args.area_height,
+    env = Environment(args.area_width, args.area_height, args.vertices,
                       args.obstacles, offset=1)
 
     sim = Simulator(
@@ -90,7 +90,7 @@ def run():
 
 
 def render(args, log_manager, result_manager):
-    env = Environment(args.area_width, args.area_height,
+    env = Environment(args.area_width, args.area_height, args.vertices,
                       args.obstacles, offset=1)
     renderer = Renderer(
         screen_size=args.screen_size,

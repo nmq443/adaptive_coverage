@@ -5,19 +5,20 @@ from adaptive_coverage.utils.utils import meters2pixels
 
 
 class Environment:
-    def __init__(self, area_width, area_height, obstacles, offset=0.1):
+    def __init__(self, area_width, area_height, vertices, obstacles, offset=0.1):
         self.area_width = area_width
         self.area_height = area_height
         self.offset = offset
-        self.vertices = np.array(
-            [
-                [0 + self.offset, 0 + self.offset],
-                [self.area_width - self.offset, 0 + self.offset],
-                [self.area_width - self.offset, area_height - offset],
-                [0 + self.offset, self.area_height - self.offset],
-            ],
-            dtype=float,
-        )
+        # self.vertices = np.array(
+        #     [
+        #         [0 + self.offset, 0 + self.offset],
+        #         [self.area_width - self.offset, 0 + self.offset],
+        #         [self.area_width - self.offset, area_height - offset],
+        #         [0 + self.offset, self.area_height - self.offset],
+        #     ],
+        #     dtype=float,
+        # )
+        self.vertices = np.array(vertices)
         self.x_min = np.min(self.vertices[:, 0])
         self.x_max = np.max(self.vertices[:, 0])
         self.y_min = np.min(self.vertices[:, 1])
