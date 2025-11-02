@@ -12,6 +12,10 @@ class VoronoiAgent(Agent):
         self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
         self.tolerance = self.size * 2
+        self.prev_pos = None
+        self.local_minima = False
+        self.local_minima_count = 0
+        self.local_minima_threshold = 10
         self.non_redundant_agents = []
 
     def get_critical_agents(self, agents, env):
@@ -271,11 +275,24 @@ class VoronoiAgent(Agent):
             if desired_v < 1e-5:
                 self.stop()
             else:
+                if self.local_minima:
+                    self.goal += self.timestep * desired_v * np.random.rand(2)
                 self.move_to_goal(
                     self.goal, agents, env.obstacles, desired_v=desired_v
                 )
         else:
             self.goal = lloyd(self, agents, env)
+
+        self.prev_pos = self.pos.copy()
+
+        if np.linalg.norm(self.prev_pos - self.pos) < self.tolerance:
+            self.local_minima_count += 1
+
+        if self.local_minima_count >= self.local_minima_threshold:
+            self.local_minima = True
+            self.local_minima_count = 0
+        else:
+            self.local_minima_count = 0
 
     def check_future_connectivity(self, next_pos, neighbor, d, env):
         """
