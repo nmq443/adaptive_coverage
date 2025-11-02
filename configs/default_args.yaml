@@ -96,8 +96,8 @@ simulation:
   screen_size: [1600, 912]
   linewidth: 1
   total_time: 5000
-  timestep: 1
-  show_sensing_range: false
+  timestep: 5
+  show_sensing_range: true
   show_goal: false
   show_connections: false
   show_trajectories: false
@@ -111,8 +111,8 @@ agents:
   num_agents: 20
   agent_size: 0.2
   v_max: 0.01
-  tolerance: 0.01
-  sensing_range: 7.5
+  tolerance: 0.05
+  sensing_range: 3.5
   communication_range: 3.5
   critical_ratio: 0.75
   avoidance_range: 0.05
