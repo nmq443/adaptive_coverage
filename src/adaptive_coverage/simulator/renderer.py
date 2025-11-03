@@ -148,6 +148,9 @@ class Renderer:
         if self.screen is not None:
             self.screen.fill("white")
 
+            # Draw environment
+            self.draw_environment()
+
             for i in range(self.num_agents):
                 current_pos_sim = self.trajectories_data[i,
                                                          self.current_timestep, :2]
@@ -177,9 +180,6 @@ class Renderer:
                 # Draw connection links
                 if self.show_connections:
                     self.draw_connections(i, current_pos_sim)
-
-            # Draw environment
-            self.draw_environment()
 
             # Draw voronoi partitions (for voronoi agent)
             if self.controller == "voronoi":
@@ -217,6 +217,37 @@ class Renderer:
             )
 
     def draw_environment(self):
+        if self.screen is None:
+            return
+
+        screen_w, screen_h = self.screen_size
+
+        # --- 1. Fill entire screen white (outside area default) ---
+        self.screen.fill('white')
+
+        # --- 2. Draw polygon area in background color ---
+        # Convert vertices to pixel positions
+        pts = [meters2pixels(v, self.scale) for v in self.env.vertices]
+        pygame.draw.polygon(self.screen, 'white', pts)
+
+        # --- 3. Draw polygon edges (boundary lines) ---
+        for start, end in self.env.edges:
+            start_pos = meters2pixels(start, self.scale)
+            end_pos = meters2pixels(end, self.scale)
+            pygame.draw.line(self.screen, self.obs_color,
+                             start_pos, end_pos, self.linewidth)
+
+        # --- 4. Draw obstacles (rectangular) ---
+        for obs in self.env.obstacles:
+            rect = np.array([obs[0], obs[1], obs[2], obs[3]])
+            rect = meters2pixels(rect, self.scale)
+            pygame.draw.rect(
+                self.screen, self.obs_color,
+                pygame.Rect(rect[0], rect[1], rect[2], rect[3])
+            )
+
+    '''
+    def draw_environment(self):
         """
         Render the environment.
         """
@@ -251,6 +282,7 @@ class Renderer:
                 rect = meters2pixels(rect, self.scale)
                 pygame.draw.rect(self.screen, self.obs_color,
                                  pygame.rect.Rect(rect[0], rect[1], rect[2], rect[3]))
+    '''
 
     def draw_agent(self, index, pos, penalty_flag=0):
         """
