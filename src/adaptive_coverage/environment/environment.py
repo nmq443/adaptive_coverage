@@ -1,4 +1,3 @@
-import pygame
 import numpy as np
 from shapely.geometry import Polygon, Point
 from adaptive_coverage.utils.utils import meters2pixels
@@ -35,7 +34,7 @@ class Environment:
         """
         for obs in self.obstacles:
             self.obstacles_rects.append(
-                pygame.rect.Rect(obs[0], obs[1], obs[2], obs[3])
+                (obs[0], obs[1], obs[2], obs[3])
             )
         for i in range(len(self.vertices) - 1):
             edge_start = self.vertices[i]

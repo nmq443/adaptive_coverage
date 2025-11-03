@@ -7,7 +7,6 @@ from adaptive_coverage.swarms.hexagon_swarm import HexagonSwarm
 from adaptive_coverage.simulator.data_manager import LogManager, ResultManager
 from adaptive_coverage.utils.utils import get_args, save_configs
 import os
-os.environ["SDL_VIDEODRIVER"] = "dummy"
 
 
 def run():

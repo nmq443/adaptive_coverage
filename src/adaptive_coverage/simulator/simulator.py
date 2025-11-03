@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pygame
 from adaptive_coverage.utils.utils import plot_travel_distances, plot_ld2
 
 
@@ -50,14 +49,6 @@ class Simulator:
         self.swarm.step(
             env=self.env, current_step=self.step_count
         )
-
-    def handle_input(self):
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_q]:
-            self.running = False
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
 
     def save_results(self):
         self.save_swarm_datas()
@@ -122,4 +113,3 @@ class Simulator:
                 self.step_count += 1
         self.save_results()
         self.log_manager.log("Finished")
-        pygame.quit()
