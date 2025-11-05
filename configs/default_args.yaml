@@ -106,7 +106,7 @@ simulation:
   scale: 40
   screen_size: [1600, 912]
   linewidth: 1
-  total_time: 5000
+  total_time: 10000
   timestep: 5
   show_sensing_range: true
   show_goal: false
