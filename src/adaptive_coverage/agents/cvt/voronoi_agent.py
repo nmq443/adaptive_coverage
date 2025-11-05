@@ -12,11 +12,13 @@ class VoronoiAgent(Agent):
         self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
         self.tolerance = self.size * 2
-        self.prev_pos = None
-        self.local_minima = False
-        self.local_minima_count = 0
-        self.local_minima_threshold = 10
         self.non_redundant_agents = []
+
+        # local minima handling
+        self.prev_pos = np.copy(self.pos)
+        self.stuck_counter = 0
+        self.STUCK_THRESHOLD = 15     # number of timesteps before adding noise
+        self.JITTER_SCALE = 0.5       # fraction of v_max * dt
 
     def get_critical_agents(self, agents, env):
         """
@@ -260,39 +262,44 @@ class VoronoiAgent(Agent):
     def step(self, agents, env):
         super().step()
 
-        # If we have a goal, attempt to minimize local connectivity first (levels 3/4)
-        if self.goal is not None and not self.terminated(self.goal):
-            # compute critical agents (level 2 constraint)
-            critical_agents = self.get_critical_agents(agents, env)
+        # --- Detect if stuck ---
+        moved_dist = np.linalg.norm(self.pos - self.prev_pos)
+        self.prev_pos = np.copy(self.pos)
 
-            topos = self.get_triangle_topologies(critical_agents, agents, env)
-
-            new_critical_agents = self.remove_redundancy(topos, agents)
-
-            desired_v = self.mobility_constraint(
-                new_critical_agents, agents, env)
-
-            if desired_v < 1e-5:
-                self.stop()
-            else:
-                if self.local_minima:
-                    self.goal += self.timestep * desired_v * np.random.rand(2)
-                self.move_to_goal(
-                    self.goal, agents, env.obstacles, desired_v=desired_v
-                )
+        if moved_dist < 1e-4:
+            self.stuck_counter += 1
         else:
+            self.stuck_counter = 0
+
+        # --- CVT Goal if no current goal ---
+        if self.goal is None or self.terminated(self.goal):
             self.goal = lloyd(self, agents, env)
 
-        self.prev_pos = self.pos.copy()
+        # --- If stuck, apply local-minima escape jitter ---
+        if self.stuck_counter > self.STUCK_THRESHOLD:
+            jitter_mag = self.JITTER_SCALE * self.v_max * self.timestep
+            jitter = jitter_mag * np.random.uniform(-1, 1, 2)
+            tentative_goal = self.goal + jitter
 
-        if np.linalg.norm(self.prev_pos - self.pos) < self.tolerance:
-            self.local_minima_count += 1
+            # optional safety check: no obstacles between self and new goal
+            if not ray_intersects_aabb(self.pos, tentative_goal, env.obstacles):
+                self.goal = tentative_goal
 
-        if self.local_minima_count >= self.local_minima_threshold:
-            self.local_minima = True
-            self.local_minima_count = 0
+            self.stuck_counter = 0
+
+        # --- Standard connectivity-aware movement ---
+        critical_agents = self.get_critical_agents(agents, env)
+        topos = self.get_triangle_topologies(critical_agents, agents, env)
+        new_critical_agents = self.remove_redundancy(topos, agents)
+
+        desired_v = self.mobility_constraint(new_critical_agents, agents, env)
+
+        if desired_v < 1e-5:
+            self.stop()
         else:
-            self.local_minima_count = 0
+            self.move_to_goal(
+                self.goal, agents, env.obstacles, desired_v=desired_v
+            )
 
     def check_future_connectivity(self, next_pos, neighbor, d, env):
         """
