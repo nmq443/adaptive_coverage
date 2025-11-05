@@ -1,7 +1,6 @@
 from adaptive_coverage.simulator.data_manager import ResultManager, LogManager
 from adaptive_coverage.environment.environment import Environment
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
-from adaptive_coverage.utils.utils import meters2pixels, ray_intersects_aabb
 import os
 import numpy as np
 from matplotlib.patches import Polygon, Rectangle, Circle
@@ -17,7 +16,7 @@ class Renderer:
         agent_size,
         critical_ratio,
         sensing_range,
-        scale,
+        scale,                     # no longer used
         screen_size,
         trajectories_filepath,
         result_manager,
@@ -46,7 +45,6 @@ class Renderer:
         self.agent_size = agent_size
         self.critical_ratio = critical_ratio
         self.sensing_range = sensing_range
-        self.scale = scale
         self.screen_size = screen_size
         self.controller = controller
         self.linewidth = linewidth
@@ -81,46 +79,41 @@ class Renderer:
         return True
 
     def draw_environment(self, ax):
-        pts = [meters2pixels(v, self.scale) for v in self.env.vertices]
-        poly = Polygon(pts, closed=True, edgecolor="black", facecolor="white")
+        # draw boundary
+        poly = Polygon(self.env.vertices, closed=True,
+                       edgecolor="black", facecolor="white")
         ax.add_patch(poly)
 
+        # draw obstacles
         for obs in self.env.obstacles:
-            rect = meters2pixels(np.array(obs), self.scale)
-            r = Rectangle((rect[0], rect[1]), rect[2], rect[3],
-                          edgecolor="black", facecolor="black")
+            x, y, w, h = obs
+            r = Rectangle((x, y), w, h, edgecolor="black", facecolor="black")
             ax.add_patch(r)
 
     def draw_agent(self, ax, idx, pos, penalty):
-        pos_px = meters2pixels(pos, self.scale)
-        size = meters2pixels(self.agent_size, self.scale)
         color = self.penalty_color if penalty == 1 else self.agent_color
-
-        circ = Circle(pos_px, size, color=color)
+        circ = Circle(pos, self.agent_size, color=color)
         ax.add_patch(circ)
-        ax.text(pos_px[0] + size, pos_px[1] - size, str(idx),
+        ax.text(pos[0] + self.agent_size, pos[1] - self.agent_size, str(idx),
                 color=self.index_color, fontsize=8)
 
     def draw_heading(self, ax, pos, yaw):
-        a = meters2pixels(pos, self.scale)
-        b = pos + 2*self.agent_size*np.array([np.cos(yaw), np.sin(yaw)])
-        b = meters2pixels(b, self.scale)
+        a = pos
+        b = pos + 2 * self.agent_size * np.array([np.cos(yaw), np.sin(yaw)])
         ax.plot([a[0], b[0]], [a[1], b[1]],
                 color=self.heading_color, linewidth=1)
 
     def draw_sensing(self, ax, pos):
-        a = meters2pixels(pos, self.scale)
-        r = meters2pixels(self.sensing_range, self.scale)
-        circ = Circle(a, r, fill=False,
+        circ = Circle(pos, self.sensing_range, fill=False,
                       edgecolor=self.agent_sensing_color, linewidth=1)
         ax.add_patch(circ)
 
     def draw_voronoi(self, ax, vor):
         for region in vor.filtered_regions:
-            verts = vor.vertices[region + [region[0]]]
-            for i in range(len(verts)-1):
-                a = meters2pixels(verts[i], self.scale)
-                b = meters2pixels(verts[i+1], self.scale)
+            pts = vor.vertices[region + [region[0]]]
+            for i in range(len(pts)-1):
+                a = pts[i]
+                b = pts[i+1]
                 ax.plot([a[0], b[0]], [a[1], b[1]], color="black", linewidth=1)
 
     def render_frame(self):
@@ -128,10 +121,39 @@ class Renderer:
                                         self.screen_size[1]/100), dpi=100)
         ax.set_aspect('equal')
         ax.set_facecolor("white")
-        ax.axis('off')
+
+        # -----------------------------
+        # compute bounds & add offset
+        # -----------------------------
+        xs = [v[0] for v in self.env.vertices]
+        ys = [v[1] for v in self.env.vertices]
+
+        min_x, max_x = min(xs), max(xs)
+        min_y, max_y = min(ys), max(ys)
+
+        offset = max(self.agent_size, 1.0)  # extra padding around map
+
+        ax.set_xlim(min_x - offset, max_x + offset)
+        ax.set_ylim(min_y - offset, max_y + offset)
+
+        # -----------------------------
+        # enable map-like visual style
+        # -----------------------------
+        ax.set_xlabel("X [meters]")
+        ax.set_ylabel("Y [meters]")
+        ax.set_title("Environment Map View")
+
+        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
+        ax.tick_params(axis='both', labelsize=8)
+
+        # optional: show axes instead of hiding
+        # ax.axis('on')
 
         self.draw_environment(ax)
 
+        # -----------------------------
+        # Draw agents
+        # -----------------------------
         for i in range(self.num_agents):
             pos = self.trajectories_data[i, self.current_timestep, :2]
             yaw = self.trajectories_data[i, self.current_timestep, 2]
@@ -142,6 +164,9 @@ class Renderer:
             if self.show_sensing_range:
                 self.draw_sensing(ax, pos)
 
+        # -----------------------------
+        # Draw Voronoi edges
+        # -----------------------------
         if self.controller == "voronoi":
             gen = self.trajectories_data[:, self.current_timestep, :2]
             vor = compute_voronoi_diagrams(gen, self.env)
@@ -149,7 +174,7 @@ class Renderer:
 
         fig.canvas.draw()
         buf = np.asarray(fig.canvas.renderer.buffer_rgba())
-        frame = buf[:, :, :3]      # keep only RGB
+        frame = buf[:, :, :3]  # RGB only
 
         plt.close(fig)
         return frame
@@ -165,7 +190,6 @@ class Renderer:
             if t == 0:
                 self.result_manager.update_frames(frame)
 
-        # Save final frame
         self.result_manager.update_frames(frame)
         self.result_manager.save_images()
         self.result_manager.save_video()
