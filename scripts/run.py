@@ -101,7 +101,6 @@ def render(args, log_manager, result_manager):
         result_manager=result_manager,
         log_manager=log_manager,
         env=env,
-        scale=args.scale,
         linewidth=args.linewidth,
         show_connections=args.show_connections,
         show_goal=args.show_goal,

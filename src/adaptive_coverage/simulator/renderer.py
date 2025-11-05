@@ -3,7 +3,8 @@ from adaptive_coverage.environment.environment import Environment
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
 import os
 import numpy as np
-from matplotlib.patches import Polygon, Rectangle, Circle
+from matplotlib.path import Path
+from matplotlib.patches import Polygon, Rectangle, Circle, PathPatch
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.use("Agg")  # headless backend for server / no GUI
@@ -16,7 +17,6 @@ class Renderer:
         agent_size,
         critical_ratio,
         sensing_range,
-        scale,                     # no longer used
         screen_size,
         trajectories_filepath,
         result_manager,
@@ -104,8 +104,20 @@ class Renderer:
                 color=self.heading_color, linewidth=1)
 
     def draw_sensing(self, ax, pos):
+        # circ = Circle(pos, self.sensing_range, fill=False,
+        #   edgecolor=self.agent_sensing_color, linewidth=1)
+        # ax.add_patch(circ)
+        # Create the sensing circle
         circ = Circle(pos, self.sensing_range, fill=False,
                       edgecolor=self.agent_sensing_color, linewidth=1)
+
+        # Create clipping path from environment polygon
+        env_path = Path(self.env.vertices)
+        clip_patch = PathPatch(env_path, transform=ax.transData)
+
+        # Apply clipping so circle is only drawn inside the environment
+        circ.set_clip_path(clip_patch)
+
         ax.add_patch(circ)
 
     def draw_voronoi(self, ax, vor):
@@ -139,9 +151,9 @@ class Renderer:
         # -----------------------------
         # enable map-like visual style
         # -----------------------------
-        ax.set_xlabel("X [meters]")
-        ax.set_ylabel("Y [meters]")
-        ax.set_title("Environment Map View")
+        # ax.set_xlabel("X [meters]")
+        # ax.set_ylabel("Y [meters]")
+        # ax.set_title("Environment Map View")
 
         ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
         ax.tick_params(axis='both', labelsize=8)
