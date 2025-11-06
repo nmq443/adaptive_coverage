@@ -95,8 +95,31 @@ class Simulator:
 
         # save coverage percentage
         percentage = self.swarm.get_coverage_percentage(self.env)
-        with open(os.path.join(self.result_manager.res_dir, "coverage_area.txt"), 'w') as f:
-            f.write(f"Area coverage: {percentage: .2f}\n")
+
+        # Compute areas
+        env_area = self.swarm.compute_environment_area(self.env)
+        obstacle_area = self.swarm.compute_total_obstacle_area(self.env)
+        free_area = max(env_area - obstacle_area, 0.0)
+
+        # Absolute coverage area (useful for comparing different environments)
+        covered_area = percentage * free_area
+
+        # Write all to file
+        output_path = os.path.join(
+            self.result_manager.res_dir, "coverage_area.txt")
+        with open(output_path, 'w') as f:
+            f.write(f"Environment total area: {env_area:.4f}\n")
+            f.write(f"Total obstacle area: {obstacle_area:.4f}\n")
+            f.write(f"Total free area: {free_area:.4f}\n")
+            f.write(f"Coverage area: {covered_area:.4f}\n")
+            f.write(f"Coverage percentage: {percentage:.2f}\n")
+
+        # Log summary
+        self.log_manager.log(f"Environment area: {env_area:.2f}")
+        self.log_manager.log(f"Obstacle area: {obstacle_area:.2f}")
+        self.log_manager.log(f"Free area: {free_area:.2f}")
+        self.log_manager.log(f"Coverage area: {covered_area:.2f}")
+        self.log_manager.log(f"Coverage percentage: {percentage:.2f}")
 
     def execute(self):
         self.init()

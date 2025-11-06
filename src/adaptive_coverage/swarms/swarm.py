@@ -113,3 +113,21 @@ class Swarm:
         positions = self.state[:, -1, :2]
         sensing_range = self.sensing_range
         return compute_coverage_percentage(positions, env, sensing_range)
+
+    def compute_environment_area(self, env):
+        """
+        Compute polygon area of the environment using the Shoelace formula.
+        This supports both convex and non-convex polygons.
+        """
+        vertices = np.array(env.vertices)
+        x, y = vertices[:, 0], vertices[:, 1]
+        return 0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+    def compute_total_obstacle_area(self, env):
+        """
+        Compute the total rectangular obstacle area.
+        Each obstacle is given as (x, y, width, height).
+        """
+        if len(env.obstacles) == 0:
+            return 0.0
+        return float(np.sum(env.obstacles[:, 2] * env.obstacles[:, 3]))

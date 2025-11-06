@@ -475,11 +475,13 @@ def save_configs(args, file_path):
 
 def compute_coverage_percentage(positions, env, sensing_range):
     """
-    Compute coverage percentage over a polygonal region using mesh grid.
+    Compute coverage percentage over a polygonal region with LOS constraint.
 
     Args:
-        positions (numpy.ndarray): positions of agents, shape (n, 2)
-        polygon_vertices (numpy.ndarray): polygon vertices, shape (m, 2)
+        positions (numpy.ndarray): (n, 2) robot positions
+        env (Environment): environment with vertices and obstacles
+        sensing_range (float): sensing radius
+        invalid (callable): function invalid(a, b, obstacles) -> bool
 
     Returns:
         float: coverage percentage (0.0 to 1.0)
@@ -487,25 +489,32 @@ def compute_coverage_percentage(positions, env, sensing_range):
     resolution = 100
     polygon = Polygon(env.vertices)
 
-    # Get bounds of polygon to limit the grid
+    # Mesh grid for environment
     minx, miny, maxx, maxy = polygon.bounds
     x_vals = np.linspace(minx, maxx, resolution)
     y_vals = np.linspace(miny, maxy, resolution)
     xx, yy = np.meshgrid(x_vals, y_vals)
-    grid_points = np.column_stack((xx.ravel(), yy.ravel()))  # shape: (N, 2)
+    grid_points = np.column_stack((xx.ravel(), yy.ravel()))
 
-    # Step 1: Filter points inside the polygon
+    # Keep only points inside polygon
     inside_polygon_mask = np.array(
         [polygon.contains(Point(p)) for p in grid_points])
     inside_polygon_points = grid_points[inside_polygon_mask]
 
-    # Step 2: Compute coverage mask (robots)
+    # Initialize coverage mask
     in_coverage = np.zeros(inside_polygon_points.shape[0], dtype=bool)
+
+    # For each robot
     for pos in positions:
         distances = np.linalg.norm(inside_polygon_points - pos, axis=1)
-        in_coverage |= distances <= sensing_range
+        candidate_mask = distances <= sensing_range
 
-    # Step 3: Obstacle mask
+        # Apply LOS constraint
+        for i, point in enumerate(inside_polygon_points[candidate_mask]):
+            if not ray_intersects_aabb(pos, point, env.obstacles):
+                in_coverage[np.where(candidate_mask)[0][i]] = True
+
+    # Exclude obstacle-covered points
     in_obs = np.zeros(inside_polygon_points.shape[0], dtype=bool)
     if len(env.obstacles) > 0:
         for obs in env.obstacles:
@@ -519,15 +528,14 @@ def compute_coverage_percentage(positions, env, sensing_range):
             )
             in_obs |= inside
 
-    # Step 4: Final valid coverage
+    # Final coverage (within polygon, not in obstacle, visible)
     valid_covered = in_coverage & (~in_obs)
 
-    # Step 5: Return coverage ratio within polygon
-    return (
-        valid_covered.sum() / (inside_polygon_points.shape[0] - in_obs.sum())
-        if inside_polygon_points.shape[0] > 0
-        else 0.0
-    )
+    total_valid_points = inside_polygon_points.shape[0] - in_obs.sum()
+    if total_valid_points <= 0:
+        return 0.0
+
+    return valid_covered.sum() / total_valid_points
 
 
 def plot_travel_distances(distances, log, agent_labels=None, save_dir=""):
