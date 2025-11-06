@@ -153,8 +153,10 @@ class Renderer:
         # ax.set_ylabel("Y [meters]")
         # ax.set_title("Environment Map View")
 
-        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.6)
-        ax.tick_params(axis='both', labelsize=8)
+        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4)
+        ax.set_xticks(np.arange(0, max_x, 1))
+        ax.set_yticks(np.arange(0, max_y + 1, 1))
+        # ax.tick_params(axis='both', labelsize=8)
 
         # optional: show axes instead of hiding
         # ax.axis('on')
