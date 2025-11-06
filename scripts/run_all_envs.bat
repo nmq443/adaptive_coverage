@@ -19,7 +19,6 @@ if "%mode%"=="1" (
     call scripts\run_env3.bat
     call scripts\run_env4.bat
     call scripts\run_env5.bat
-    call scripts\run_env6.bat
     echo.
     echo All environments finished!
 ) else if "%mode%"=="2" (
@@ -31,7 +30,6 @@ if "%mode%"=="1" (
     start cmd /c scripts\run_env3.bat
     start cmd /c scripts\run_env4.bat
     start cmd /c scripts\run_env5.bat
-    start cmd /c scripts\run_env6.bat
     echo.
     echo All environments launched!
 ) else (

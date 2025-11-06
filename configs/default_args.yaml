@@ -42,19 +42,6 @@ environment:
     area_height: 15
     first_agent_pos: [3, 2]
     obstacles: 
-      - [9, 4, 5, 4]
-      - [8, 10, 2, 3]
-    vertices:
-      - [0, 0]
-      - [35, 0]
-      - [35, 15]
-      - [0, 15]
-
-  env4:
-    area_width: 35
-    area_height: 15
-    first_agent_pos: [3, 2]
-    obstacles: 
       - [9, 4, 5, 4] 
       - [8, 10, 2, 3]
       - [14, 8, 4, 4]
@@ -64,7 +51,7 @@ environment:
       - [35, 15]
       - [0, 15]
 
-  env5:
+  env4:
     area_width: 35
     area_height: 15
     first_agent_pos: [3, 2]
@@ -79,7 +66,7 @@ environment:
       - [35, 15]
       - [0, 15]
 
-  env6:
+  env5:
     area_width: 40
     area_height: 20
     first_agent_pos: [2, 10]
@@ -99,8 +86,6 @@ environment:
       - [40, 0]
       - [40, 20]
       - [0, 20]
-
-
 
 simulation:
   scale: 40
