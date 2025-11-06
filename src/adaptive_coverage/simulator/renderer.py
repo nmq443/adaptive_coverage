@@ -1,6 +1,7 @@
 from adaptive_coverage.simulator.data_manager import ResultManager, LogManager
 from adaptive_coverage.environment.environment import Environment
 from adaptive_coverage.agents.cvt.lloyd import compute_voronoi_diagrams
+from adaptive_coverage.utils.utils import ray_intersects_aabb
 import os
 import numpy as np
 from matplotlib.path import Path
@@ -33,7 +34,6 @@ class Renderer:
         unassigned_color="black",
         penalty_color="green",
         linewidth=1,
-        fps=30,
         trail_length=100,
         font_size=11,
         show_sensing_range=False,
@@ -51,6 +51,7 @@ class Renderer:
         self.show_sensing_range = show_sensing_range
         self.show_connections = show_connections
         self.show_trajectories = show_trajectories
+        self.show_goal = show_goal
 
         self.trajectories_filepath = trajectories_filepath
         self.result_manager = result_manager
@@ -104,12 +105,9 @@ class Renderer:
                 color=self.heading_color, linewidth=1)
 
     def draw_sensing(self, ax, pos):
-        # circ = Circle(pos, self.sensing_range, fill=False,
-        #   edgecolor=self.agent_sensing_color, linewidth=1)
-        # ax.add_patch(circ)
         # Create the sensing circle
         circ = Circle(pos, self.sensing_range, fill=False,
-                      edgecolor=self.agent_sensing_color, linewidth=1)
+                      edgecolor=self.agent_sensing_color, facecolor=self.agent_sensing_color, linewidth=1, alpha=0.5)
 
         # Create clipping path from environment polygon
         env_path = Path(self.env.vertices)
@@ -128,7 +126,7 @@ class Renderer:
                 b = pts[i+1]
                 ax.plot([a[0], b[0]], [a[1], b[1]], color="black", linewidth=1)
 
-    def render_frame(self):
+    def render_frame(self, show_sensing_range=False, show_connections=False):
         fig, ax = plt.subplots(figsize=(self.screen_size[0]/100,
                                         self.screen_size[1]/100), dpi=100)
         ax.set_aspect('equal')
@@ -173,8 +171,27 @@ class Renderer:
 
             self.draw_agent(ax, i, pos, penalty)
             self.draw_heading(ax, pos, yaw)
-            if self.show_sensing_range:
+            if show_sensing_range:
                 self.draw_sensing(ax, pos)
+        if show_connections:
+            for i in range(self.num_agents):
+                for j in range(self.num_agents):
+                    if i == j:
+                        continue
+                    pos_i = self.trajectories_data[i,
+                                                   self.current_timestep, :2]
+                    pos_j = self.trajectories_data[j,
+                                                   self.current_timestep, :2]
+                    rij = np.linalg.norm(pos_i - pos_j)
+                    if rij <= self.sensing_range and not ray_intersects_aabb(pos_i, pos_j, self.env.obstacles):
+                        ax.plot(
+                            [pos_i[0], pos_j[0]],
+                            [pos_i[1], pos_j[1]],
+                            color=self.agent_color,
+                            linestyle="--",
+                            linewidth=0.8)
+                        # alpha=0.6,
+                        # )
 
         # -----------------------------
         # Draw Voronoi edges
@@ -191,6 +208,24 @@ class Renderer:
         plt.close(fig)
         return frame
 
+    def save_snapshot(self, timestep, tag):
+        """Save 4 images at specific timestep."""
+        self.current_timestep = timestep
+        snapshots = {
+            "pos": (False, False),
+            "pos_sensing": (True, False),
+            "pos_conn": (False, True),
+            "pos_conn_sensing": (True, True)
+        }
+
+        for name, (sensing, conn) in snapshots.items():
+            frame = self.render_frame(
+                show_sensing_range=sensing, show_connections=conn)
+            save_path = os.path.join(
+                self.result_manager.res_dir, f"{tag}_{name}.png")
+            plt.imsave(save_path, frame)
+            self.log_manager.log(f"Saved {tag}_{name}.png")
+
     def run(self):
         if not self.load_data():
             return
@@ -202,7 +237,8 @@ class Renderer:
             if t == 0:
                 self.result_manager.update_frames(frame)
 
+        self.save_snapshot(0, "start")
+        self.save_snapshot(self.num_timesteps - 1, "final")
         self.result_manager.update_frames(frame)
-        self.result_manager.save_images()
         self.result_manager.save_video()
         self.log_manager.log(f"Saved results to {self.result_manager.res_dir}")
