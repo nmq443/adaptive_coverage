@@ -1,12 +1,12 @@
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Arc
 import numpy as np
 import os
 
 # Coordinates of robots
-pos_i = np.array([0.0, 0.5])
-pos_j = np.array([-0.35, -0.6])
-pos_k = np.array([0.35, -0.6])
+pos_i = np.array([0.0, 0.3])
+pos_j = np.array([-0.75, -0.6])
+pos_k = np.array([0.75, -0.6])
 
 # Parameters
 r_free = 0.9       # Free region radius (light gray)
@@ -31,7 +31,7 @@ def draw_robot(ax, pos, label, sensing_range=True):
             Circle(pos, r_free, facecolor='lightgray', edgecolor='black', alpha=0.5, zorder=1))
     # Robot
     ax.add_patch(Circle(pos, 0.1, facecolor='red',
-                 edgecolor='black', linewidth=2, zorder=3))
+                 edgecolor='blue', linewidth=2, zorder=3))
     ax.text(pos[0], pos[1] + 0.2, label, fontsize=11,
             ha='center', va='bottom')
 
@@ -41,23 +41,41 @@ draw_robot(ax, pos_i, 'i', False)
 draw_robot(ax, pos_j, 'j')
 draw_robot(ax, pos_k, 'k')
 
-# Connections
-for a, b in [(pos_i, pos_j), (pos_i, pos_k), (pos_j, pos_k)]:
+# Connections (solid lines from i to j and i to k)
+for a, b in [(pos_i, pos_j), (pos_i, pos_k)]:
     ax.plot([a[0], b[0]], [a[1], b[1]], color='blue', linewidth=1.5, zorder=2)
+
+# Dashed curved line below connecting j and k
+# Create a curved path below
+mid_point = (pos_j + pos_k) / 2
+curve_depth = -0.5  # How far down the curve goes
+
+# Create arc points
+t = np.linspace(0, 1, 50)
+curve_x = pos_j[0] * (1 - t) + pos_k[0] * t
+curve_y = pos_j[1] * (1 - t) + pos_k[1] * t + 4 * curve_depth * t * (1 - t)
+
+ax.plot(curve_x, curve_y, color='blue',
+        linewidth=1.5, linestyle='--', zorder=2)
+
+# Add label for the dashed line
+label_pos = np.array([mid_point[0], mid_point[1] + curve_depth])
+ax.text(label_pos[0], label_pos[1] - 0.15, r'$I_{jk} \neq \emptyset$',
+        fontsize=11, ha='center', va='top')
 
 # Velocity vector of robot i
 vi_dir = np.array([1.0, 0.4])  # direction
 vi_dir = vi_dir / np.linalg.norm(vi_dir)
 arrow_end = pos_i + arrow_len * vi_dir
 ax.arrow(pos_i[0], pos_i[1], arrow_len * vi_dir[0], arrow_len * vi_dir[1],
-         head_width=0.08, head_length=0.12, fc='blue', ec='blue', linestyle='dashed', zorder=4)
+         head_width=0.08, head_length=0.12, fc='blue', ec='blue', zorder=4)
 ax.text(arrow_end[0] + 0.05, arrow_end[1] + 0.05,
         r'$\vec{v_i}$', color='blue', fontsize=12)
 
 # Destination d_i
 d_i = vi_dir / 1.5 + pos_i
-ax.add_patch(Circle(d_i, 0.01, color='blue', zorder=0))
-ax.text(d_i[0], d_i[1] + 0.01,
+ax.add_patch(Circle(d_i, 0.03, color='blue', zorder=5))
+ax.text(d_i[0] + 0.1, d_i[1],
         r'$d_i$', color='blue', fontsize=12)
 
 # View
@@ -67,6 +85,6 @@ ax.set_ylim(-2, 1)
 save_dir = "results/figures"
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
-plt.savefig(os.path.join(save_dir, "triangle_topo.png"))
+plt.savefig(os.path.join(save_dir, "k_connect_topo.png"))
 
 plt.show()
