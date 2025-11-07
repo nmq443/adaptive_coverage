@@ -1,5 +1,5 @@
 environment:
-  env0:
+  env1:
     area_width: 30
     area_height: 15
     first_agent_pos: [3, 2]
@@ -10,7 +10,7 @@ environment:
       - [30, 15]
       - [0, 15]
 
-  env1:
+  env2:
     area_width: 40
     area_height: 20
     first_agent_pos: [5, 5]
@@ -23,7 +23,7 @@ environment:
       - [5, 16]
       - [0, 8]
   
-  env2:
+  env3:
     area_width: 40
     area_height: 20
     first_agent_pos: [10, 8]
@@ -37,7 +37,7 @@ environment:
       - [8, 20]
       - [4, 14]
 
-  env3:
+  env4:
     area_width: 35
     area_height: 15
     first_agent_pos: [3, 2]
@@ -51,7 +51,7 @@ environment:
       - [35, 15]
       - [0, 15]
 
-  env4:
+  env5:
     area_width: 35
     area_height: 15
     first_agent_pos: [3, 2]
@@ -66,7 +66,7 @@ environment:
       - [35, 15]
       - [0, 15]
 
-  env5:
+  env6:
     area_width: 40
     area_height: 20
     first_agent_pos: [2, 10]
@@ -91,8 +91,8 @@ simulation:
   scale: 40
   screen_size: [1600, 912]
   linewidth: 1
-  total_time: 10
-  timestep: 5
+  total_time: 10000
+  timestep: 1
   show_sensing_range: true
   show_goal: false
   show_connections: false
