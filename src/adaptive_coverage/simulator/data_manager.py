@@ -1,5 +1,5 @@
 import os
-import shutil
+import matplotlib.animation as animation
 import imageio
 import logging
 
@@ -97,9 +97,13 @@ class ResultManager:
         """
         self.frames.append(frame)
 
-    def save_video(self):
+    def save_video(self, ani):
         """Save playback video."""
-        self.video_writer.close()
+        # self.video_writer.close()
+        writer = animation.FFMpegWriter(
+            fps=self.fps, codec='libx264', bitrate=2000)
+        ani.save(self.video_path, writer=writer)
+        print(f"Saved video to: {self.video_path}")
 
     def save_images(self):
         """Save first and final image."""
