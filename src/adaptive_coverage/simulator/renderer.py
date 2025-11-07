@@ -19,58 +19,52 @@ class Renderer:
         agent_size: float,
         critical_ratio: float,
         sensing_range: float,
-        screen_size,
+        screen_size: tuple,
         trajectories_filepath,
         result_manager: ResultManager,
         log_manager: LogManager,
-        controller="voronoi",
-        agent_color="red",
-        agent_sensing_color="blue",
-        goal_color="green",
-        heading_color="green",
-        index_color="black",
-        obs_color="black",
-        occupied_color="red",
-        assigned_color="blue",
-        unassigned_color="black",
-        penalty_color="green",
-        linewidth=1,
-        trail_length=100,
-        font_size=11,
+        controller: str = "voronoi",
+        agent_color: str = "red",
+        agent_sensing_color: str = "blue",
+        heading_color: str = "green",
+        index_color: str = "black",
+        occupied_color: str = "red",
+        assigned_color: str = "blue",
+        unassigned_color: str = "black",
+        penalty_color: str = "green",
+        linewidth: int = 1,
         show_sensing_range=False,
-        show_goal=False,
         show_connections=False,
         show_trajectories=False,
     ):
-        self.env = env
-        self.agent_size = agent_size
-        self.critical_ratio = critical_ratio
-        self.sensing_range = sensing_range
-        self.screen_size = screen_size
-        self.controller = controller
-        self.linewidth = linewidth
-        self.show_sensing_range = show_sensing_range
-        self.show_connections = show_connections
-        self.show_trajectories = show_trajectories
-        self.show_goal = show_goal
+        self.env: Environment = env
+        self.agent_size: float = agent_size
+        self.critical_ratio: float = critical_ratio
+        self.sensing_range: float = sensing_range
+        self.screen_size: tuple = screen_size
+        self.controller: str = controller
+        self.linewidth: int = linewidth
+        self.show_sensing_range: bool = show_sensing_range
+        self.show_connections: bool = show_connections
+        self.show_trajectories: bool = show_trajectories
 
-        self.trajectories_filepath = trajectories_filepath
-        self.result_manager = result_manager
-        self.log_manager = log_manager
+        self.trajectories_filepath: str = trajectories_filepath
+        self.result_manager: ResultManager = result_manager
+        self.log_manager: LogManager = log_manager
 
-        self.agent_color = agent_color
-        self.agent_sensing_color = agent_sensing_color
-        self.heading_color = heading_color
-        self.index_color = index_color
+        self.agent_color: str = agent_color
+        self.agent_sensing_color: str = agent_sensing_color
+        self.heading_color: str = heading_color
+        self.index_color: str = index_color
         if controller == "hexagon":
-            self.occupied_color = occupied_color
-            self.assigned_color = assigned_color
-            self.unassigned_color = unassigned_color
-            self.penalty_color = penalty_color
+            self.occupied_color: str = occupied_color
+            self.assigned_color: str = assigned_color
+            self.unassigned_color: str = unassigned_color
+            self.penalty_color: str = penalty_color
 
-        self.current_timestep = 0
-        self.num_timesteps = 0
-        self.num_agents = 0
+        self.current_timestep: int = 0
+        self.num_timesteps: int = 0
+        self.num_agents: int = 0
 
     def load_data(self):
         if not os.path.exists(self.trajectories_filepath):
@@ -103,12 +97,12 @@ class Renderer:
         a = pos
         b = pos + 2 * self.agent_size * np.array([np.cos(yaw), np.sin(yaw)])
         ax.plot([a[0], b[0]], [a[1], b[1]],
-                color=self.heading_color, linewidth=1)
+                color=self.heading_color, linewidth=self.linewidth)
 
     def draw_sensing(self, ax, pos):
         # Create the sensing circle
         circ = Circle(pos, self.sensing_range, fill=False,
-                      edgecolor=self.agent_sensing_color, facecolor=self.agent_sensing_color, linewidth=1, alpha=0.5)
+                      edgecolor=self.agent_sensing_color, facecolor=self.agent_sensing_color, linewidth=self.linewidth, alpha=0.5)
 
         # Create clipping path from environment polygon
         env_path = Path(self.env.vertices)
@@ -125,17 +119,16 @@ class Renderer:
             for i in range(len(pts)-1):
                 a = pts[i]
                 b = pts[i+1]
-                ax.plot([a[0], b[0]], [a[1], b[1]], color="black", linewidth=1)
+                ax.plot([a[0], b[0]], [a[1], b[1]],
+                        color="black", linewidth=self.linewidth)
 
-    def render_frame(self, show_sensing_range=False, show_connections=False):
+    def create_fig_and_ax(self):
         fig, ax = plt.subplots(figsize=(self.screen_size[0]/100,
                                         self.screen_size[1]/100), dpi=100)
         ax.set_aspect('equal')
         ax.set_facecolor("white")
 
-        # -----------------------------
         # compute bounds & add offset
-        # -----------------------------
         xs = [v[0] for v in self.env.vertices]
         ys = [v[1] for v in self.env.vertices]
 
@@ -147,24 +140,22 @@ class Renderer:
         ax.set_xlim(min_x - offset, max_x + offset)
         ax.set_ylim(min_y - offset, max_y + offset)
 
-        # -----------------------------
-        # enable map-like visual style
-        # -----------------------------
-        # ax.set_xlabel("X [meters]")
-        # ax.set_ylabel("Y [meters]")
-        # ax.set_title("Environment Map View")
-
-        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4)
+        ax.grid(True, linestyle="--", linewidth=self.linewidth, alpha=0.4)
         ax.set_xticks(np.arange(0, max_x, 1))
         ax.set_yticks(np.arange(0, max_y + 1, 1))
 
         ax.axis('on')
 
+        return fig, ax
+
+    def render_frame(self, show_sensing_range=False, show_connections=False):
+        """Render a frame at current timestep."""
+
+        fig, ax = self.create_fig_and_ax()
+
         self.draw_environment(ax)
 
-        # -----------------------------
         # Draw agents
-        # -----------------------------
         for i in range(self.num_agents):
             pos = self.trajectories_data[i, self.current_timestep, :2]
             yaw = self.trajectories_data[i, self.current_timestep, 2]
@@ -175,28 +166,9 @@ class Renderer:
             if show_sensing_range:
                 self.draw_sensing(ax, pos)
         if show_connections:
-            for i in range(self.num_agents):
-                for j in range(self.num_agents):
-                    if i == j:
-                        continue
-                    pos_i = self.trajectories_data[i,
-                                                   self.current_timestep, :2]
-                    pos_j = self.trajectories_data[j,
-                                                   self.current_timestep, :2]
-                    rij = np.linalg.norm(pos_i - pos_j)
-                    if rij <= self.sensing_range and not ray_intersects_aabb(pos_i, pos_j, self.env.obstacles):
-                        ax.plot(
-                            [pos_i[0], pos_j[0]],
-                            [pos_i[1], pos_j[1]],
-                            color=self.agent_color,
-                            linestyle="--",
-                            linewidth=0.8)
-                        # alpha=0.6,
-                        # )
+            self.draw_connections(fig, ax)
 
-        # -----------------------------
         # Draw Voronoi edges
-        # -----------------------------
         if self.controller == "voronoi":
             gen = self.trajectories_data[:, self.current_timestep, :2]
             vor = compute_voronoi_diagrams(gen, self.env)
@@ -208,6 +180,24 @@ class Renderer:
 
         plt.close(fig)
         return frame
+
+    def draw_connections(self, fig, ax):
+        for i in range(self.num_agents):
+            for j in range(self.num_agents):
+                if i == j:
+                    continue
+                pos_i = self.trajectories_data[i,
+                                               self.current_timestep, :2]
+                pos_j = self.trajectories_data[j,
+                                               self.current_timestep, :2]
+                rij = np.linalg.norm(pos_i - pos_j)
+                if rij <= self.sensing_range and not ray_intersects_aabb(pos_i, pos_j, self.env.obstacles):
+                    ax.plot(
+                        [pos_i[0], pos_j[0]],
+                        [pos_i[1], pos_j[1]],
+                        color=self.agent_color,
+                        linestyle="solid",
+                        linewidth=self.linewidth)
 
     def save_snapshot(self, timestep, tag):
         """Save 4 images at specific timestep."""
@@ -237,26 +227,7 @@ class Renderer:
         self.save_snapshot(self.num_timesteps - 1, "final")
 
         # Prepare figure once
-        fig, ax = plt.subplots(
-            figsize=(self.screen_size[0]/100, self.screen_size[1]/100), dpi=100)
-        xs = [v[0] for v in self.env.vertices]
-        ys = [v[1] for v in self.env.vertices]
-
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        ax.set_aspect("equal")
-        ax.set_facecolor("white")
-        ax.grid(True, linestyle="--", linewidth=0.5, alpha=0.4)
-        ax.set_xticks(np.arange(0, max_x, 1))
-        ax.set_yticks(np.arange(0, max_y + 1, 1))
-
-        xs = [v[0] for v in self.env.vertices]
-        ys = [v[1] for v in self.env.vertices]
-        min_x, max_x = min(xs), max(xs)
-        min_y, max_y = min(ys), max(ys)
-        offset = max(self.agent_size, 1.0)
-        ax.set_xlim(min_x - offset, max_x + offset)
-        ax.set_ylim(min_y - offset, max_y + offset)
+        fig, ax = self.create_fig_and_ax()
 
         # Draw static parts once
         self.draw_environment(ax)
@@ -284,12 +255,12 @@ class Renderer:
             b = pos + 2 * self.agent_size * \
                 np.array([np.cos(yaw), np.sin(yaw)])
             line, = ax.plot([a[0], b[0]], [a[1], b[1]],
-                            color=self.heading_color, linewidth=1)
+                            color=self.heading_color, linewidth=self.linewidth)
             heading_lines.append(line)
 
             # sensing range (clipped inside environment)
             circ2 = plt.Circle(pos, self.sensing_range, fill=False,
-                               edgecolor=self.agent_sensing_color, linewidth=0.5, alpha=0.3)
+                               edgecolor=self.agent_sensing_color, linewidth=self.linewidth, alpha=0.3)
             circ2.set_visible(self.show_sensing_range)
             circ2.set_clip_path(clip_patch)
             ax.add_patch(circ2)
@@ -320,12 +291,15 @@ class Renderer:
 
         # Create animation
         ani = animation.FuncAnimation(fig, update, frames=self.num_timesteps,
-                                      interval=1000/self.result_manager.fps,
+                                      interval=10,
                                       blit=True)
 
         # Save animation via ResultManager
-        self.result_manager.save_video(ani)
+        writer = animation.FFMpegWriter(
+            fps=60, codec='libx264', bitrate=2000)
+        ani.save(self.result_manager.video_path, writer=writer)
 
         plt.close(fig)
+
         self.log_manager.log(
             f"Saved video to {self.result_manager.video_path}")

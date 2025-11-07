@@ -106,7 +106,7 @@ agents:
   original_method: true
   num_agents: 30
   agent_size: 0.2
-  v_max: 0.01
+  v_max: 0.05
   tolerance: 0.05
   sensing_range: 5.0
   communication_range: 3.5

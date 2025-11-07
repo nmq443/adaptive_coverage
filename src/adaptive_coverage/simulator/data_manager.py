@@ -6,7 +6,7 @@ import logging
 
 class ResultManager:
     def __init__(
-        self, num_agents, res_dir, env_dir, controller, original_method, fps=144
+        self, num_agents, res_dir, env_dir, controller, original_method
     ):
         """
         This class helps with managing results.
@@ -17,7 +17,6 @@ class ResultManager:
             env_dir: name of environment.
             controller: controller to use (voronoi or hexagon).
             original_method: if using hexagon controller's original method or PSO method.
-            fps: frames per second for video playback.
         """
         self.num_agents = num_agents
         self.res_dir = res_dir
@@ -25,13 +24,11 @@ class ResultManager:
         self.controller = controller
         self.original_method = original_method
         self.frames = []
-        self.fps = fps
         self.res_dir = (
             self.init_directories()
         )  # Correctly assign the path of the new directory
 
         self.video_path = os.path.join(self.res_dir, f"running_video.mp4")
-        self.video_writer = imageio.get_writer(self.video_path, fps=self.fps)
 
         self.start_img_path = os.path.join(self.res_dir, "start_pose.png")
         self.end_img_path = os.path.join(self.res_dir, "final_pose.png")
@@ -78,40 +75,6 @@ class ResultManager:
         new_res_dir = os.path.join(base_dir, f"run{run_number}")
         os.makedirs(new_res_dir)
         return new_res_dir
-
-    def update_video(self, frame):
-        """
-        Update current frame to playback video.
-
-        Args:
-            frame: current frame.
-        """
-        self.video_writer.append_data(frame)
-
-    def update_frames(self, frame):
-        """
-        Add current frame to frames list.
-
-        Args:
-            frame: current frame.
-        """
-        self.frames.append(frame)
-
-    def save_video(self, ani):
-        """Save playback video."""
-        # self.video_writer.close()
-        writer = animation.FFMpegWriter(
-            fps=self.fps, codec='libx264', bitrate=2000)
-        ani.save(self.video_path, writer=writer)
-        print(f"Saved video to: {self.video_path}")
-
-    def save_images(self):
-        """Save first and final image."""
-        imageio.imwrite(self.start_img_path, self.frames[0])
-        imageio.imwrite(self.end_img_path, self.frames[-1])
-
-    def save_travel_distances(self):
-        pass
 
 
 class LogManager:
