@@ -295,9 +295,9 @@ class Renderer:
                                       blit=True)
 
         # Save animation via ResultManager
-        writer = animation.FFMpegWriter(
-            fps=60, codec='libx264', bitrate=2000)
-        ani.save(self.result_manager.video_path, writer=writer)
+        # writer = animation.FFMpegWriter(
+        # fps=60, codec='libx264', bitrate=2000)
+        ani.save(self.result_manager.video_path)
 
         plt.close(fig)
 
