@@ -261,6 +261,10 @@ class Renderer:
         # Draw static parts once
         self.draw_environment(ax)
 
+        # Create clip path from environment polygon (for all sensing circles)
+        env_path = Path(self.env.vertices)
+        clip_patch = PathPatch(env_path, transform=ax.transData)
+
         # Initialize artists for dynamic elements (agents, headings, sensing)
         agent_patches = []
         heading_lines = []
@@ -283,10 +287,11 @@ class Renderer:
                             color=self.heading_color, linewidth=1)
             heading_lines.append(line)
 
-            # sensing range (optional)
+            # sensing range (clipped inside environment)
             circ2 = plt.Circle(pos, self.sensing_range, fill=False,
                                edgecolor=self.agent_sensing_color, linewidth=0.5, alpha=0.3)
             circ2.set_visible(self.show_sensing_range)
+            circ2.set_clip_path(clip_patch)
             ax.add_patch(circ2)
             sensing_patches.append(circ2)
 
