@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+from matplotlib.patches import Circle, Polygon
 import numpy as np
 import os
+from shapely.geometry import Point
 
 # Coordinates of robots
 pos_i = np.array([0.0, 0.5])
@@ -41,9 +42,19 @@ draw_robot(ax, pos_i, 'i', False)
 draw_robot(ax, pos_j, 'j')
 draw_robot(ax, pos_k, 'k')
 
+# --- Highlight intersection between important zones of j and k ---
+circle_j = Point(pos_j).buffer(r_important)
+circle_k = Point(pos_k).buffer(r_important)
+intersection = circle_j.intersection(circle_k)
+
+if not intersection.is_empty:
+    # Convert intersection polygon to matplotlib patch
+    x, y = intersection.exterior.xy
+    ax.fill(x, y, color='green', alpha=0.4, zorder=2, label='Intersection')
+
 # Connections
 for a, b in [(pos_i, pos_j), (pos_i, pos_k), (pos_j, pos_k)]:
-    ax.plot([a[0], b[0]], [a[1], b[1]], color='blue', linewidth=1.5, zorder=2)
+    ax.plot([a[0], b[0]], [a[1], b[1]], color='blue', linewidth=1.5, zorder=3)
 
 # Velocity vector of robot i
 vi_dir = np.array([1.0, 0.4])  # direction
@@ -56,17 +67,17 @@ ax.text(arrow_end[0] + 0.05, arrow_end[1] + 0.05,
 
 # Destination d_i
 d_i = vi_dir / 1.5 + pos_i
-ax.add_patch(Circle(d_i, 0.01, color='blue', zorder=0))
-ax.text(d_i[0], d_i[1] + 0.01,
+ax.add_patch(Circle(d_i, 0.03, color='blue', zorder=4))
+ax.text(d_i[0] + 0.05, d_i[1] + 0.01,
         r'$d_i$', color='blue', fontsize=12)
 
 # View
 ax.set_xlim(-2.5, 2.5)
 ax.set_ylim(-2, 1)
 
+# Save figure
 save_dir = "results/figures"
-if not os.path.exists(save_dir):
-    os.makedirs(save_dir)
+os.makedirs(save_dir, exist_ok=True)
 plt.savefig(os.path.join(save_dir, "triangle_topo.png"))
 
 plt.show()

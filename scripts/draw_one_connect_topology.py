@@ -2,10 +2,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Circle
 import numpy as np
 import os
-from shapely.geometry import Point
 
 # Coordinates of robots
-pos_i = np.array([0.0, 0.3])
+pos_i = np.array([0.3, -0.3])
 pos_j = np.array([-0.75, -0.6])
 pos_k = np.array([0.75, -0.6])
 
@@ -33,7 +32,8 @@ def draw_robot(ax, pos, label, sensing_range=True):
     # Robot body
     ax.add_patch(Circle(pos, 0.1, facecolor='red',
                         edgecolor='blue', linewidth=2, zorder=3))
-    ax.text(pos[0], pos[1] + 0.2, label, fontsize=11, ha='center', va='bottom')
+    ax.text(pos[0], pos[1] + 0.2, label, fontsize=11,
+            ha='center', va='bottom')
 
 
 # Draw robots
@@ -41,37 +41,32 @@ draw_robot(ax, pos_i, 'i', False)
 draw_robot(ax, pos_j, 'j')
 draw_robot(ax, pos_k, 'k')
 
-# === Highlight intersection between important zones of j and k ===
-circle_j = Point(pos_j).buffer(r_important)
-circle_k = Point(pos_k).buffer(r_important)
-intersection = circle_j.intersection(circle_k)
-
-if not intersection.is_empty:
-    x, y = intersection.exterior.xy
-    ax.fill(x, y, color='green', alpha=0.4, zorder=2, label='Intersection')
+# === Highlight only j’s important circle ===
+highlight = Circle(pos_j, r_important, facecolor='green', alpha=0.35,
+                   edgecolor='green', linewidth=2.5, linestyle='-', zorder=2)
+ax.add_patch(highlight)
 
 # Connections (solid lines from i to j and i to k)
 for a, b in [(pos_i, pos_j), (pos_i, pos_k)]:
     ax.plot([a[0], b[0]], [a[1], b[1]], color='blue', linewidth=1.5, zorder=3)
 
-# === 3-segment dashed polyline (bottom connection between j and k) ===
-bottom_y = -1.1  # depth of the bottom
-offset_x = 0.4   # how far inwards the angled lines bend
+# === Two short dashed line segments below j and k ===
+dash_len = 0.6
+angle_deg = -80
+angle_rad = np.radians(angle_deg)
 
-p1 = pos_j  # start from j
-p2 = np.array([pos_j[0] + offset_x, bottom_y])  # left bottom corner
-p3 = np.array([pos_k[0] - offset_x, bottom_y])  # right bottom corner
-p4 = pos_k  # end at k
+end_j = pos_j + dash_len * np.array([np.cos(angle_rad), np.sin(angle_rad)])
+ax.plot([pos_j[0], end_j[0]], [pos_j[1], end_j[1]],
+        color='blue', linewidth=1.5, linestyle='--', zorder=3)
 
-x_coords = [p1[0], p2[0], p3[0], p4[0]]
-y_coords = [p1[1], p2[1], p3[1], p4[1]]
-ax.plot(x_coords, y_coords, color='blue', linewidth=1.5,
-        linestyle='--', zorder=3)
+end_k = pos_k + dash_len * np.array([-np.cos(angle_rad), np.sin(angle_rad)])
+ax.plot([pos_k[0], end_k[0]], [pos_k[1], end_k[1]],
+        color='blue', linewidth=1.5, linestyle='--', zorder=3)
 
-# Label below the bottom segment
-mid_bottom = (p2 + p3) / 2
-ax.text(mid_bottom[0], mid_bottom[1] - 0.1, r'$I_{jk} \neq \emptyset$',
-        fontsize=11, ha='center', va='top')
+# Label for I_jk = empty
+mid_label = np.array([0.0, -0.8])
+ax.text(mid_label[0], mid_label[1],
+        r'$I_{jk} = \emptyset$', fontsize=11, ha='center', va='top')
 
 # Velocity vector of robot i
 vi_dir = np.array([1.0, 0.4])
@@ -91,8 +86,8 @@ ax.text(d_i[0] + 0.1, d_i[1], r'$d_i$', color='blue', fontsize=12)
 ax.set_xlim(-2.5, 2.5)
 ax.set_ylim(-2, 1)
 
-# Save and show
+# Save figure
 save_dir = "results/figures"
 os.makedirs(save_dir, exist_ok=True)
-plt.savefig(os.path.join(save_dir, "k_connect_topo.png"))
+plt.savefig(os.path.join(save_dir, "one_connect_topo.png"))
 plt.show()
