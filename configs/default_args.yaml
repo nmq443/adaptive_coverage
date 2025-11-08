@@ -92,7 +92,7 @@ simulation:
   screen_size: [1600, 912]
   linewidth: 1
   total_time: 10000
-  timestep: 5
+  timestep: 0.5
   show_sensing_range: true
   show_goal: false
   show_connections: false
