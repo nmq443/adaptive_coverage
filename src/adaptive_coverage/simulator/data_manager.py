@@ -28,7 +28,7 @@ class ResultManager:
             self.init_directories()
         )  # Correctly assign the path of the new directory
 
-        self.video_path = os.path.join(self.res_dir, f"running_video.gif")
+        self.video_path = os.path.join(self.res_dir, f"running_video.mp4")
 
         self.start_img_path = os.path.join(self.res_dir, "start_pose.png")
         self.end_img_path = os.path.join(self.res_dir, "final_pose.png")

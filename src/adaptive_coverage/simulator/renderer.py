@@ -9,6 +9,7 @@ from matplotlib.patches import Polygon, Rectangle, Circle, PathPatch
 import matplotlib.pyplot as plt
 import matplotlib
 import matplotlib.animation as animation
+import imageio
 matplotlib.use("Agg")  # headless backend for server / no GUI
 
 
@@ -65,6 +66,9 @@ class Renderer:
         self.current_timestep: int = 0
         self.num_timesteps: int = 0
         self.num_agents: int = 0
+        self.video_writer = imageio.get_writer(
+            self.result_manager.video_path, fps=30)
+        self.frames: list = []
 
     def load_data(self):
         if not os.path.exists(self.trajectories_filepath):
@@ -218,7 +222,7 @@ class Renderer:
             self.log_manager.log(f"Saved {tag}_{name}.png")
 
     def run(self):
-        """Render animation using matplotlib."""
+        """Playback."""
         if not self.load_data():
             return
 
@@ -226,80 +230,11 @@ class Renderer:
         self.save_snapshot(0, "start")
         self.save_snapshot(self.num_timesteps - 1, "final")
 
-        # Prepare figure once
-        fig, ax = self.create_fig_and_ax()
+        for t in range(self.num_timesteps):
+            self.current_timestep = t
+            frame = self.render_frame()
+            self.video_writer.append_data(frame)
 
-        # Draw static parts once
-        self.draw_environment(ax)
-
-        # Create clip path from environment polygon (for all sensing circles)
-        env_path = Path(self.env.vertices)
-        clip_patch = PathPatch(env_path, transform=ax.transData)
-
-        # Initialize artists for dynamic elements (agents, headings, sensing)
-        agent_patches = []
-        heading_lines = []
-        sensing_patches = []
-
-        for i in range(self.num_agents):
-            pos = self.trajectories_data[i, 0, :2]
-            yaw = self.trajectories_data[i, 0, 2]
-            penalty = self.trajectories_data[i, 0, 8]
-            color = self.penalty_color if penalty == 1 else self.agent_color
-            circ = plt.Circle(pos, self.agent_size, color=color)
-            ax.add_patch(circ)
-            agent_patches.append(circ)
-
-            # heading line
-            a = pos
-            b = pos + 2 * self.agent_size * \
-                np.array([np.cos(yaw), np.sin(yaw)])
-            line, = ax.plot([a[0], b[0]], [a[1], b[1]],
-                            color=self.heading_color, linewidth=self.linewidth)
-            heading_lines.append(line)
-
-            # sensing range (clipped inside environment)
-            circ2 = plt.Circle(pos, self.sensing_range, fill=False,
-                               edgecolor=self.agent_sensing_color, linewidth=self.linewidth, alpha=0.3)
-            circ2.set_visible(self.show_sensing_range)
-            circ2.set_clip_path(clip_patch)
-            ax.add_patch(circ2)
-            sensing_patches.append(circ2)
-
-        # Update function for each frame
-        def update(frame_idx):
-            for i in range(self.num_agents):
-                pos = self.trajectories_data[i, frame_idx, :2]
-                yaw = self.trajectories_data[i, frame_idx, 2]
-                penalty = self.trajectories_data[i, frame_idx, 8]
-                color = self.penalty_color if penalty == 1 else self.agent_color
-
-                # Update agent circle
-                agent_patches[i].center = pos
-                agent_patches[i].set_color(color)
-
-                # Update heading
-                a = pos
-                b = pos + 2 * self.agent_size * \
-                    np.array([np.cos(yaw), np.sin(yaw)])
-                heading_lines[i].set_data([a[0], b[0]], [a[1], b[1]])
-
-                # Update sensing circle
-                sensing_patches[i].center = pos
-
-            return agent_patches + heading_lines + sensing_patches
-
-        # Create animation
-        ani = animation.FuncAnimation(fig, update, frames=self.num_timesteps,
-                                      interval=10,
-                                      blit=True)
-
-        # Save animation via ResultManager
-        # writer = animation.FFMpegWriter(
-        # fps=60, codec='libx264', bitrate=2000)
-        ani.save(self.result_manager.video_path)
-
-        plt.close(fig)
-
+        self.video_writer.close()
         self.log_manager.log(
-            f"Saved video to {self.result_manager.video_path}")
+            f"Save playback video to {self.result_manager.video_path}")
