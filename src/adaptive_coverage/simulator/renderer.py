@@ -66,9 +66,12 @@ class Renderer:
         self.current_timestep: int = 0
         self.num_timesteps: int = 0
         self.num_agents: int = 0
-        self.video_writer = imageio.get_writer(
-            self.result_manager.video_path, fps=30)
+        self.video_writer = None
         self.frames: list = []
+        self.save_video: bool = False
+        if self.save_video:
+            self.video_writer = imageio.get_writer(
+                self.result_manager.video_path, fps=30)
 
     def load_data(self):
         if not os.path.exists(self.trajectories_filepath):
@@ -230,11 +233,12 @@ class Renderer:
         self.save_snapshot(0, "start")
         self.save_snapshot(self.num_timesteps - 1, "final")
 
-        for t in range(self.num_timesteps):
-            self.current_timestep = t
-            frame = self.render_frame()
-            self.video_writer.append_data(frame)
+        if self.save_video:
+            for t in range(self.num_timesteps):
+                self.current_timestep = t
+                frame = self.render_frame()
+                self.video_writer.append_data(frame)
 
-        self.video_writer.close()
-        self.log_manager.log(
-            f"Save playback video to {self.result_manager.video_path}")
+            self.video_writer.close()
+            self.log_manager.log(
+                f"Save playback video to {self.result_manager.video_path}")
