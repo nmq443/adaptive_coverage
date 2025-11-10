@@ -25,7 +25,7 @@ class HexagonSwarm(Swarm):
         self.pso_num_iterations: int = pso_num_iterations
 
     def init_agents(self):
-        """Initialize all agents in a grid-like formation."""
+        """Initialize all agents in a grid-like formation or random positions."""
         if self.random_init:
             pos = np.random.rand(self.num_agents, 2) + np.array([1, 1])
             for i, p in enumerate(pos):
