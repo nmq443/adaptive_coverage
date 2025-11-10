@@ -225,7 +225,7 @@ class HexagonAgent(Agent):
                 return False, False
             if self.is_penalty_node:
                 # not in a coverage range
-                if np.any(distances < self.hexagon_range):
+                if np.any(distances < self.sensing_range):
                     return False, False
 
         # not a neighbour's targets
@@ -241,9 +241,7 @@ class HexagonAgent(Agent):
                     return False, False
                 if self.is_penalty_node:
                     for i, dist in enumerate(distances):
-                        if dist <= self.sensing_range and not ray_intersects_aabb(
-                            agents[i].pos, target, env.obstacles
-                        ):  # not in a coverage range
+                        if dist <= self.sensing_range:  # not in a coverage range
                             return False, False
 
         # If behind an obstacle
