@@ -50,7 +50,8 @@ class Agent:
             self.vel = self.path_planner.total_force(
                 self.pos, self.goal, self.index, agents, obstacles
             )
-            self.vel = self.vel / np.linalg.norm(self.vel)
+            if np.linalg.norm(self.vel) > 1e-6:
+                self.vel = self.vel / np.linalg.norm(self.vel)
             self.limit_speed(desired_v=desired_v)
             self.pos += self.vel * self.timestep
 

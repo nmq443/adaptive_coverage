@@ -99,7 +99,7 @@ class HexagonAgent(Agent):
                 [self.hexagon_range *
                     np.cos(phi), self.hexagon_range * np.sin(phi)]
             )
-            # virtual_target = np.round(virtual_target, 3)
+            virtual_target = np.round(virtual_target, 3)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
                 virtual_target, agents, env
             )
@@ -217,11 +217,11 @@ class HexagonAgent(Agent):
         if len(other_agent_positions) > 0:
             distances = np.linalg.norm(target - other_agent_positions, axis=1)
             if np.any(
-                distances <= 20 * self.tolerance
+                distances <= 2 * self.size  # hardcode
             ):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances <= self.hexagon_range):  # not in a coverage range
+                if np.any(distances < self.hexagon_range):  # not in a coverage range
                     return False, False
 
         # not a neighbour's targets
@@ -231,7 +231,7 @@ class HexagonAgent(Agent):
             if len(virtual_targets) > 0:
                 distances = np.linalg.norm(virtual_targets - target, axis=1)
                 distances = np.round(distances, 5)
-                if np.any(distances <= 20 * self.tolerance):
+                if np.any(distances <= 2 * self.size):  # hardcode
                     return False, False
                 if self.is_penalty_node:
                     for i, dist in enumerate(distances):
