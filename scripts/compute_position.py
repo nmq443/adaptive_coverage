@@ -1,6 +1,8 @@
 import numpy as np
 
-pos = np.array([11.25, 1.8349364905389036])
+source = np.array([11.25, 6.165063509461096])
+pos = np.array([13.36, 7.24])
+dir =
 rh = 2.5
 poses = []
 
