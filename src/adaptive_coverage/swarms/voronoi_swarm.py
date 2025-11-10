@@ -26,8 +26,8 @@ class VoronoiSwarm(Swarm):
             for i, p in enumerate(pos):
                 self.agents.append(
                     VoronoiAgent(
-                        index=i * self.num_cols + j,
-                        init_pos=init_pos,
+                        index=i,
+                        init_pos=p,
                         size=self.agent_size,
                         critical_ratio=self.critical_ratio,
                         sensing_range=self.sensing_range,

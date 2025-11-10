@@ -365,7 +365,7 @@ def get_args(default_configs):
     )
 
     parser.add_argument("--env", type=str,
-                        help="Which environment", default="env0")
+                        help="Which environment", default="env1")
     parser.add_argument(
         "--area_width", type=float, help="Area width", default=None
     )  # Set a placeholder default
