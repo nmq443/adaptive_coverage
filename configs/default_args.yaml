@@ -91,7 +91,7 @@ simulation:
   scale: 40
   screen_size: [1600, 912]
   linewidth: 1
-  total_time: 2000
+  total_time: 5000
   timestep: 1
   show_sensing_range: true
   show_goal: false
@@ -104,7 +104,7 @@ experiments:
 agents:
   controller: "hexagon"
   original_method: true
-  num_agents: 30
+  num_agents: 40
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.1
