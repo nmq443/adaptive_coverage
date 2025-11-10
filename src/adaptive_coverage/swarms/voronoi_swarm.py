@@ -22,7 +22,7 @@ class VoronoiSwarm(Swarm):
     def init_agents(self):
         """Initialize all agents in a grid-like formation or in random positions."""
         if self.random_init:
-            pos = np.random.rand(self.num_agents, 2) + np.array([1, 1])
+            pos = np.random.rand(self.num_agents, 2) + self.first_agent_pos
             for i, p in enumerate(pos):
                 self.agents.append(
                     VoronoiAgent(
