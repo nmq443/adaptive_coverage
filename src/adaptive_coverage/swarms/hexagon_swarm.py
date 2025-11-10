@@ -60,21 +60,20 @@ class HexagonSwarm(Swarm):
 
     def step(self, env, current_step):
         if len(self.agents) > 0:
-            order = np.random.permutation(len(self.agents))
-            for i in order:
-                self.agents[i].step(self.landmarks, self.agents, env)
+            for agent in self.agents:
+                agent.step(self.landmarks, self.agents, env)
 
                 # save the current state
-                pos = self.agents[i].get_pos()
-                vel = self.agents[i].get_vel()
-                speed = self.agents[i].get_speed()
-                theta = self.agents[i].get_theta()
-                goal = self.agents[i].get_goal()
+                pos = agent.get_pos()
+                vel = agent.get_vel()
+                speed = agent.get_speed()
+                theta = agent.get_theta()
+                goal = agent.get_goal()
                 next_pos = pos + self.timestep * vel
                 if goal is None:
                     goal = pos
                 penalty_flag = 0
-                if self.agents[i].is_penalty_node:
+                if agent.is_penalty_node:
                     penalty_flag = 1
                 state = np.array(
                     [pos[0], pos[1], theta, goal[0], goal[1],
@@ -82,7 +81,7 @@ class HexagonSwarm(Swarm):
                 )
 
                 self.update_state(
-                    agent_index=i, current_step=current_step, state=state)
+                    agent_index=agent.index, current_step=current_step, state=state)
             self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)

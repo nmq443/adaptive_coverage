@@ -51,26 +51,23 @@ class VoronoiSwarm(Swarm):
 
     def step(self, env, current_step):
         if len(self.agents) > 0:
-            order = np.random.permutation(len(self.agents))
-            # order = np.arange(len(self.agents))
-            for i in order:
+            for agent in self.agents:
                 # record agent's critical agents before removing redundant
-                critical_agents = self.agents[i].get_critical_agents(self.agents, env
-                                                                     )
+                critical_agents = agent.get_critical_agents(self.agents, env)
                 state = np.zeros(self.num_agents)
                 if len(critical_agents) >= 1:
                     state[critical_agents] = 1
                 self.update_critical_agents_state(
-                    i, current_step, state, False)
+                    agent.index, current_step, state, False)
 
                 # perform a step
-                self.agents[i].step(self.agents, env)
-                pos = self.agents[i].get_pos()
-                vel = self.agents[i].get_vel()
+                agent.step(self.agents, env)
+                pos = agent.get_pos()
+                vel = agent.get_vel()
                 next_pos = pos + vel * self.timestep
-                speed = self.agents[i].get_speed()
-                theta = self.agents[i].get_theta()
-                goal = self.agents[i].get_goal()
+                speed = agent.get_speed()
+                theta = agent.get_theta()
+                goal = agent.get_goal()
                 penalty_flag = 0
                 state = np.array(
                     [pos[0], pos[1], theta, goal[0], goal[1],
@@ -79,26 +76,25 @@ class VoronoiSwarm(Swarm):
 
                 # record agent's state
                 self.update_state(
-                    agent_index=i, current_step=current_step, state=state)
+                    agent_index=agent.index, current_step=current_step, state=state)
 
                 # record critical agents after removing redundant
-                non_redundant_agents = self.agents[i].get_non_redundant_agents(
+                non_redundant_agents = agent.get_non_redundant_agents(
                 )
                 state = np.zeros(self.num_agents)
                 state[non_redundant_agents] = 1
                 self.update_critical_agents_state(
-                    i, current_step, state, False)
+                    agent.index, current_step, state, False)
 
             self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)
 
         if len(self.agents) > 0:
-            # order = np.random.permutation(len(self.agents))
-            order = np.arange(len(self.agents))
-            for i in order:
-                non_redundant_agents = self.agents[i].get_non_redundant_agents(
+            for agent in self.agents:
+                non_redundant_agents = agent.get_non_redundant_agents(
                 )
                 state = np.zeros(self.num_agents)
                 state[non_redundant_agents] = 1
-                self.update_critical_agents_state(i, current_step, state)
+                self.update_critical_agents_state(
+                    agent.index, current_step, state)
