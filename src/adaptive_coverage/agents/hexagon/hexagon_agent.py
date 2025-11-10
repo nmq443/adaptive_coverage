@@ -62,7 +62,7 @@ class HexagonAgent(Agent):
         self.goal = goal
 
     def mobility_control(self, agents, env):
-        if self.route_id == len(self.route) - 2:
+        if self.route_id == len(self.route) - 1:
             cur_node = agents[self.route[self.route_id]]
             if (
                 np.linalg.norm(cur_node.pos - self.pos) <= self.size * 4
@@ -72,7 +72,7 @@ class HexagonAgent(Agent):
         if self.flag == 0:
             dest1 = agents[self.route[self.route_id]].pos
             dest2 = None
-            if self.route_id + 1 < len(self.route) - 1:
+            if self.route_id + 1 <= len(self.route) - 1:
                 dest2 = agents[self.route[self.route_id + 1]].pos
             self.move_to_goal(dest1, agents, env.obstacles)
             if (
@@ -99,7 +99,7 @@ class HexagonAgent(Agent):
                 [self.hexagon_range *
                     np.cos(phi), self.hexagon_range * np.sin(phi)]
             )
-            virtual_target = np.round(virtual_target, 3)
+            virtual_target = np.round(virtual_target, 6)
             is_valid, is_hidden_vertex = self.is_valid_virtual_target(
                 virtual_target, agents, env
             )
@@ -207,30 +207,36 @@ class HexagonAgent(Agent):
         if is_in_obs:
             self.invalid_targets.append(target)
             return False, True
+
         other_agent_positions = np.array(
             [
                 other_agent.pos
                 for other_agent in agents
-                if (other_agent.is_occupied() and other_agent.index != self.index)
+                if (other_agent.is_occupied() and other_agent.index != self.index and np.linalg.norm(other_agent.pos - self.pos) <= self.hexagon_range)
             ]
         )
+
+        # if swarm has too many agents, the following conditions may prevents them from moving
         if len(other_agent_positions) > 0:
             distances = np.linalg.norm(target - other_agent_positions, axis=1)
             if np.any(
-                distances <= 2 * self.size  # hardcode
+                distances <= self.tolerance
             ):  # not occupied by another agent
                 return False, False
             if self.is_penalty_node:
-                if np.any(distances < self.hexagon_range):  # not in a coverage range
+                # not in a coverage range
+                if np.any(distances < self.hexagon_range):
                     return False, False
 
         # not a neighbour's targets
         for other_agent in agents:
+            if other_agent.index == self.index:
+                continue
             virtual_targets = np.array(
                 [pt for pt in other_agent.virtual_targets])
             if len(virtual_targets) > 0:
                 distances = np.linalg.norm(virtual_targets - target, axis=1)
-                distances = np.round(distances, 5)
+                distances = np.round(distances, 6)
                 if np.any(distances <= 2 * self.size):  # hardcode
                     return False, False
                 if self.is_penalty_node:
@@ -318,7 +324,7 @@ class HexagonAgent(Agent):
                 landmark.occupied_virtual_targets[tc] = True
                 landmark.tc += 1
                 route = self.get_shortest_path(lc, agents, env)
-                route.append(self.assigned_target)
+                # route.append(self.assigned_target)
                 if len(route) > 0:
                     self.route = route
                     self.set_state("assigned")
@@ -387,7 +393,7 @@ class HexagonAgent(Agent):
                     return path + [neighbor]
                 queue.append((neighbor, path + [neighbor]))
 
-        return [start_node[0]]  # if there is only one element
+        return [start_node[0], landmark_id]  # if there is only one element
 
     def step(self, landmarks, agents, env):
         """

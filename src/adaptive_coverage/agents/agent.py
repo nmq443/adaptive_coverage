@@ -16,7 +16,7 @@ class Agent:
     ):
         # Basic parameters
         self.index = index
-        self.pos = init_pos.copy()
+        self.pos = np.array(init_pos.copy())
         self.theta = 0
         self.vel = np.zeros(2)
         self.size = size

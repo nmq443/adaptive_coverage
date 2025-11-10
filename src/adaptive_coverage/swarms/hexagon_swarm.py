@@ -18,26 +18,22 @@ class HexagonSwarm(Swarm):
     ):
         super().__init__(*args, **kwargs)
         self.landmarks = deque([])
-        self.original_method = original_method
-        self.rho = rho
-        self.pso_weights = pso_weights
-        self.pso_num_particles = pso_num_particles
-        self.pso_num_iterations = pso_num_iterations
+        self.original_method: bool = original_method
+        self.rho: float = rho
+        self.pso_weights: list = pso_weights
+        self.pso_num_particles: int = pso_num_particles
+        self.pso_num_iterations: int = pso_num_iterations
+        self.random_init: bool = True
 
     def init_agents(self):
         """Initialize all agents in a grid-like formation."""
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
-                x = self.first_agent_pos[0] + j * self.dist_btw_agents
-                y = (
-                    self.first_agent_pos[1]
-                    + (self.num_rows - i - 1) * self.dist_btw_agents
-                )
-                init_pos = np.array([x, y])
+        if self.random_init:
+            pos = np.random.rand(self.num_agents, 2) + np.array([1, 1])
+            for i, p in enumerate(pos):
                 self.agents.append(
                     HexagonAgent(
-                        index=i * self.num_cols + j,
-                        init_pos=init_pos,
+                        index=i,
+                        init_pos=p,
                         size=self.agent_size,
                         original_method=self.original_method,
                         v_max=self.v_max,
@@ -52,6 +48,33 @@ class HexagonSwarm(Swarm):
                         pso_num_iterations=self.pso_num_iterations,
                     )
                 )
+        else:
+            for i in range(self.num_rows):
+                for j in range(self.num_cols):
+                    x = self.first_agent_pos[0] + j * self.dist_btw_agents
+                    y = (
+                        self.first_agent_pos[1]
+                        + (self.num_rows - i - 1) * self.dist_btw_agents
+                    )
+                    init_pos = np.array([x, y])
+                    self.agents.append(
+                        HexagonAgent(
+                            index=i * self.num_cols + j,
+                            init_pos=init_pos,
+                            size=self.agent_size,
+                            original_method=self.original_method,
+                            v_max=self.v_max,
+                            avoidance_range=self.avoidance_range,
+                            tolerance=self.tolerance,
+                            sensing_range=self.sensing_range,
+                            timestep=self.timestep,
+                            path_planner=self.path_planner,
+                            rho=self.rho,
+                            pso_weights=self.pso_weights,
+                            pso_num_particles=self.pso_num_particles,
+                            pso_num_iterations=self.pso_num_iterations,
+                        )
+                    )
         self.determine_root(-1, self.agents[-1].pos)
 
     def determine_root(self, agent_id, agent_goal):
