@@ -20,15 +20,10 @@ class VoronoiSwarm(Swarm):
             (self.state.shape[0], self.state.shape[1], self.num_agents))
 
     def init_agents(self):
-        """Initialize all agents in a grid-like formation."""
-        for i in range(self.num_rows):
-            for j in range(self.num_cols):
-                x = self.first_agent_pos[0] + j * self.dist_btw_agents
-                y = (
-                    self.first_agent_pos[1]
-                    + (self.num_rows - i - 1) * self.dist_btw_agents
-                )
-                init_pos = np.array([x, y])
+        """Initialize all agents in a grid-like formation or in random positions."""
+        if self.random_init:
+            pos = np.random.rand(self.num_agents, 2) + np.array([1, 1])
+            for i, p in enumerate(pos):
                 self.agents.append(
                     VoronoiAgent(
                         index=i * self.num_cols + j,
@@ -40,6 +35,26 @@ class VoronoiSwarm(Swarm):
                         path_planner=self.path_planner,
                     )
                 )
+        else:
+            for i in range(self.num_rows):
+                for j in range(self.num_cols):
+                    x = self.first_agent_pos[0] + j * self.dist_btw_agents
+                    y = (
+                        self.first_agent_pos[1]
+                        + (self.num_rows - i - 1) * self.dist_btw_agents
+                    )
+                    init_pos = np.array([x, y])
+                    self.agents.append(
+                        VoronoiAgent(
+                            index=i * self.num_cols + j,
+                            init_pos=init_pos,
+                            size=self.agent_size,
+                            critical_ratio=self.critical_ratio,
+                            sensing_range=self.sensing_range,
+                            timestep=self.timestep,
+                            path_planner=self.path_planner,
+                        )
+                    )
         self.generators = np.array([agent.pos for agent in self.agents])
 
     def update_critical_agents_state(self, agent_index, current_step, state, before=False):

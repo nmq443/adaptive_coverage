@@ -47,6 +47,7 @@ class Swarm:
         self.state = np.zeros(
             (self.num_agents, int(self.total_time / self.timestep), 11)
         )
+        self.random_init: bool = False
 
     def init_agents(self):
         pass

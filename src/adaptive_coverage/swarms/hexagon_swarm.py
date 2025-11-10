@@ -23,7 +23,6 @@ class HexagonSwarm(Swarm):
         self.pso_weights: list = pso_weights
         self.pso_num_particles: int = pso_num_particles
         self.pso_num_iterations: int = pso_num_iterations
-        self.random_init: bool = True
 
     def init_agents(self):
         """Initialize all agents in a grid-like formation."""
