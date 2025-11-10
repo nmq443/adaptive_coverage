@@ -155,6 +155,41 @@ class Renderer:
 
         return fig, ax
 
+    def render_frame(self, show_sensing_range=False, show_connections=False, show_trajectories=False):
+        """Render a frame at current timestep."""
+
+        fig, ax = self.create_fig_and_ax()
+
+        self.draw_environment(ax)
+
+        # Draw agents
+        for i in range(self.num_agents):
+            pos = self.trajectories_data[i, self.current_timestep, :2]
+            yaw = self.trajectories_data[i, self.current_timestep, 2]
+            penalty = self.trajectories_data[i, self.current_timestep, 8]
+
+            self.draw_agent(ax, i, pos, penalty)
+            self.draw_heading(ax, pos, yaw)
+            if show_sensing_range:
+                self.draw_sensing(ax, pos)
+        if show_connections:
+            self.draw_connections(fig, ax)
+        if show_trajectories:
+            self.draw_trajectories(ax)
+
+        # Draw Voronoi edges
+        if self.controller == "voronoi":
+            gen = self.trajectories_data[:, self.current_timestep, :2]
+            vor = compute_voronoi_diagrams(gen, self.env)
+            self.draw_voronoi(ax, vor)
+
+        fig.canvas.draw()
+        buf = np.asarray(fig.canvas.renderer.buffer_rgba())
+        frame = buf[:, :, :3]  # RGB only
+
+        plt.close(fig)
+        return frame
+    '''
     def render_frame(self, show_sensing_range=False, show_connections=False):
         """Render a frame at current timestep."""
 
@@ -187,6 +222,7 @@ class Renderer:
 
         plt.close(fig)
         return frame
+    '''
 
     def draw_connections(self, fig, ax):
         for i in range(self.num_agents):
@@ -206,19 +242,28 @@ class Renderer:
                         linestyle="solid",
                         linewidth=self.linewidth)
 
+    def draw_trajectories(self, ax):
+        """Draw past trajectories for all agents up to current timestep."""
+        for i in range(self.num_agents):
+            # Get all previous positions up to current timestep
+            traj = self.trajectories_data[i, :self.current_timestep + 1, :2]
+            ax.plot(traj[:, 0], traj[:, 1],
+                    color=self.agent_color, linewidth=0.8, alpha=0.7)
+
     def save_snapshot(self, timestep, tag):
         """Save 4 images at specific timestep."""
         self.current_timestep = timestep
         snapshots = {
-            "pos": (False, False),
-            "pos_sensing": (True, False),
-            "pos_conn": (False, True),
-            "pos_conn_sensing": (True, True)
+            "pos": (False, False, False),
+            "pos_sensing": (True, False, False),
+            "pos_conn": (False, True, False),
+            "pos_conn_sensing": (True, True, False),
+            "pos_traj": (False, False, True)
         }
 
-        for name, (sensing, conn) in snapshots.items():
+        for name, (sensing, conn, traj) in snapshots.items():
             frame = self.render_frame(
-                show_sensing_range=sensing, show_connections=conn)
+                show_sensing_range=sensing, show_connections=conn, show_trajectories=traj)
             save_path = os.path.join(
                 self.result_manager.res_dir, f"{tag}_{name}.png")
             plt.imsave(save_path, frame)
