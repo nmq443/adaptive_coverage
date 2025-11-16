@@ -105,7 +105,7 @@ experiments:
 agents:
   controller: "hexagon"
   original_method: true
-  num_agents: 10
+  num_agents: 20
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.1

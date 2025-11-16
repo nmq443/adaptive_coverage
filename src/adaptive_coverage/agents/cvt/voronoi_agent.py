@@ -21,7 +21,7 @@ class VoronoiAgent(Agent):
         self.JITTER_SCALE = 0.5       # fraction of v_max * dt
 
         # coverage-based exploration parameters
-        self.NUM_COVERAGE_SAMPLES = 12     # number of directions to sample when stuck
+        self.NUM_COVERAGE_SAMPLES = 4     # number of directions to sample when stuck
         # exploration step: move slightly farther than a single nominal step to try escape
         # multiply v_max * timestep by this for exploration
         self.EXPLORATION_STEP_SCALE = 1.5
