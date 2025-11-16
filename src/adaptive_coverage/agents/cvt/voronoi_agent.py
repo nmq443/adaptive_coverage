@@ -2,7 +2,7 @@ import numpy as np
 from shapely.geometry import Point, LineString
 from adaptive_coverage.agents.agent import Agent
 from adaptive_coverage.agents.cvt.lloyd import lloyd
-from adaptive_coverage.utils.utils import ray_intersects_aabb
+from adaptive_coverage.utils.utils import ray_intersects_aabb, compute_coverage_percentage
 from collections import deque
 
 
@@ -19,6 +19,12 @@ class VoronoiAgent(Agent):
         self.stuck_counter = 0
         self.STUCK_THRESHOLD = 15     # number of timesteps before adding noise
         self.JITTER_SCALE = 0.5       # fraction of v_max * dt
+
+        # coverage-based exploration parameters
+        self.NUM_COVERAGE_SAMPLES = 12     # number of directions to sample when stuck
+        # exploration step: move slightly farther than a single nominal step to try escape
+        # multiply v_max * timestep by this for exploration
+        self.EXPLORATION_STEP_SCALE = 1.5
 
     def get_critical_agents(self, agents, env):
         """
@@ -259,6 +265,63 @@ class VoronoiAgent(Agent):
 
         return out
 
+    # -------------------------
+    # Coverage-aware helper
+    # -------------------------
+    def find_coverage_improving_goal(self, agents, env):
+        """
+        Sample NUM_COVERAGE_SAMPLES candidate offsets around current position,
+        simulate moving only this agent to that position, and pick the candidate
+        that increases coverage the most (using compute_coverage_percentage).
+
+        Returns:
+            (best_goal, best_gain) where best_goal is a numpy array or None if no improvement.
+        """
+        # build positions array for all agents (assumes agents list indexed by agent.index)
+        current_positions = np.array([a.pos.copy() for a in agents])
+        # baseline coverage
+        try:
+            current_coverage = compute_coverage_percentage(
+                current_positions, env, self.sensing_range)
+        except Exception:
+            # If the coverage function throws, do not break — fall back to jitter
+            return None, 0.0
+
+        best_goal = None
+        best_gain = 0.0
+
+        # exploration step magnitude
+        exploration_step = self.v_max * self.timestep * self.EXPLORATION_STEP_SCALE
+
+        thetas = np.linspace(
+            0, 2 * np.pi, self.NUM_COVERAGE_SAMPLES, endpoint=False)
+        for th in thetas:
+            offset = exploration_step * np.array([np.cos(th), np.sin(th)])
+            candidate_goal = self.pos + offset
+
+            # skip candidate if LOS from current pos to candidate is blocked
+            if ray_intersects_aabb(self.pos, candidate_goal, env.obstacles):
+                continue
+
+            # simulate this agent at candidate and compute coverage
+            sim_positions = current_positions.copy()
+            # ensure the agent's entry corresponds to its index
+            sim_positions[self.index] = candidate_goal
+
+            try:
+                new_coverage = compute_coverage_percentage(
+                    sim_positions, env, self.sensing_range)
+            except Exception:
+                # skip candidate if compute fails
+                continue
+
+            gain = new_coverage - current_coverage
+            if gain > best_gain:
+                best_gain = gain
+                best_goal = candidate_goal
+
+        return best_goal, best_gain
+
     def step(self, agents, env):
         super().step()
 
@@ -275,16 +338,24 @@ class VoronoiAgent(Agent):
         if self.goal is None or self.terminated(self.goal):
             self.goal = lloyd(self, agents, env)
 
-        # --- If stuck, apply local-minima escape jitter ---
+        # --- If stuck, apply coverage-aware local-minima escape ---
         if self.stuck_counter > self.STUCK_THRESHOLD:
-            jitter_mag = self.JITTER_SCALE * self.v_max * self.timestep
-            jitter = jitter_mag * np.random.uniform(-1, 1, 2)
-            tentative_goal = self.goal + jitter
+            best_goal, gain = self.find_coverage_improving_goal(agents, env)
 
-            # optional safety check: no obstacles between self and new goal
-            if not ray_intersects_aabb(self.pos, tentative_goal, env.obstacles):
-                self.goal = tentative_goal
+            if best_goal is not None and gain > 1e-6:
+                # adopt coverage-improving candidate
+                self.goal = best_goal
+            else:
+                # fallback: random jitter (existing behaviour)
+                jitter_mag = self.JITTER_SCALE * self.v_max * self.timestep
+                jitter = jitter_mag * np.random.uniform(-1, 1, 2)
+                tentative_goal = self.goal + jitter
 
+                # optional safety check: no obstacles between self and new goal
+                if not ray_intersects_aabb(self.pos, tentative_goal, env.obstacles):
+                    self.goal = tentative_goal
+
+            # reset stuck counter after attempting escape
             self.stuck_counter = 0
 
         # --- Standard connectivity-aware movement ---

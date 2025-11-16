@@ -34,9 +34,10 @@ class Renderer:
         unassigned_color: str = "black",
         penalty_color: str = "green",
         linewidth: int = 1,
-        show_sensing_range=False,
-        show_connections=False,
-        show_trajectories=False,
+        save_video: bool = False,
+        show_sensing_range: bool = False,
+        show_connections: bool = False,
+        show_trajectories: bool = False,
     ):
         self.env: Environment = env
         self.agent_size: float = agent_size
@@ -68,7 +69,7 @@ class Renderer:
         self.num_agents: int = 0
         self.video_writer = None
         self.frames: list = []
-        self.save_video: bool = False
+        self.save_video: bool = save_video
         if self.save_video:
             self.video_writer = imageio.get_writer(
                 self.result_manager.video_path, fps=30)

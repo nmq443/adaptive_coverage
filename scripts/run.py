@@ -102,6 +102,7 @@ def render(args, log_manager, result_manager):
         log_manager=log_manager,
         env=env,
         linewidth=args.linewidth,
+        save_video=args.save_video,
         show_connections=args.show_connections,
         show_sensing_range=args.show_sensing_range,
         show_trajectories=args.show_trajectories,
