@@ -1,9 +1,7 @@
 import numpy as np
-from shapely.geometry import Point, LineString
 from adaptive_coverage.agents.agent import Agent
 from adaptive_coverage.agents.cvt.lloyd import lloyd
 from adaptive_coverage.utils.utils import ray_intersects_aabb, compute_coverage_percentage
-from collections import deque
 
 
 class VoronoiAgent(Agent):
@@ -24,7 +22,7 @@ class VoronoiAgent(Agent):
         self.NUM_COVERAGE_SAMPLES = 4     # number of directions to sample when stuck
         # exploration step: move slightly farther than a single nominal step to try escape
         # multiply v_max * timestep by this for exploration
-        self.EXPLORATION_STEP_SCALE = 1.5
+        self.EXPLORATION_STEP_SCALE = 1
 
     def _compute_pairwise_info(self, agents, env):
         n = len(agents)
@@ -266,7 +264,6 @@ class VoronoiAgent(Agent):
 
         Args:
             topos: list of local topologies.
-            critical_agents: list of critical_agents.
             agents: list of all agents.
 
         Returns:

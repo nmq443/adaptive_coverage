@@ -82,22 +82,25 @@ class Swarm:
 
     def step(self, env, current_step, penalty_flag=0):
         if len(self.agents) > 0:
-            # order = np.random.permutation(len(self.agents))
-            order = np.arange(len(self.agents))
-            for i in order:
-                self.agents[i].step(self.agents, env)
-                pos = self.agents[i].get_pos()
-                vel = self.agents[i].get_vel()
+            for agent in self.agents:
+                # perform a step
+                agent.step(self.agents, env)
+                pos = agent.get_pos()
+                vel = agent.get_vel()
                 next_pos = pos + vel * self.timestep
-                speed = self.agents[i].get_speed()
-                theta = self.agents[i].get_theta()
-                goal = self.agents[i].get_goal()
+                speed = agent.get_speed()
+                theta = agent.get_theta()
+                goal = agent.get_goal()
+                penalty_flag = 0
                 state = np.array(
                     [pos[0], pos[1], theta, goal[0], goal[1],
                         vel[0], vel[1], speed, penalty_flag, next_pos[0], next_pos[1]]
                 )
+
+                # record agent's state
                 self.update_state(
-                    agent_index=i, current_step=current_step, state=state)
+                    agent_index=agent.index, current_step=current_step, state=state)
+
             self.update_adj_mat(env)
             ld2 = lambda2(self.adjacency_matrix)
             self.ld2s.append(ld2)
