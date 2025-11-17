@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import time
 from adaptive_coverage.utils.utils import plot_travel_distances, plot_ld2
 
 
@@ -89,9 +90,6 @@ class Simulator:
         if self.controller == "voronoi":
             with open(self.result_manager.critical_agents_filepath, "wb") as f:
                 np.save(f, np.array(self.swarm.critical_agents))
-            with open(self.result_manager.critical_agents_before_removing_redundant_filepath, "wb") as f:
-                np.save(f, np.array(
-                    self.swarm.critical_agents_before_removing_redundant))
 
         # save coverage percentage
         percentage = self.swarm.get_coverage_percentage(self.env)
@@ -123,6 +121,7 @@ class Simulator:
 
     def execute(self):
         self.init()
+        start = time.perf_counter()
         while self.running:
             if self.step_count % 10 == 0:
                 self.log_manager.log(
@@ -134,5 +133,7 @@ class Simulator:
             else:
                 self.current_time += self.timestep
                 self.step_count += 1
+        end = time.perf_counter()
+        self.log_manager.log(f"Total time {end - start} seconds.")
         self.save_results()
         self.log_manager.log("Finished")
