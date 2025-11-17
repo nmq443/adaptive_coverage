@@ -355,6 +355,14 @@ def get_args(default_configs):
         help="Show agent's trajectories",
         default=configs["simulation"]["show_trajectories"],
     )
+    parser.add_argument(
+        "--save_video",
+        type=str2bool,
+        nargs="?",
+        const=False,
+        help="Save playback video",
+        default=configs["simulation"]["save_video"],
+    )
 
     # Results
     parser.add_argument(

@@ -69,7 +69,7 @@ environment:
   env6:
     area_width: 40
     area_height: 20
-    first_agent_pos: [2, 6]
+    first_agent_pos: [2, 9.5]
     obstacles:
       - [8, 7, 6, 1]
       - [8, 0, 1, 7]
@@ -97,6 +97,7 @@ simulation:
   show_goal: false
   show_connections: false
   show_trajectories: false
+  save_video: false
 
 experiments:
   res_dir: "results"
@@ -104,11 +105,11 @@ experiments:
 agents:
   controller: "hexagon"
   original_method: true
-  num_agents: 40
+  num_agents: 20
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.1
-  sensing_range: 5.0
+  sensing_range: 7.5
   communication_range: 2.5
   critical_ratio: 0.75
   avoidance_range: 0.05
