@@ -86,11 +86,6 @@ class Simulator:
                     with open(filepath, "wb") as f:
                         np.save(f, agent.fitness_func_hist)
 
-        # save critical agents information
-        if self.controller == "voronoi":
-            with open(self.result_manager.critical_agents_filepath, "wb") as f:
-                np.save(f, np.array(self.swarm.critical_agents))
-
         # save coverage percentage
         percentage = self.swarm.get_coverage_percentage(self.env)
 
