@@ -26,6 +26,17 @@ class VoronoiAgent(Agent):
         # multiply v_max * timestep by this for exploration
         self.EXPLORATION_STEP_SCALE = 1.5
 
+    def _compute_pairwise_info(self, agents, env):
+        n = len(agents)
+        dists = np.empty(n, dtype=float)
+        los = [False] * n
+        obs = env.obstacles
+        for a in agents:
+            idx = a.index
+            dists[idx] = np.linalg.norm(a.pos - self.pos)
+            los[idx] = ray_intersects_aabb(self.pos, a.pos, obs)
+        return dists, los
+
     def get_critical_agents(self, agents, env):
         """
         Get critical agents with definition in *Hierarchical Distributed Control for Global Network Integrity Preservation in Multi-Robot Systems*.
@@ -38,13 +49,14 @@ class VoronoiAgent(Agent):
             list of all critical agents.
         """
         critical_agents = []
+        dists, los = self._compute_pairwise_info(agents, env)
         for agent in agents:
             if agent.index != self.index:
-                if self.is_critical_agent(agent, agents, env):
+                if self.is_critical_agent(agent, agents, env, dists, los):
                     critical_agents.append(agent.index)
         return critical_agents
 
-    def is_critical_agent(self, agent, agents, env):
+    def is_critical_agent(self, agent, agents, env, dists_self=None, los_self=None):
         """
         Check if an agent is this agent's critical agent:
         - agent must be in the annulus (critical area): distance in (critical_range, sensing_range]
@@ -61,24 +73,27 @@ class VoronoiAgent(Agent):
         if agent.index == self.index:
             return False
 
-        rij = np.linalg.norm(agent.pos - self.pos)
+        if dists_self is None or los_self is None:
+            dists_self, los_self = self._compute_pairwise_info(agents, env)
+
+        rij = dists_self[agent.index]
 
         # NOTE: no need for this condition any more
         # must be inside annulus (critical area)
         # but still need to be inside sensing area
-        if not (rij < self.sensing_range):
+        if rij >= self.sensing_range:
             return False
 
         # if not (self.critical_range < rij < self.sensing_range):
         # return False
 
         # check line-of-sight (if blocked -> not considered critical)
-        if ray_intersects_aabb(self.pos, agent.pos, env.obstacles):
+        if los_self[agent.index]:
             return False
 
         # define noncritical area as inside critical_range (Sn_i)
         for other in agents:
-            if other.index in (self.index, agent.index):
+            if other.index == self.index or other.index == agent.index:
                 continue
             # other in our noncritical area?
             d_other_i = np.linalg.norm(other.pos - self.pos)
@@ -163,32 +178,50 @@ class VoronoiAgent(Agent):
     def get_triangle_topologies(self, critical_agents, agents, env):
         """
         Finds all local triangle topologies of current agent.
-        - critical_agents: list of agent indices (integers)
-        Returns a list of topologies, each as [agent_idx_j, agent_idx_k]
+        - critical_agents: list of agent indices (ints)
+        Returns: list of [agent_j, agent_k]
         """
-        if len(critical_agents) <= 1:
+        n = len(critical_agents)
+        if n <= 1:
             return []
 
-        # ensure we have numpy array of ints
-        crit = np.array(critical_agents, dtype=int)
+        # Convert to numpy array
+        crit = np.asarray(critical_agents, dtype=int)
 
-        # compute angle of each critical agent relative to self
-        rel = np.array([agents[idx].pos - self.pos for idx in crit])
-        thetas = np.arctan2(rel[:, 1], rel[:, 0])  # angle in [-pi, pi)
-        sort_idx = np.argsort(thetas)
-        crit_sorted = crit[sort_idx]
+        # Vectorized positions of critical agents relative to self
+        crit_positions = np.array([agents[i].pos for i in crit])  # shape (n,2)
+        rel = crit_positions - self.pos
+
+        # Compute and sort by angle
+        thetas = np.arctan2(rel[:, 1], rel[:, 0])
+        sorted_idx = np.argsort(thetas)
+        crit_sorted = crit[sorted_idx]
+        crit_pos_sorted = crit_positions[sorted_idx]
+
+        # Precompute pairwise distances for adjacent (cyclic)
+        # Compute all distances except the last-to-first
+        diffs = crit_pos_sorted[1:] - crit_pos_sorted[:-1]  # shape (n-1,2)
+        dists = np.linalg.norm(diffs, axis=1)  # shape (n-1,)
 
         topos = []
-        q = len(crit_sorted)
-        # cyclic adjacency: each pair (m, m+1) and also (q-1,0)
-        for m in range(q):
-            a_idx = int(crit_sorted[m])
-            b_idx = int(crit_sorted[(m+1) % q])
-            # check they are mutually visible and connected to each other (edge between them)
-            dist_ab = np.linalg.norm(agents[a_idx].pos - agents[b_idx].pos)
-            if dist_ab < self.sensing_range and not ray_intersects_aabb(agents[a_idx].pos, agents[b_idx].pos, env.obstacles):
-                # triangle topology with this agent i and neighbors a_idx,b_idx
-                topos.append([a_idx, b_idx])
+
+        # Loop through adjacent pairs
+        for m in range(n):
+            j = crit_sorted[m]
+            k = crit_sorted[(m + 1) % n]
+
+            # Select precomputed distance or compute special wrap-around
+            if m < n - 1:
+                d = dists[m]
+            else:
+                # Wrap-around distance between last and first
+                d = np.linalg.norm(crit_pos_sorted[-1] - crit_pos_sorted[0])
+
+            # Visibility test
+            if d < self.sensing_range:
+                if not ray_intersects_aabb(agents[j].pos, agents[k].pos, env.obstacles):
+                    topos.append([j, k])
+
         return topos
 
     def find_best_connectivity_in_a_topology(self, topo, agents):
@@ -384,38 +417,16 @@ class VoronoiAgent(Agent):
         u_ij = v_ij / norm_v
         u_perp = np.array([-u_ij[1], u_ij[0]])
 
-        j0 = neighbor.pos
         j1 = neighbor.pos + d * u_perp
         j2 = neighbor.pos - d * u_perp
-        j3 = neighbor.pos + d * u_ij
-        j4 = neighbor.pos - d * u_ij
-        # worst_cases = [j0, j1, j2, j3, j4]
+
         worst_cases = [j1, j2]
 
         for wpos in worst_cases:
             dist = np.linalg.norm(next_pos - wpos)
-            if dist < self.sensing_range:
-                if ray_intersects_aabb(next_pos, wpos, env.obstacles):
-                    return False
-            else:
+            if dist >= self.sensing_range:
                 return False
-        return True
-
-    def check_future_connectivity_sample(self, next_pos, neighbor, env, N=24, eps=1e-9):
-        d = self.timestep * self.v_max
-
-        p = neighbor.pos
-        v = next_pos - p
-        r = np.linalg.norm(v)
-
-        # Sample the boundary of the neighbor's motion disk
-        thetas = np.linspace(0, 2*np.pi, N, endpoint=False)
-        for th in thetas:
-            wpos = p + d * np.array([np.cos(th), np.sin(th)])
-            # distance check (should be redundant given r + d < R, but keep for numerical safety)
-            if np.linalg.norm(next_pos - wpos) > self.sensing_range:
-                return False
-            # LOS check
             if ray_intersects_aabb(next_pos, wpos, env.obstacles):
                 return False
         return True
+

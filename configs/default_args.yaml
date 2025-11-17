@@ -97,7 +97,7 @@ simulation:
   show_goal: false
   show_connections: false
   show_trajectories: false
-  save_video: false
+  save_video: true
 
 experiments:
   res_dir: "results"
@@ -109,7 +109,7 @@ agents:
   agent_size: 0.2
   v_max: 0.1
   tolerance: 0.1
-  sensing_range: 7.5
+  sensing_range: 5.0
   communication_range: 2.5
   critical_ratio: 0.75
   avoidance_range: 0.05
