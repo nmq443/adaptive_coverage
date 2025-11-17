@@ -2,6 +2,7 @@ import numpy as np
 from adaptive_coverage.agents.agent import Agent
 from adaptive_coverage.agents.cvt.lloyd import lloyd
 from adaptive_coverage.utils.utils import ray_intersects_aabb, compute_coverage_percentage
+from adaptive_coverage.environment.environment import Environment
 
 
 class VoronoiAgent(Agent):
@@ -10,19 +11,6 @@ class VoronoiAgent(Agent):
         self.critical_range = self.sensing_range * critical_ratio
         self.eps = self.sensing_range - self.critical_range
         self.tolerance = self.size * 2
-        self.non_redundant_agents = []
-
-        # local minima handling
-        self.prev_pos = np.copy(self.pos)
-        self.stuck_counter = 0
-        self.STUCK_THRESHOLD = 15     # number of timesteps before adding noise
-        self.JITTER_SCALE = 0.5       # fraction of v_max * dt
-
-        # coverage-based exploration parameters
-        self.NUM_COVERAGE_SAMPLES = 4     # number of directions to sample when stuck
-        # exploration step: move slightly farther than a single nominal step to try escape
-        # multiply v_max * timestep by this for exploration
-        self.EXPLORATION_STEP_SCALE = 1
 
     def _compute_pairwise_info(self, agents, env):
         n = len(agents)
@@ -110,14 +98,10 @@ class VoronoiAgent(Agent):
         # if no such k exists, it's noncritical by Definition 1
         return True
 
-    def get_non_redundant_agents(self):
-        return self.non_redundant_agents
-
     def mobility_constraint(self, critical_agents, agents, env):
         if len(critical_agents) == 0:
             return self.v_max * (self.eps / (2 * self.timestep))
 
-        self.non_redundant_agents = critical_agents
         epsi = []
         for critical_id in critical_agents:
             neighbor = agents[critical_id]
@@ -158,7 +142,7 @@ class VoronoiAgent(Agent):
         # if none of the reduced steps are safe, stay still
         return 0.0
 
-    def angle_to_goal(self, neighbor_pos):
+    def angle_to_goal(self, neighbor_pos: np.ndarray):
         """
         Compute angle to desired goal.
         Return:
@@ -173,7 +157,7 @@ class VoronoiAgent(Agent):
         cosang = np.clip(np.dot(v_des, v_rel) / (mv * mr), -1.0, 1.0)
         return np.arccos(cosang)
 
-    def get_triangle_topologies(self, critical_agents, agents, env):
+    def get_triangle_topologies(self, critical_agents: list[int], agents: list[Agent], env: Environment):
         """
         Finds all local triangle topologies of current agent.
         - critical_agents: list of agent indices (ints)
@@ -222,7 +206,7 @@ class VoronoiAgent(Agent):
 
         return topos
 
-    def find_best_connectivity_in_a_topology(self, topo, agents):
+    def find_best_connectivity_in_a_topology(self, topo: list, agents: list):
         """
         Find the best connectivity in a local topology by finding the link that has minimum angle with reference to goal.
 
@@ -258,7 +242,7 @@ class VoronoiAgent(Agent):
                     best_neighbor_id = neighbor_id
         return best_neighbor_id
 
-    def remove_redundancy(self, topos, agents):
+    def remove_redundancy(self, topos: list, agents: list):
         """
         Remove redundant links.
 
@@ -295,98 +279,12 @@ class VoronoiAgent(Agent):
 
         return out
 
-    # -------------------------
-    # Coverage-aware helper
-    # -------------------------
-    def find_coverage_improving_goal(self, agents, env):
-        """
-        Sample NUM_COVERAGE_SAMPLES candidate offsets around current position,
-        simulate moving only this agent to that position, and pick the candidate
-        that increases coverage the most (using compute_coverage_percentage).
-
-        Returns:
-            (best_goal, best_gain) where best_goal is a numpy array or None if no improvement.
-        """
-        # build positions array for all agents (assumes agents list indexed by agent.index)
-        current_positions = np.array([a.pos.copy() for a in agents])
-        # baseline coverage
-        try:
-            current_coverage = compute_coverage_percentage(
-                current_positions, env, self.sensing_range)
-        except Exception:
-            # If the coverage function throws, do not break — fall back to jitter
-            return None, 0.0
-
-        best_goal = None
-        best_gain = 0.0
-
-        # exploration step magnitude
-        exploration_step = self.v_max * self.timestep * self.EXPLORATION_STEP_SCALE
-
-        thetas = np.linspace(
-            0, 2 * np.pi, self.NUM_COVERAGE_SAMPLES, endpoint=False)
-        for th in thetas:
-            offset = exploration_step * np.array([np.cos(th), np.sin(th)])
-            candidate_goal = self.pos + offset
-
-            # skip candidate if LOS from current pos to candidate is blocked
-            if ray_intersects_aabb(self.pos, candidate_goal, env.obstacles):
-                continue
-
-            # simulate this agent at candidate and compute coverage
-            sim_positions = current_positions.copy()
-            # ensure the agent's entry corresponds to its index
-            sim_positions[self.index] = candidate_goal
-
-            try:
-                new_coverage = compute_coverage_percentage(
-                    sim_positions, env, self.sensing_range)
-            except Exception:
-                # skip candidate if compute fails
-                continue
-
-            gain = new_coverage - current_coverage
-            if gain > best_gain:
-                best_gain = gain
-                best_goal = candidate_goal
-
-        return best_goal, best_gain
-
-    def step(self, agents, env):
+    def step(self, agents: list, env: Environment):
         super().step()
-
-        # --- Detect if stuck ---
-        moved_dist = np.linalg.norm(self.pos - self.prev_pos)
-        self.prev_pos = np.copy(self.pos)
-
-        if moved_dist < 1e-4:
-            self.stuck_counter += 1
-        else:
-            self.stuck_counter = 0
 
         # --- CVT Goal if no current goal ---
         if self.goal is None or self.terminated(self.goal):
             self.goal = lloyd(self, agents, env)
-
-        # --- If stuck, apply coverage-aware local-minima escape ---
-        if self.stuck_counter > self.STUCK_THRESHOLD:
-            best_goal, gain = self.find_coverage_improving_goal(agents, env)
-
-            if best_goal is not None and gain > 1e-6:
-                # adopt coverage-improving candidate
-                self.goal = best_goal
-            else:
-                # fallback: random jitter (existing behaviour)
-                jitter_mag = self.JITTER_SCALE * self.v_max * self.timestep
-                jitter = jitter_mag * np.random.uniform(-1, 1, 2)
-                tentative_goal = self.goal + jitter
-
-                # optional safety check: no obstacles between self and new goal
-                if not ray_intersects_aabb(self.pos, tentative_goal, env.obstacles):
-                    self.goal = tentative_goal
-
-            # reset stuck counter after attempting escape
-            self.stuck_counter = 0
 
         # --- Standard connectivity-aware movement ---
         critical_agents = self.get_critical_agents(agents, env)
@@ -402,7 +300,7 @@ class VoronoiAgent(Agent):
                 self.goal, agents, env.obstacles, desired_v=desired_v
             )
 
-    def check_future_connectivity(self, next_pos, neighbor, d, env):
+    def check_future_connectivity(self, next_pos: np.ndarray, neighbor: Agent, d: float, env: Environment):
         """
         Check if next_pos maintains connectivity with neighbor under worst-case
         neighbor positions.
@@ -426,4 +324,3 @@ class VoronoiAgent(Agent):
             if ray_intersects_aabb(next_pos, wpos, env.obstacles):
                 return False
         return True
-
