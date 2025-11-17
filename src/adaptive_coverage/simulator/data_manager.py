@@ -1,12 +1,11 @@
 import os
 import matplotlib.animation as animation
-import imageio
 import logging
 
 
 class ResultManager:
     def __init__(
-        self, num_agents, res_dir, env_dir, controller, original_method
+        self, num_agents, res_dir, env_dir, controller, original_method, create_new_dir=True
     ):
         """
         This class helps with managing results.
@@ -24,6 +23,7 @@ class ResultManager:
         self.controller = controller
         self.original_method = original_method
         self.frames = []
+        self.create_new_dir = create_new_dir
         self.res_dir = (
             self.init_directories()
         )  # Correctly assign the path of the new directory
@@ -66,15 +66,16 @@ class ResultManager:
         # Create the base directory if it doesn't exist
         os.makedirs(base_dir, exist_ok=True)
 
-        # Find the next available run number
-        run_number = 0
-        while os.path.exists(os.path.join(base_dir, f"run{run_number}")):
-            run_number += 1
+        if self.create_new_dir:
+            # Find the next available run number
+            run_number = 0
+            while os.path.exists(os.path.join(base_dir, f"run{run_number}")):
+                run_number += 1
 
-        # Set the new results directory
-        new_res_dir = os.path.join(base_dir, f"run{run_number}")
-        os.makedirs(new_res_dir)
-        return new_res_dir
+            # Set the new results directory
+            new_res_dir = os.path.join(base_dir, f"run{run_number}")
+            os.makedirs(new_res_dir)
+            return new_res_dir
 
 
 class LogManager:

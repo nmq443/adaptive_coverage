@@ -33,10 +33,12 @@ class Renderer:
         assigned_color: str = "blue",
         unassigned_color: str = "black",
         penalty_color: str = "green",
+        res_dir: str = '',
         linewidth: int = 1,
-        show_sensing_range=False,
-        show_connections=False,
-        show_trajectories=False,
+        show_sensing_range: bool = False,
+        show_connections: bool = False,
+        show_trajectories: bool = False,
+        save_video: bool = False,
     ):
         self.env: Environment = env
         self.agent_size: float = agent_size
@@ -52,6 +54,7 @@ class Renderer:
         self.trajectories_filepath: str = trajectories_filepath
         self.result_manager: ResultManager = result_manager
         self.log_manager: LogManager = log_manager
+        self.res_dir: str = res_dir
 
         self.agent_color: str = agent_color
         self.agent_sensing_color: str = agent_sensing_color
@@ -68,10 +71,14 @@ class Renderer:
         self.num_agents: int = 0
         self.video_writer = None
         self.frames: list = []
-        self.save_video: bool = False
+        self.save_video: bool = save_video
         if self.save_video:
-            self.video_writer = imageio.get_writer(
-                self.result_manager.video_path, fps=30)
+            if self.result_manager:
+                self.video_writer = imageio.get_writer(
+                    self.result_manager.video_path, fps=30)
+            else:
+                self.video_writer = imageio.get_writer(
+                    os.path.join(self.res_dir, "playback.mp4"), fps=30)
 
     def load_data(self):
         if not os.path.exists(self.trajectories_filepath):
@@ -189,40 +196,6 @@ class Renderer:
 
         plt.close(fig)
         return frame
-    '''
-    def render_frame(self, show_sensing_range=False, show_connections=False):
-        """Render a frame at current timestep."""
-
-        fig, ax = self.create_fig_and_ax()
-
-        self.draw_environment(ax)
-
-        # Draw agents
-        for i in range(self.num_agents):
-            pos = self.trajectories_data[i, self.current_timestep, :2]
-            yaw = self.trajectories_data[i, self.current_timestep, 2]
-            penalty = self.trajectories_data[i, self.current_timestep, 8]
-
-            self.draw_agent(ax, i, pos, penalty)
-            self.draw_heading(ax, pos, yaw)
-            if show_sensing_range:
-                self.draw_sensing(ax, pos)
-        if show_connections:
-            self.draw_connections(fig, ax)
-
-        # Draw Voronoi edges
-        if self.controller == "voronoi":
-            gen = self.trajectories_data[:, self.current_timestep, :2]
-            vor = compute_voronoi_diagrams(gen, self.env)
-            self.draw_voronoi(ax, vor)
-
-        fig.canvas.draw()
-        buf = np.asarray(fig.canvas.renderer.buffer_rgba())
-        frame = buf[:, :, :3]  # RGB only
-
-        plt.close(fig)
-        return frame
-    '''
 
     def draw_connections(self, fig, ax):
         for i in range(self.num_agents):
@@ -275,8 +248,9 @@ class Renderer:
             return
 
         # Save start and finish snapshot
-        self.save_snapshot(0, "start")
-        self.save_snapshot(self.num_timesteps - 1, "final")
+        if self.result_manager:
+            self.save_snapshot(0, "start")
+            self.save_snapshot(self.num_timesteps - 1, "final")
 
         if self.save_video:
             for t in range(self.num_timesteps):
@@ -285,5 +259,6 @@ class Renderer:
                 self.video_writer.append_data(frame)
 
             self.video_writer.close()
-            self.log_manager.log(
-                f"Save playback video to {self.result_manager.video_path}")
+            if self.log_manager:
+                self.log_manager.log(
+                    f"Save playback video to {self.result_manager.video_path}")

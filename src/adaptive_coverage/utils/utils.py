@@ -415,6 +415,7 @@ def save_configs(args, file_path):
         "area_height": config_dict.pop("area_height"),
         "first_agent_pos": config_dict.pop("first_agent_pos"),
         "obstacles": config_dict.pop("obstacles"),
+        "vertices": config_dict.pop("vertices")
     }
 
     output_config["simulation"]["scale"] = config_dict.pop("scale")
