@@ -107,7 +107,7 @@ agents:
   original_method: true
   num_agents: 20
   agent_size: 0.2
-  v_max: 0.1
+  v_max: 0.2
   tolerance: 0.1
   sensing_range: 5.0
   critical_ratio: 0.75
