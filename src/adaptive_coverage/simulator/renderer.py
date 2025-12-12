@@ -38,6 +38,7 @@ class Renderer:
         show_sensing_range: bool = False,
         show_connections: bool = False,
         show_trajectories: bool = False,
+        show_goal: bool = True,
         save_video: bool = False,
     ):
         self.env: Environment = env
@@ -50,6 +51,7 @@ class Renderer:
         self.show_sensing_range: bool = show_sensing_range
         self.show_connections: bool = show_connections
         self.show_trajectories: bool = show_trajectories
+        self.show_goal: bool = show_goal
 
         self.trajectories_filepath: str = trajectories_filepath
         self.result_manager: ResultManager = result_manager
@@ -100,12 +102,15 @@ class Renderer:
             r = Rectangle((x, y), w, h, edgecolor="black", facecolor="black")
             ax.add_patch(r)
 
-    def draw_agent(self, ax, idx, pos, penalty):
+    def draw_agent(self, ax, idx, pos, goal, penalty):
         color = self.penalty_color if penalty == 1 else self.agent_color
         circ = Circle(pos, self.agent_size, color=color)
         ax.add_patch(circ)
         ax.text(pos[0] + self.agent_size, pos[1] - self.agent_size, str(idx),
                 color=self.index_color, fontsize=8)
+        if self.show_goal:
+            goal_circ = Circle(goal, self.agent_size / 2, color='green')
+            ax.add_patch(goal_circ)
 
     def draw_heading(self, ax, pos, yaw):
         a = pos
@@ -174,8 +179,9 @@ class Renderer:
             pos = self.trajectories_data[i, self.current_timestep, :2]
             yaw = self.trajectories_data[i, self.current_timestep, 2]
             penalty = self.trajectories_data[i, self.current_timestep, 8]
+            goal = self.trajectories_data[i, self.current_timestep, 3:5]
 
-            self.draw_agent(ax, i, pos, penalty)
+            self.draw_agent(ax, i, pos, goal, penalty)
             self.draw_heading(ax, pos, yaw)
             if show_sensing_range:
                 self.draw_sensing(ax, pos)
